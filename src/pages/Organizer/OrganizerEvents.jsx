@@ -137,8 +137,9 @@ export default function OrganizerEvents() {
   const [loading, setLoading] = useState(false);
   const [showDraftNotification, setshowDraftNotification] = useState(false);
   const [showPublishNotification, setshowPublishNotification] = useState(false);
-  const [showActivateNotification, setshowActivateNotification] =
-    useState(false);
+  const [showActivateNotification, setshowActivateNotification] = useState(false);
+  const [accountId, setAccountId] = useState("");
+  const [organizer, setOrganizer] = useState(null);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -220,6 +221,8 @@ export default function OrganizerEvents() {
   useEffect(() => {
     const loadFromLocalStorage = () => {
       const storedUserOrganizerId = localStorage.getItem("organizerId");
+      const storedAccountID = localStorage.getItem("accountId");
+      setAccountId(storedAccountID || "");
       setOragnizerId(storedUserOrganizerId);
     };
     loadFromLocalStorage();
@@ -283,10 +286,10 @@ export default function OrganizerEvents() {
 
       return (
         "$" +
-          total.toLocaleString("en-US", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          }) || "$" + 0
+        total.toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }) || "$" + 0
       );
     } catch (error) {
       console.error(`Error fetching events for id: ${id}`, error);
@@ -358,6 +361,35 @@ export default function OrganizerEvents() {
     }
   }, [liveEvents]);
 
+  const fetchOrganizer = async () => {
+    if (oragnizerId) {
+      try {
+        const response = await axios.get(`${url}/get-organizer/${oragnizerId}`);
+        setOrganizer(response.data);
+      } catch (error) {
+        console.error("Error fetching organizer:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (oragnizerId) {
+      fetchOrganizer();
+    }
+  }, [oragnizerId]);
+
+  const handleOnboard = () => {
+    if (organizer && organizer.stripeAccountId) {
+      axios.post(`${url}/generate-onboarding-url`, { accountId: organizer.stripeAccountId })
+        .then(response => {
+          window.location.href = response.data.url;
+        })
+        .catch(error => {
+          console.error('Error generating onboarding URL:', error);
+        });
+    }
+  }
+
   return (
     <SidebarLayout>
       <div className="m-4 mb-2 z-20">
@@ -384,9 +416,8 @@ export default function OrganizerEvents() {
                     value="live"
                     active={activeTab === "live"}
                     onClick={() => setActiveTab("live")}
-                    className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${
-                      activeTab === "live" ? "bg-white/10" : ""
-                    }`}
+                    className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${activeTab === "live" ? "bg-white/10" : ""
+                      }`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -414,9 +445,8 @@ export default function OrganizerEvents() {
                     value="live"
                     active={activeTab === "live"}
                     onClick={() => setActiveTab("live")}
-                    className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${
-                      activeTab === "live" ? "bg-white/10" : ""
-                    }`}
+                    className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${activeTab === "live" ? "bg-white/10" : ""
+                      }`}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -444,9 +474,8 @@ export default function OrganizerEvents() {
                   value="past"
                   active={activeTab === "past"}
                   onClick={() => setActiveTab("past")}
-                  className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${
-                    activeTab === "past" ? "bg-white/10" : ""
-                  }`}
+                  className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${activeTab === "past" ? "bg-white/10" : ""
+                    }`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -478,9 +507,8 @@ export default function OrganizerEvents() {
                   value="drafts"
                   active={activeTab === "drafts"}
                   onClick={() => setActiveTab("drafts")}
-                  className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${
-                    activeTab === "drafts" ? "bg-white/10" : ""
-                  }`}
+                  className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${activeTab === "drafts" ? "bg-white/10" : ""
+                    }`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -506,9 +534,9 @@ export default function OrganizerEvents() {
                   <span className="bg-[#151515] h-6 w-fit px-2 rounded-full flex items-center justify-center">
                     {events
                       ? filterEvents(events).filter(
-                          (event) =>
-                            event.explore === "NO" && event.status === "active"
-                        ).length
+                        (event) =>
+                          event.explore === "NO" && event.status === "active"
+                      ).length
                       : 0}
                   </span>
                 </TabTrigger>
@@ -516,9 +544,8 @@ export default function OrganizerEvents() {
                   value="deactivated"
                   active={activeTab === "deactivated"}
                   onClick={() => setActiveTab("deactivated")}
-                  className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${
-                    activeTab === "deactivated" ? "bg-white/10" : ""
-                  }`}
+                  className={`flex items-center gap-2 p-2 pl-2 pr-1 @4xl:rounded-full hover:bg-white/5 ${activeTab === "deactivated" ? "bg-white/10" : ""
+                    }`}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -539,8 +566,8 @@ export default function OrganizerEvents() {
                   <span className="bg-[#151515] h-6 w-fit px-2 rounded-full flex items-center justify-center">
                     {events
                       ? filterEvents(events).filter(
-                          (event) => event.status === "inactive"
-                        ).length
+                        (event) => event.status === "inactive"
+                      ).length
                       : 0}
                   </span>
                 </TabTrigger>
@@ -703,8 +730,8 @@ export default function OrganizerEvents() {
                             const soldPercentage =
                               totalTickets > 0
                                 ? ((soldTickets[event._id] || 0) /
-                                    totalTickets) *
-                                  100
+                                  totalTickets) *
+                                100
                                 : 0;
                             return (
                               <tr
@@ -758,9 +785,8 @@ export default function OrganizerEvents() {
                                             <div
                                               className="h-full transition-all duration-300 ease-out"
                                               style={{
-                                                transform: `scaleY(${
-                                                  barFillPercentage / 25
-                                                })`,
+                                                transform: `scaleY(${barFillPercentage / 25
+                                                  })`,
                                                 transformOrigin: "bottom",
                                                 backgroundColor: barColor,
                                               }}
@@ -1029,8 +1055,8 @@ export default function OrganizerEvents() {
                             const soldPercentage =
                               totalTickets > 0
                                 ? ((soldTickets[event._id] || 0) /
-                                    totalTickets) *
-                                  100
+                                  totalTickets) *
+                                100
                                 : 0;
                             return (
                               <tr
@@ -1084,9 +1110,8 @@ export default function OrganizerEvents() {
                                             <div
                                               className="h-full transition-all duration-300 ease-out"
                                               style={{
-                                                transform: `scaleY(${
-                                                  barFillPercentage / 25
-                                                })`,
+                                                transform: `scaleY(${barFillPercentage / 25
+                                                  })`,
                                                 transformOrigin: "bottom",
                                                 backgroundColor: barColor,
                                               }}
@@ -1350,6 +1375,7 @@ export default function OrganizerEvents() {
                                   <MenuItem
                                     onClick={() => {
                                       setSelectedEvent(event);
+                                      localStorage.setItem('organizer_eventId', event._id);
                                       setPublishDialogOpen(true);
                                     }}
                                   >
@@ -1794,45 +1820,80 @@ export default function OrganizerEvents() {
       <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
         <DialogContent>
           <DialogTitle className="w-80">
-            Publish &quot;{selectedEvent?.event_name}&quot;?
+            {
+              !accountId ? (
+                <>
+                  Complete stripe onboarding
+                </>
+              ) : (
+                <>
+                  Publish & quot;{selectedEvent?.event_name}&quot;?
+                </>
+              )
+            }
           </DialogTitle>
           <DialogDescription>
-            This event will be published. Users can see this event and purchase
-            the tickets.
+            {
+              !accountId ? (
+                <>
+                  complete your stripe onboarding to make events live and get full access
+                </>
+              ) : (
+                <>
+                  This event will be published. Users can see this event and purchase
+                  the tickets.
+                </>
+              )
+            }
           </DialogDescription>
           <div className="flex flex-col gap-3 mt-3">
-            <button
-              onClick={async () => {
-                if (!selectedEvent?._id) return;
+            {
+              !accountId ? (
+                <>
+                  <button
+                    onClick={handleOnboard}
+                    className="w-full bg-green-500/60 hover:bg-green-600/90 text-white border-white/10 border text-center rounded-full h-10 px-4 focus:outline-none flex items-center justify-center gap-2 font-medium transition-colors"
+                  >
+                    Complete onboard
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={async () => {
+                      if (!selectedEvent?._id) return;
 
-                try {
-                  const newStatus = "YES";
+                      try {
+                        const newStatus = "YES";
 
-                  const response = await axios.patch(
-                    `${url}/event/change-status/${selectedEvent._id}`,
-                    { status: newStatus }
-                  );
+                        const response = await axios.patch(
+                          `${url}/event/change-status/${selectedEvent._id}`,
+                          { status: newStatus }
+                        );
 
-                  setPublishDialogOpen(false);
-                  setshowPublishNotification(true);
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, [2500]);
-                } catch (error) {
-                  console.error("Error updating event status:", error);
-                  alert("Failed to change event status. Please try again.");
-                }
-              }}
-              className="w-full bg-green-500/60 hover:bg-green-600/90 text-white border-white/10 border text-center rounded-full h-10 px-4 focus:outline-none flex items-center justify-center gap-2 font-medium transition-colors"
-            >
-              Publish
-            </button>
+                        setPublishDialogOpen(false);
+                        setshowPublishNotification(true);
+                        setTimeout(() => {
+                          window.location.reload();
+                        }, [2500]);
+                      } catch (error) {
+                        console.error("Error updating event status:", error);
+                        alert("Failed to change event status. Please try again.");
+                      }
+                    }}
+                    className="w-full bg-green-500/60 hover:bg-green-600/90 text-white border-white/10 border text-center rounded-full h-10 px-4 focus:outline-none flex items-center justify-center gap-2 font-medium transition-colors"
+                  >
+                    Publish
+                  </button>
+                </>
+              )
+            }
             {/* <button
-                            onClick={() => setDeactivateDialogOpen(false)}
-                            className="w-full border border-white/10 hover:bg-white/5 text-white text-center rounded-full h-10 px-4 focus:outline-none flex items-center justify-center gap-2 font-medium transition-colors"
-                        >
-                            Cancel
-                        </button> */}
+                  onClick={() => setDeactivateDialogOpen(false)}
+                  className="w-full border border-white/10 hover:bg-white/5 text-white text-center rounded-full h-10 px-4 focus:outline-none flex items-center justify-center gap-2 font-medium transition-colors"
+              >
+                  Cancel
+              </button> */}
           </div>
         </DialogContent>
       </Dialog>

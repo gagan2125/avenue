@@ -24,6 +24,7 @@ import {
     DialogTitle,
     DialogDescription,
 } from "../../components/ui/Dailog";
+import moment from 'moment-timezone';
 
 const ticketTypes = [
     {
@@ -227,6 +228,12 @@ export default function EditEvent() {
     const [discountType, setDiscountType] = useState("percentage");
     const [customName, setCustomName] = useState("");
     const [customFee, setCustomFee] = useState("");
+    const [timezones, setTimezones] = useState([]);
+    const [selectedTimezone, setSelectedTimezone] = useState('');
+
+    useEffect(() => {
+        setTimezones(moment.tz.names());
+    }, []);
 
     const categories = [
         {
@@ -308,6 +315,7 @@ export default function EditEvent() {
 
             setEventName(response.data?.event_name)
             setEventSlug(response.data?.event_slug)
+            setSelectedTimezone(response.data?.timezone)
             if (response.data?.category && categories.length) {
                 const matchingCategory = categories.find(
                     (category) => category.name === response.data.category
@@ -540,6 +548,7 @@ export default function EditEvent() {
         formData.append('organizer_id', oragnizerId);
         formData.append('event_name', eventName || event.event_name);
         formData.append('event_slug', eventSlug || event.event_slug);
+        formData.append('timezone', selectedTimezone || event.timezone);
         formData.append('event_type', event.event_type);
         formData.append('category', "");
         formData.append('flyer', getImagesForUpload());
@@ -740,7 +749,7 @@ export default function EditEvent() {
                     </div>
                     <div className="w-full mt-2">
                         <label className="block text-sm font-medium text-white mb-3">
-                            Event slug
+                            Custom Event URL
                         </label>
                         <input
                             type="text"
@@ -876,6 +885,50 @@ export default function EditEvent() {
                             </svg>
                         </button>
                     </div> */}
+
+                    <div className="w-full">
+                        <label className="block text-sm font-medium text-white mb-3">
+                            Timezone
+                        </label>
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <button className="w-full h-10 bg-transparent border border-white/10 rounded-lg px-4 py-2.5 text-white flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`${selectedTimezone ? 'text-white' : 'text-white/60'}`}>
+                                            {selectedTimezone || 'Select timezone'}
+                                        </span>
+                                    </div>
+                                    <svg
+                                        className="w-4 h-4"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 16 16"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M4 6L8 10L12 6"
+                                            stroke="white"
+                                            strokeOpacity="0.3"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </button>
+                            </DropdownTrigger>
+                            <DropdownContent className="bg-[#1A1A1A] border border-white/10 rounded-lg shadow-lg w-full max-h-52 overflow-y-auto">
+                                {timezones.map((timezone, index) => (
+                                    <DropdownItem
+                                        key={index}
+                                        onClick={() => setSelectedTimezone(timezone)}
+                                        className={`px-4 py-1.5 hover:bg-white/5 flex items-center gap-3`}
+                                    >
+                                        <div>
+                                            <p className="text-white font-medium text-sm">{timezone}</p>
+                                        </div>
+                                    </DropdownItem>
+                                ))}
+                            </DropdownContent>
+                        </Dropdown>
+                    </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>

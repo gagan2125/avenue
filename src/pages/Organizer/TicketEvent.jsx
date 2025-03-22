@@ -25,6 +25,7 @@ import {
     DialogDescription,
 } from "../../components/ui/Dailog";
 import { LoadScript, Autocomplete } from "@react-google-maps/api";
+import moment from 'moment-timezone';
 
 const ticketTypes = [
     {
@@ -232,6 +233,13 @@ export default function TicketEvent() {
     const [discountAmount, setDiscountAmount] = useState("");
     const [statusNotify, setStatusNotify] = useState("");
     const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+    const [timezones, setTimezones] = useState([]);
+    const [selectedTimezone, setSelectedTimezone] = useState('');
+    const [accountId, setAccountId] = useState("");
+
+    useEffect(() => {
+        setTimezones(moment.tz.names());
+    }, []);
 
     const categories = [
         {
@@ -451,6 +459,8 @@ export default function TicketEvent() {
         const loadFromLocalStorage = () => {
             const storedUserOrganizerId = localStorage.getItem("organizerId");
             const storedUserId = localStorage.getItem("userID");
+            const storedAccountID = localStorage.getItem("accountId");
+            setAccountId(storedAccountID || "");
             setOragnizerId(storedUserOrganizerId || null);
             setUserId(storedUserId || null);
         };
@@ -585,6 +595,7 @@ export default function TicketEvent() {
         formData.append('organizer_id', orgId);
         formData.append('event_name', eventName);
         formData.append('event_slug', eventSlug);
+        formData.append('timezone', selectedTimezone);
         formData.append('event_type', id === "ticketed" ? "ticket" : "rsvp");
         formData.append('category', "");
         formData.append('flyer', getImagesForUpload());
@@ -756,7 +767,7 @@ export default function TicketEvent() {
                     </div>
                     <div className="w-full mt-2">
                         <label className="block text-sm font-medium text-white mb-3">
-                            Event slug
+                            Custom Event URL
                         </label>
                         <input
                             type="text"
@@ -863,36 +874,49 @@ export default function TicketEvent() {
             description: "Set the date and time details for your event",
             fields: (
                 <div className="w-full space-y-4">
-                    {/* <div className="w-full">
+                    <div className="w-full mt-5">
                         <label className="block text-sm font-medium text-white mb-3">
-                            Choose event start & end date
+                            Timezone
                         </label>
-                        <button
-                            onClick={() => setIsDateModalOpen(true)}
-                            className="w-full bg-transparent border border-white/5 rounded-lg px-4 py-2.5 h-10 text-white/60 text-sm text-left flex items-center justify-between"
-                        >
-                            <span>
-                                {startDate ? startDate.toLocaleDateString() : "Click to select"} - {endDate ? endDate.toLocaleDateString() : "Click to select"}
-                            </span>
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 16 16"
-                                fill="none"
-                            >
-                                <path
-                                    d="M6 12L10 8L6 4"
-                                    stroke="white"
-                                    strokeOpacity="0.6"
-                                    strokeWidth="1.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            </svg>
-                        </button>
-                    </div> */}
-
+                        <Dropdown>
+                            <DropdownTrigger>
+                                <button className="w-full h-10 bg-transparent border border-white/10 rounded-lg px-4 py-2.5 text-white flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className={`${selectedTimezone ? 'text-white' : 'text-white/60'}`}>
+                                            {selectedTimezone || 'Select timezone'}
+                                        </span>
+                                    </div>
+                                    <svg
+                                        className="w-4 h-4"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        viewBox="0 0 16 16"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M4 6L8 10L12 6"
+                                            stroke="white"
+                                            strokeOpacity="0.3"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+                                </button>
+                            </DropdownTrigger>
+                            <DropdownContent className="bg-[#1A1A1A] border border-white/10 rounded-lg shadow-lg w-full max-h-52 overflow-y-auto">
+                                {timezones.map((timezone, index) => (
+                                    <DropdownItem
+                                        key={index}
+                                        onClick={() => setSelectedTimezone(timezone)}
+                                        className={`px-4 py-1.5 hover:bg-white/5 flex items-center gap-3`}
+                                    >
+                                        <div>
+                                            <p className="text-white font-medium text-sm">{timezone}</p>
+                                        </div>
+                                    </DropdownItem>
+                                ))}
+                            </DropdownContent>
+                        </Dropdown>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-white mb-3">
@@ -1132,7 +1156,7 @@ export default function TicketEvent() {
             title: "Location",
             description: "Where is your event taking place?",
             fields: (
-                <div className="w-full">
+                <div className="w-full mt-5">
                     <div className="w-full">
                         <label className="block text-sm font-medium text-white mb-3">
                             Venue name
@@ -1207,7 +1231,7 @@ export default function TicketEvent() {
             title: "Tell us more about your event",
             description: "Add description and manage event settings",
             fields: (
-                <div className="w-full space-y-4">
+                <div className="w-full space-y-4 mt-5">
                     <div className="w-full">
                         <label className="block text-sm font-medium text-white mb-3">
                             Event description
@@ -1423,7 +1447,7 @@ export default function TicketEvent() {
                     {
                         showAddForm ? (
                             <>
-                                <div className="w-full">
+                                <div className="w-full mt-5">
                                     <label className="block text-sm font-medium text-white mb-3">
                                         Ticket name
                                     </label>
@@ -1542,7 +1566,7 @@ export default function TicketEvent() {
                                 </div>
 
                                 <div className="w-full">
-                                    <label className="block text-sm font-medium text-white mb-3">
+                                    <label className="block text-sm font-medium text-white mb-1">
                                         Total available ticket quantity
                                     </label>
                                     <input
@@ -1557,6 +1581,9 @@ export default function TicketEvent() {
                                         placeholder="0"
                                         className="w-full h-10 bg-transparent border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30"
                                     />
+                                    <p className="text-white/30 text-xs mt-5">
+                                        Date and time of this event and ticket belongs to {selectedTimezone} timezone
+                                    </p>
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -2138,38 +2165,45 @@ export default function TicketEvent() {
                                             {isAdding && addStatus === "draft" ? "Loading..." : "Draft it"}
                                         </button>
 
-                                        <button
-                                            onClick={() => {
-                                                if (!userId && !oragnizerId) {
-                                                    setIsModalOpen(true);
-                                                    return;
-                                                }
+                                        {
+                                            userId && oragnizerId && !accountId ? (
+                                                <></>
+                                            ) : (
+                                                <button
+                                                    onClick={() => {
+                                                        if (!userId && !oragnizerId) {
+                                                            setIsModalOpen(true);
+                                                            return;
+                                                        }
 
-                                                if (userId && !oragnizerId) {
-                                                    setIsModalDetailsOpen(true);
-                                                    return;
-                                                }
+                                                        if (userId && !oragnizerId) {
+                                                            setIsModalDetailsOpen(true);
+                                                            return;
+                                                        }
 
-                                                if (step === 5) {
-                                                    setStatusNotify("live");
-                                                    handleAddEvent("YES", oragnizerId, "redirect");
-                                                    return;
-                                                }
+                                                        if (step === 5) {
+                                                            setStatusNotify("live");
+                                                            handleAddEvent("YES", oragnizerId, "redirect");
+                                                            return;
+                                                        }
 
-                                                if (step < 6) {
-                                                    setStep((prevStep) => prevStep + 1);
-                                                }
-                                            }}
+                                                        if (step < 6) {
+                                                            setStep((prevStep) => prevStep + 1);
+                                                        }
+                                                    }}
 
-                                            className={`px-4 py-2 w-full bg-white rounded-full h-10 font-semibold flex items-center justify-center gap-2
+                                                    className={`px-4 py-2 w-full bg-white rounded-full h-10 font-semibold flex items-center justify-center gap-2
                                                 ${step !== 5 || isAdding || !tickets.length > 0
-                                                    ? "disabled:opacity-50 cursor-not-allowed text-black"
-                                                    : "text-black"
-                                                }`}
-                                            disabled={step !== 5 || isAdding || !tickets.length > 0}
-                                        >
-                                            {isAdding && addStatus === "live" ? "Loading..." : "Publish"}
-                                        </button>
+                                                            ? "disabled:opacity-50 cursor-not-allowed text-black"
+                                                            : "text-black"
+                                                        }`}
+                                                    disabled={step !== 5 || isAdding || !tickets.length > 0}
+                                                >
+                                                    {isAdding && addStatus === "live" ? "Loading..." : "Publish"}
+                                                </button>
+                                            )
+
+                                        }
                                         <OnboardLogin
                                             isOpen={isModalOpen}
                                             isAdding={isAdding}
@@ -2518,7 +2552,7 @@ export default function TicketEvent() {
                     </DialogContent>
                 </Dialog>
 
-            </div>
+            </div >
         </>
     );
 }

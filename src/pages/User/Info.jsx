@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Calendar, Locate, MinusIcon, Navigation, PlusIcon, Share2 } from 'lucide-react';
+import { Calendar, Instagram, Locate, MinusIcon, Navigation, PlusIcon, Share2 } from 'lucide-react';
 import { IoLocationOutline, IoShareOutline } from "react-icons/io5";
 import axios from 'axios';
 import url from "../../constants/url"
@@ -7,7 +7,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { use } from 'react';
 import { Spin } from 'antd';
 import LoginModal from '../../components/modals/LoginModal';
-import { FaEnvelope, FaPhone } from 'react-icons/fa';
+import { FaEnvelope, FaInstagram, FaPhone } from 'react-icons/fa';
 
 const Info = () => {
     const { name } = useParams()
@@ -24,9 +24,28 @@ const Info = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [remain, setRemain] = useState([])
+    const [book, setBook] = useState([]);
 
     const id = localStorage.getItem('user_event_id') || {};
     const userId = localStorage.getItem('userID') || "";
+
+    const fetchBook = async () => {
+        //setLoading(true);
+        try {
+            const response = await axios.get(
+                `${url}/get-event-payment-list/${event._id}`
+            );
+            setBook(response.data);
+        } catch (error) {
+            console.error("Error fetching events:", error);
+        } finally {
+            //setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchBook();
+    }, [event._id]);
 
     const avatars = [
         { name: "CV", image: "", bgColor: "bg-gray-800" },
@@ -213,7 +232,7 @@ const Info = () => {
         const encodedName = encodeURIComponent(name);
 
         try {
-            const response = await axios.get(`${url}/event/get-event-by-name/${name}`);
+            const response = await axios.get(`${url}/event/get-event-by-name/${encodedName}`);
             console.log(response.data)
             localStorage.setItem('user_event_id', response.data?._id);
             localStorage.setItem('user_event_name', response.data?.event_name);
@@ -410,59 +429,83 @@ const Info = () => {
                                         </div>
                                     </button>
                                     {
-                                        event.show === 'YES' ? (
+                                        event.show === 'YES' && book.length > 0 ? (
                                             <>
-                                                <div className="flex space-x-[-10px] mt-6">
-                                                    {avatars.map((avatar, index) => (
+                                                <div className='mt-8'>
+                                                    <p className=' text-gray-400 w-6/7 text-xs font-inter font-semibold'>ATTENDES</p>
+                                                </div>
+                                                <div className="flex space-x-[-10px] items-center mt-2">
+                                                    {book.filter(bk => bk.user_id?.showInEvent === 'YES').slice(0, 5).reverse().map((avatar, index) => (
                                                         <div
                                                             key={index}
-                                                            className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold border border-black ${avatar.bgColor ? avatar.bgColor : ""
-                                                                }`}
+                                                            className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-sm font-semibold border border-white/20 ${avatar.bgColor ? avatar.bgColor : "bg-[#141414]"}`}
                                                             style={{
-                                                                backgroundImage: avatar.image ? `url(${avatar.image})` : "none",
+                                                                backgroundImage: avatar.user_id?.profile_image ? `url(${avatar.user_id?.profile_image})` : "none",
                                                                 backgroundSize: "cover",
                                                                 backgroundPosition: "center"
                                                             }}
                                                         >
-                                                            {!avatar.image && avatar.name}
+                                                            {!avatar.user_id?.profile_image && avatar.firstName.slice(0, 2).toUpperCase()}
                                                         </div>
                                                     ))}
-                                                </div>
-                                                <div>
-                                                    <p className='mt-1 text-gray-300 w-6/7 text-sm leading-relaxed font-inter'>5 others</p>
+
+                                                    {/* "+ more" circle explicitly centered */}
+                                                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[12px] font-semibold bg-[#141414] border border-white/20">
+                                                        + more
+                                                    </div>
                                                 </div>
                                             </>
                                         ) : ("")
                                     }
 
-                                    <div>
-                                        <p className='mt-10 text-gray-400 text-xs font-inter font-semibold'>ABOUT</p>
-                                    </div>
-                                    {event.social_profiles?.length > 0 ? (
-                                        <div className="flex space-x-[-10px] mt-6">
-                                            {event.social_profiles.map((avatar, index) => {
-                                                const initials = avatar.name
-                                                    ? avatar.name.replace(/\s+/g, "").substring(0, 2).toUpperCase()
-                                                    : "";
+                                    {event.social_profiles?.length > 0 && event.social_profiles[0].name?.trim() !== "" && event.social_profiles[0] !== "" ? (
+                                        <>
+                                            <div>
+                                                <p className='mt-8 text-gray-400 text-xs font-inter font-semibold'>LINE UP</p>
+                                            </div>
 
-                                                return (
-                                                    <div
-                                                        key={index}
-                                                        className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-semibold border border-black bg-gray-800"
-                                                        style={{
-                                                            backgroundImage: avatar.profile_photo && avatar.profile_photo !== "undefined"
-                                                                ? `url(${avatar.profile_photo})`
-                                                                : "none",
-                                                            backgroundSize: "cover",
-                                                            backgroundPosition: "center"
-                                                        }}
-                                                    >
-                                                        {(!avatar.profile_photo || avatar.profile_photo === "undefined") && initials}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
+                                            <div className="grid grid-cols-2 gap-4 mt-3">
+                                                {event.social_profiles.map((avatar, index) => {
+                                                    const initials = avatar.name
+                                                        ? avatar.name.replace(/\s+/g, "").substring(0, 2).toUpperCase()
+                                                        : "";
+
+                                                    return (
+                                                        <div key={index} className="flex items-center gap-3 bg-[#141414] p-3 rounded-lg">
+                                                            <div
+                                                                className="w-12 h-12 rounded-full bg-gray-700 flex-shrink-0 bg-center bg-cover flex items-center justify-center text-white font-semibold text-sm"
+                                                                style={{
+                                                                    backgroundImage:
+                                                                        avatar.profile_photo && avatar.profile_photo !== "undefined"
+                                                                            ? `url(${avatar.profile_photo})`
+                                                                            : "none",
+                                                                }}
+                                                            >
+                                                                {(!avatar.profile_photo || avatar.profile_photo === "undefined") && initials}
+                                                            </div>
+
+                                                            <div className="flex flex-col">
+                                                                <span className="text-white font-medium text-sm line-clamp-1 gap-y-2">{avatar.name}</span>
+                                                                {avatar.instagram_url && (
+                                                                    <a
+                                                                        href={avatar.instagram_url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="text-xs text-gray-400 hover:text-white line-clamp-1 break-all"
+                                                                    >
+                                                                        <FaInstagram size={16} />
+                                                                    </a>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
                                     ) : null}
+                                    <div>
+                                        <p className='mt-8 text-gray-400 text-xs font-inter font-semibold'>ABOUT</p>
+                                    </div>
                                     <div>
                                         <p className='mt-4 text-gray-300 w-6/7 text-sm leading-relaxed font-inter' dangerouslySetInnerHTML={{ __html: event.event_description }}></p>
                                     </div>
