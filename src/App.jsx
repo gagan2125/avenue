@@ -29,7 +29,7 @@ import OrganizerAnalytics from "./pages/Organizer/OrganizerAnalytics";
 import EventDetails from "./pages/Organizer/EventDetails";
 import OrganizeMembers from "./pages/Organizer/OrganizeMembers";
 import CreateEvent from "./pages/Organizer/CreateEvent";
-import TicketEvent from "./pages/Organizer/TicketEvent"
+import TicketEvent from "./pages/Organizer/TicketEvent";
 import EditEvent from "./pages/Organizer/EditEvent";
 import Preview from "./pages/Organizer/Preview";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -52,7 +52,7 @@ function App() {
     "/organizer/create-ticket/ticketedevent",
     "/organizer/edit-event",
     "/privacy-policy",
-    "/terms-and-conditions"
+    "/terms-and-conditions",
   ];
   const hideFooter = [
     "/login",
@@ -69,12 +69,12 @@ function App() {
     "/organizer/events",
     "/organizer/wallet",
     "/organizer/members",
-    "/organizer/analytics",
     "/organizer/create-event",
     "/organizer/create-ticket/ticketedevent",
     "/organizer/edit-event",
     "/privacy-policy",
-    "/terms-and-conditions"
+    "/terms-and-conditions",
+    "/stripe-success",
   ];
 
   const shouldHideNavbarAndFooter = hideHeader.some((path) =>
@@ -146,7 +146,7 @@ function App() {
           />
         </Routes>
         {!shouldHideFooter && <Footer />}
-      </div >
+      </div>
     </>
   );
 }
