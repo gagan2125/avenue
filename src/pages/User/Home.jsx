@@ -176,11 +176,9 @@ const Home = () => {
     const minPrice = sliderValue ? sliderValue[0] : null;
     const maxPrice = sliderValue ? sliderValue[1] : null;
 
-    const yesterday = new Date();
-yesterday.setDate(yesterday.getDate() - 1);
-const allowedDate = getDateOnly(yesterday);
-const isAllowedEvent = eventDate >= allowedDate;
+    const currentDate = getDateOnly(new Date());  // Compare dates properly (string or timestamp)
 
+    const isFutureEvent = eventDate >= currentDate;
 
     // const isWithinPriceRange =
     //   (minPrice === null || (event.ticket_start_price || 0) >= minPrice) &&
@@ -226,7 +224,7 @@ const isAllowedEvent = eventDate >= allowedDate;
       isWithinPriceRange &&
       isWithinDateRange &&
       isFreeEvent &&
-      isAllowedEvent
+      isFutureEvent
     );
   });
 
