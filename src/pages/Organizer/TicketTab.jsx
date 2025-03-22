@@ -120,7 +120,7 @@ const ticketTypeFormSchema = z.object({
   max_count: z.number().min(1, "Maximum purchase must be at least 1"),
 });
 
-export default function TicketTab({ event }) {
+export default function TicketTab({ event, onTicketStatusChange }) {
   const [tickets, setTickets] = useState(event?.tickets || []);
   const [newTicketTypeDialogOpen, setNewTicketTypeDialogOpen] = useState(false);
   const [editTicketDialogOpen, setEditTicketDialogOpen] = useState(false);
@@ -294,11 +294,9 @@ export default function TicketTab({ event }) {
       return;
     }
     try {
-      // Close the renew dialog immediately
       setRenewDialogOpen(false);
-      // Show loader in the tickets tab
       setIsRefreshing(true);
-
+  
       const response = await fetch(
         `${url}/event/update-ticket-status/${ticketData.ticket_id}`,
         {
@@ -311,22 +309,19 @@ export default function TicketTab({ event }) {
         }
       );
       const data = await response.json();
+  
       if (response.ok) {
-        // Update the local tickets state so that the ticket's status becomes "active"
-        setTickets((prevTickets) =>
-          prevTickets.map((ticket) =>
-            ticket.ticket_id === ticketData._id
-              ? { ...ticket, status: "active" }
-              : ticket
+        const updated = { ...ticketData, status: "active" };
+        setTickets(prev =>
+          prev.map(ticket =>
+            ticket.ticket_id === ticketData.ticket_id ? updated : ticket
           )
         );
-        // Hide the loader after the update
+        onTicketStatusChange?.(updated);
         setIsRefreshing(false);
-        // Wait 300 ms before showing the success notification
+  
         setTimeout(() => {
-          setNotificationMessage(
-            `${ticketData.ticket_name} ticket sales has been renewed.`
-          );
+          setNotificationMessage(`${ticketData.ticket_name} ticket sales has been renewed.`);
           setShowActivateNotification(true);
           setTimeout(() => setShowActivateNotification(false), 3000);
         }, 300);
@@ -343,18 +338,16 @@ export default function TicketTab({ event }) {
       setTimeout(() => setShowInActiveNotification(false), 3000);
     }
   };
-
+  
   const confirmPause = async () => {
     if (!ticketData?.ticket_id || !event._id) {
       console.error("Missing ticket_id or event_id");
       return;
     }
     try {
-      // Close the pause dialog immediately
       setPauseDialogOpen(false);
-      // Show loader in the tickets tab
       setIsRefreshing(true);
-
+  
       const response = await fetch(
         `${url}/event/update-ticket-status/${ticketData.ticket_id}`,
         {
@@ -367,21 +360,19 @@ export default function TicketTab({ event }) {
         }
       );
       const data = await response.json();
+  
       if (response.ok) {
-        // Update the local tickets state so that the ticket's status becomes "inactive"
-        setTickets((prev) =>
-          prev.map((ticket) =>
-            ticket.ticket_id === ticketData._id
-              ? { ...ticket, status: "inactive" }
-              : ticket
+        const updated = { ...ticketData, status: "inactive" };
+        setTickets(prev =>
+          prev.map(ticket =>
+            ticket.ticket_id === ticketData.ticket_id ? updated : ticket
           )
         );
+        onTicketStatusChange?.(updated);
         setIsRefreshing(false);
-        // Wait 300 ms before showing the success notification
+  
         setTimeout(() => {
-          setNotificationMessage(
-            `${ticketData.ticket_name} ticket sales has been paused.`
-          );
+          setNotificationMessage(`${ticketData.ticket_name} ticket sales has been paused.`);
           setShowActivateNotification(true);
           setTimeout(() => setShowActivateNotification(false), 3000);
         }, 300);
@@ -398,6 +389,7 @@ export default function TicketTab({ event }) {
       setTimeout(() => setShowInActiveNotification(false), 3000);
     }
   };
+  
 
   const handlePause = (ticket) => {
     setTicketToPause(ticket);
@@ -525,9 +517,9 @@ export default function TicketTab({ event }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
         {isRefreshing ? (
-          <div className="w-full flex justify-center items-center p-4">
-            <Loader />
-          </div>
+          <div className="col-span-2 w-full flex justify-center items-center p-4">
+          <Loader />
+        </div>
         ) : (
         //   event?.tickets?.map((ticket) => {
             tickets.map((ticket) => {

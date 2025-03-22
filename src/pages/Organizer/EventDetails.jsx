@@ -138,17 +138,32 @@ export default function EventDetails() {
   const [soldTickets, setSoldTickets] = useState(0);
   const [remainCount, setRemainCount] = useState(0);
   const [ticketData, setTicketData] = useState(null);
-  const [showActivateNotification, setShowActivateNotification] =
-    useState(false);
-  const [showInActiveNotification, setShowInActiveNotification] =
-    useState(false);
+  const [showActivateNotification, setShowActivateNotification] = useState(false);
+  const [showActivatesNotification, setShowActivatesNotification] = useState(false);
+  const [showSalesNotification, setShowSalesNotification] = useState(false);
+  const [showInActiveNotification, setShowInActiveNotification] = useState(false);
   const [renewDialogOpen, setRenewDialogOpen] = useState(false);
   const [ticketToRenew, setTicketToRenew] = useState(null);
   const [notificationEmail, setNotificationEmail] = useState("");
   const [notificationMessage, setNotificationMessage] = useState("");
-
   const [ticketCount, setTicketCount] = useState(null);
+  const [organizerId, setOrganizerId] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  useEffect(() => {
+    const stored = localStorage.getItem("organizerId");
+    setOrganizerId(stored);
+  }, []);
+
+  const handleTicketStatusChange = (updatedTicket) => {
+    setEvent(prev => ({
+      ...prev,
+      tickets: prev.tickets.map(t =>
+        t.ticket_id === updatedTicket.ticket_id ? updatedTicket : t
+      ),
+    }));
+  };
+  
   const scrollContainerRef = useRef(null);
   const handleIncrement = () => {
     if (!ticketData) return;
@@ -167,6 +182,41 @@ export default function EventDetails() {
   };
 
   const handleDecrement = () => {
+    if (!ticketData) return;
+    const current =
+      ticketCount === null
+        ? ticketData.min_count
+          ? Number(ticketData.min_count)
+          : 1
+        : ticketCount;
+    if (current > 1) {
+      const newCount = current - 1;
+      setTicketCount(newCount);
+      setTicketData({ ...ticketData, count: newCount });
+    } else {
+      // Do not let count go below 1.
+      setTicketCount(1);
+      setTicketData({ ...ticketData, count: 1 });
+    }
+  };
+
+  const handleIncrements = () => {
+    if (!ticketData) return;
+    const current =
+      ticketCount === null
+        ? ticketData.min_count
+          ? Number(ticketData.min_count)
+          : 1
+        : ticketCount;
+    const available = remainCount[ticketData.ticket_name] || 0;
+    if (current < available) {
+      const newCount = current + 1;
+      setTicketCount(newCount);
+      setTicketData({ ...ticketData, count: newCount });
+    }
+  };
+
+  const handleDecrements = () => {
     if (!ticketData) return;
     const current =
       ticketCount === null
@@ -230,6 +280,8 @@ export default function EventDetails() {
           setNotificationMessage(
             `${ticketData.ticket_name} ticket sales has been renewed.`
           );
+          setShowSalesNotification(true);
+setTimeout(() => setShowSalesNotification(false), 3000);
           setShowActivateNotification(true);
           setTimeout(() => setShowActivateNotification(false), 3000);
         }, 300);
@@ -376,7 +428,7 @@ export default function EventDetails() {
   const onSubmit = async (data) => {
     try {
       const formData = {
-        organizer_id: organizerId, // corrected spelling if needed
+        organizer_id: organizerId,
         name: data.fullName,
         email: data.email,
         phone_number: "+1" + data.phoneNumber,
@@ -436,16 +488,62 @@ export default function EventDetails() {
       setTimeout(() => setShowInActiveNotification(false), 3000);
     }
   };
-  const onValid = (data) => {
-    console.log("Form data:", data);
-    setShowActivateNotification(true);
-    setTimeout(() => setShowActivateNotification(false), 3000);
-    setNotificationEmail(data.email);
+  const onValid = async (data) => {
+    try {
+      if (!ticketData || !event) {
+        console.error("Missing ticket or event data");
+        setShowInActiveNotification(true);
+        setTimeout(() => setShowInActiveNotification(false), 3000);
+        return;
+      }
 
-    // Close the dialog immediately after successful submission
-    setNewMemberDialogOpen(false);
+      // Split full name into first and last names
+      const names = data.fullName.trim().split(" ");
+      const firstName = names[0];
+      const lastName = names.slice(1).join(" ");
 
-    reset();
+      const payload = {
+        event_id: event._id,
+        ticket_id: ticketData._id,
+        email: data.email,
+        qty: ticketCount,
+        date: new Date().toISOString(),
+        firstName,
+        lastName,
+        phoneNumber: "+1" + data.phoneNumber, // Make sure this is included
+
+        tickets: ticketData,
+        
+        // userId: user_id
+        
+      };
+      // console.log("POST URL:", `${url}/complimentary/add-complimentary`);
+
+      console.log(payload);
+      const response = await fetch(`${url}/complimentary/add-complimentary`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Failed to send ticket:", errorData);
+        setShowInActiveNotification(true);
+        setTimeout(() => setShowInActiveNotification(false), 3000);
+        return;
+      }
+
+      setNotificationEmail(data.email);
+      setNewMemberDialogOpen(false);
+      setShowActivateNotification(true);
+      setTimeout(() => setShowActivateNotification(false), 3000);
+      reset();
+    } catch (error) {
+      console.error("Error sending ticket:", error);
+      setShowInActiveNotification(true);
+      setTimeout(() => setShowInActiveNotification(false), 3000);
+    }
   };
 
   const liveEvents = events.filter((event) => {
@@ -468,7 +566,7 @@ export default function EventDetails() {
       setAssignLoading(false);
     }
   };
-
+ 
   const handleRemoveEvent = async (eventId, data) => {
     try {
       const updatedEvents = assignEvents.filter(
@@ -604,21 +702,6 @@ export default function EventDetails() {
           <div className="rounded-xl border border-white/10 grid gap-6 p-4">
             <p className="text-white/50 font-semibold">ABOUT</p>
             <div className="flex items-center gap-x-3">
-              {/* <div className="bg-white/[0.06] h-8 p-2 px-2.5 w-fit rounded-full flex items-center justify-start gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 16 16"
-                  fill="none"
-                >
-                  <path
-                    d="M12.6126 1.2575C12.9079 1.05971 13.2626 0.970506 13.6163 1.00509C13.97 1.03968 14.3007 1.19591 14.5521 1.44714C14.8034 1.69837 14.9598 2.02903 14.9946 2.3827C15.0293 2.73638 14.9403 3.09115 14.7426 3.3865L12.8376 6.2425C11.9655 7.5507 10.7273 8.57294 9.27762 9.1815C9.07858 8.61307 8.75408 8.09677 8.32821 7.6709C7.90235 7.24504 7.38604 6.92054 6.81762 6.7215C7.42645 5.27168 8.44905 4.03343 9.75762 3.1615L12.6126 1.2575ZM5.49962 7.9995C4.83658 7.9995 4.2007 8.26289 3.73185 8.73173C3.26301 9.20057 2.99962 9.83645 2.99962 10.4995C2.99974 10.5826 2.97916 10.6644 2.93973 10.7375C2.9003 10.8107 2.84327 10.8728 2.77379 10.9184C2.70431 10.9639 2.62458 10.9915 2.54179 10.9985C2.459 11.0055 2.37577 10.9917 2.29962 10.9585C2.16033 10.8973 2.00573 10.88 1.85634 10.9087C1.70695 10.9374 1.56984 11.0109 1.46319 11.1194C1.35654 11.2279 1.28541 11.3663 1.25923 11.5161C1.23306 11.666 1.25307 11.8203 1.31662 11.9585C1.64897 12.6853 2.22003 13.2765 2.93489 13.6337C3.64975 13.991 4.46536 14.0929 5.24614 13.9224C6.02693 13.752 6.72586 13.3195 7.22678 12.6968C7.72769 12.074 8.00042 11.2987 7.99962 10.4995C7.99962 9.83645 7.73623 9.20057 7.26739 8.73173C6.79855 8.26289 6.16266 7.9995 5.49962 7.9995Z"
-                    fill="#A3E635"
-                  />
-                </svg>
-                <span>{event.category}</span>
-              </div> */}
               <div className="bg-white/[0.06] h-8 p-2 px-2.5 w-fit rounded-full flex items-center justify-start gap-2">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -726,7 +809,7 @@ export default function EventDetails() {
           />
         </svg>
       ),
-      content: <TicketTab event={event} />,
+      content: <TicketTab event={event}onTicketStatusChange={handleTicketStatusChange} />,
     },
     {
       id: "customers",
@@ -1110,6 +1193,7 @@ export default function EventDetails() {
                           </div>
                         </DropdownItem>
                         <DropdownItem
+                          // onClick={() => setNewMemberDialogOpen(true)}
                           onClick={() => setNewSaleDialogOpen(true)}
                           className="px-4 py-2 hover:bg-white/5 text-white"
                         >
@@ -1165,10 +1249,58 @@ export default function EventDetails() {
                       fill="#10B981"
                     />
                   </svg>
-                  <p className="text-sm">{notificationMessage}</p>
+                  <p className="text-sm">
+                    Comp ticket has been sent to {notificationEmail}
+                  </p>{" "}
                 </div>
                 <button
                   onClick={() => setShowActivateNotification(false)}
+                  className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                  >
+                    <path
+                      d="M5.28033 4.21967C4.98744 3.92678 4.51256 3.92678 4.21967 4.21967C3.92678 4.51256 3.92678 4.98744 4.21967 5.28033L6.93934 8L4.21967 10.7197C3.92678 11.0126 3.92678 11.4874 4.21967 11.7803C4.51256 12.0732 4.98744 12.0732 5.28033 11.7803L8 9.06066L10.7197 11.7803C11.0126 12.0732 11.4874 12.0732 11.7803 11.7803C12.0732 11.4874 12.0732 11.0126 11.7803 10.7197L9.06066 8L11.7803 5.28033C12.0732 4.98744 12.0732 4.51256 11.7803 4.21967C11.4874 3.92678 11.0126 3.92678 10.7197 4.21967L8 6.93934L5.28033 4.21967Z"
+                      fill="white"
+                    />
+                  </svg>
+                </button>
+              </motion.div>
+            )}
+            {showSalesNotification && (
+              <motion.div
+                initial={{ y: -50, opacity: 0, scale: 0.9 }}
+                animate={{ y: 0, opacity: 1, scale: 1 }}
+                exit={{ y: -50, opacity: 0, scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 150, damping: 15 }}
+                className="fixed top-20 sm:top-10 inset-x-0 mx-auto z-[1000] w-fit backdrop-blur-md text-white p-3 pl-4 rounded-lg flex items-center gap-2 border border-white/10 shadow-lg max-w-[400px] justify-between"
+              >
+                <div className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M8 15C9.85652 15 11.637 14.2625 12.9497 12.9497C14.2625 11.637 15 9.85652 15 8C15 6.14348 14.2625 4.36301 12.9497 3.05025C11.637 1.7375 9.85652 1 8 1C6.14348 1 4.36301 1.7375 3.05025 3.05025C1.7375 4.36301 1 6.14348 1 8C1 9.85652 1.7375 11.637 3.05025 12.9497C4.36301 14.2625 6.14348 15 8 15ZM11.844 6.209C11.9657 6.05146 12.0199 5.85202 11.9946 5.65454C11.9693 5.45706 11.8665 5.27773 11.709 5.156C11.5515 5.03427 11.352 4.9801 11.1545 5.00542C10.9571 5.03073 10.7777 5.13346 10.656 5.291L6.956 10.081L5.307 8.248C5.24174 8.17247 5.16207 8.11073 5.07264 8.06639C4.98322 8.02205 4.88584 7.99601 4.78622 7.98978C4.6866 7.98356 4.58674 7.99729 4.4925 8.03016C4.39825 8.06303 4.31151 8.11438 4.23737 8.1812C4.16322 8.24803 4.10316 8.32898 4.06071 8.41931C4.01825 8.50965 3.99425 8.60755 3.99012 8.70728C3.98599 8.807 4.00181 8.90656 4.03664 9.00009C4.07148 9.09363 4.12464 9.17927 4.193 9.252L6.443 11.752C6.51649 11.8335 6.60697 11.8979 6.70806 11.9406C6.80915 11.9833 6.91838 12.0034 7.02805 11.9993C7.13772 11.9952 7.24515 11.967 7.34277 11.9169C7.44038 11.8667 7.5258 11.7958 7.593 11.709L11.844 6.209Z"
+                      fill="#10B981"
+                    />
+                  </svg>
+                  <p className="text-sm">
+                  {notificationMessage}
+                  </p>{" "}
+                </div>
+                <button
+                  onClick={() => setShowSalesNotification(false)}
                   className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
                 >
                   <svg
@@ -1210,7 +1342,7 @@ export default function EventDetails() {
                       fillOpacity="0.4"
                     />
                   </svg>{" "}
-                  <p className="text-sm">Failed to renew ticket sales.</p>
+                  <p className="text-sm">Failed to sent ticket</p>
                 </div>
                 <button
                   onClick={() => setShowInActiveNotification(false)}
@@ -1237,408 +1369,435 @@ export default function EventDetails() {
               className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
             >
               <DialogContent className="overflow-y-auto min-h-[90vh] hide-scrollbar relative !gap-0">
-                {/* Single scrollable form container */}
-                <form
-                  onSubmit={handleSubmit(onValid)}
-                  style={{ maxHeight: "calc(90vh - 150px)" }}
-                >
-                  {/* The close button is moved inside the form */}
-                  {/* Header Area */}
-                  <div className="flex flex-col gap-y-3 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
-                    {showTicketCards ? (
-                      <>
-                        <DialogTitle>Select a ticket</DialogTitle>
-                        <DialogDescription>
-                          Choose a complimentary ticket from below to proceed.
-                        </DialogDescription>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setShowTicketCards(true)}
-                          className="flex items-center gap-2 text-sm h-8 w-fit rounded-md border border-white/10 border-dashed px-2 text-white/70 hover:text-white transition-colors"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M19 12H5M12 19l-7-7 7-7" />
-                          </svg>
-                          Back
-                        </button>
-                        <DialogTitle>Send a complimentary ticket</DialogTitle>
-                        <DialogDescription>
-                          Provide your details to send a free ticket for your
-                          event.
-                        </DialogDescription>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Main Content Area */}
-                  {showTicketCards ? (
-                    // Page 1: Grid of Ticket Cards
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 gap-4 pt-4">
-                        {event?.tickets?.map((ticket) => {
-                          const totalTickets =
-                            (soldTickets[ticket.ticket_name] || 0) +
-                            (remainCount[ticket.ticket_name] || 0);
-                          const soldPercentage =
-                            totalTickets > 0
-                              ? ((soldTickets[ticket.ticket_name] || 0) /
-                                  totalTickets) *
-                                100
-                              : 0;
-                          return (
-                            <div
-                              key={ticket.id}
-                              className="bg-white/[0.03] rounded-2xl space-y-2"
-                            >
-                              <div className="flex w-full">
-                                <div className="w-full">
-                                  <div className="w-full flex items-center justify-between p-4 border-b-2 border-dashed border-[#0F0F0F]">
-                                    <div className="flex items-center gap-2">
-                                      {ticketTypesIcons["regular"]}
-                                      <span className="flex items-center uppercase text-sm">
-                                        {ticket.ticket_name}
-                                      </span>
-                                    </div>
-                                    <div className="text-white/70">
-                                      <div className="flex items-center gap-3">
-                                        <div className="flex gap-0.5">
-                                          {[...Array(4)].map((_, i) => {
-                                            const barFillPercentage = Math.min(
-                                              Math.max(
-                                                soldPercentage - i * 25,
-                                                0
-                                              ),
-                                              25
-                                            );
-                                            let barColor;
-                                            if (soldPercentage <= 25) {
-                                              barColor = "#10B981";
-                                            } else if (soldPercentage <= 50) {
-                                              barColor = "#A3E635";
-                                            } else {
-                                              barColor = "#F97316";
-                                            }
-                                            return (
-                                              <div
-                                                key={i}
-                                                className="h-4 w-1.5 rounded-full bg-white/10 overflow-hidden"
-                                              >
-                                                <div
-                                                  className="h-full transition-all duration-300 ease-out"
-                                                  style={{
-                                                    transform: `scaleY(${
-                                                      barFillPercentage / 25
-                                                    })`,
-                                                    transformOrigin: "bottom",
-                                                    backgroundColor: barColor,
-                                                  }}
-                                                />
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                        <span className="text-sm">
-                                          {soldTickets[ticket.ticket_name] || 0}
-                                          /{totalTickets || 0}
-                                        </span>
-                                      </div>
-                                      {/* <span className="block mt-1 text-sm">
-                                        {totalTickets -
-                                          (soldTickets[ticket.ticket_name] ||
-                                            0)}{" "}
-                                        Available
-                                      </span> */}
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col items-baseline gap-y-2.5 p-4">
-                                    <p className="text-2xl font-bold">
-                                      {ticket.status === "paused" && (
-                                        <span className="text-white/70">
-                                          Paused –{" "}
-                                        </span>
-                                      )}
-                                      <span className="text-white/70">$ </span>
-                                      {ticket.price}
-                                    </p>
-                                    <p
-                                      className="text-white/70"
-                                      dangerouslySetInnerHTML={{
-                                        __html: ticket.ticket_description,
-                                      }}
-                                    ></p>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between p-4">
-                                {ticket.status === "inactive" ? (
-                                  <button
-                                    onClick={() => {
-                                      handleRenewSales(ticket);
-                                      setTicketData(ticket);
-                                    }}
-                                    className="bg-[#0F0F0F] rounded-full px-4 py-2 h-10 flex items-center gap-2"
-                                  >
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      width="16"
-                                      height="16"
-                                      viewBox="0 0 16 16"
-                                      fill="none"
-                                    >
-                                      <path
-                                        d="M3 3.73173C3 3.46303 3.07242 3.19929 3.20934 2.96809C3.34626 2.73689 3.54277 2.54671 3.77833 2.41744C4.01389 2.28816 4.27985 2.22453 4.54841 2.2332C4.81697 2.24187 5.07827 2.32253 5.305 2.46673L12.011 6.73373C12.2239 6.86921 12.3992 7.0562 12.5206 7.27741C12.642 7.49862 12.7057 7.74688 12.7057 7.99923C12.7057 8.25158 12.642 8.49984 12.5206 8.72105C12.3992 8.94226 12.2239 9.12925 12.011 9.26473L5.305 13.5327C5.0782 13.677 4.81681 13.7576 4.54816 13.7663C4.27951 13.7749 4.01348 13.7112 3.77789 13.5818C3.5423 13.4524 3.3458 13.2621 3.20896 13.0307C3.07211 12.7994 2.99994 12.5355 3 12.2667V3.73173Z"
-                                        fill="white"
-                                        fillOpacity="0.5"
-                                      />
-                                    </svg>
-                                    <span>Renew sales</span>
-                                  </button>
-                                ) : soldPercentage === 100 ? (
-                                  <button
-                                    disabled
-                                    className="bg-[#2A2A2A] text-[#AAAAAA] border border-[#333333] rounded-full px-4 py-2 h-10 flex items-center gap-2 cursor-not-allowed"
-                                  >
-                                    <span>Sold Out</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => {
-                                      setTicketData(ticket);
-                                      setShowTicketCards(false);
-                                      const initCount = ticket.min_count
-                                        ? Number(ticket.min_count)
-                                        : 1;
-                                      setTicketCount(initCount);
-                                    }}
-                                    className="bg-[#0F0F0F] rounded-full px-4 py-2 h-10 flex items-center gap-2"
-                                  >
-                                    <span>Select ticket</span>
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                <div>
+                  {isRefreshing ? (
+                    <div className="space-y-4">
+                      <div className="bg-[#151515] p-4 rounded-lg border border-white/10 animate-pulse">
+                        <div className="space-y-3">
+                          <div className="h-4 bg-white/10 rounded w-3/4"></div>
+                          <div className="h-4 bg-white/10 rounded w-1/2"></div>
+                          <div className="h-4 bg-white/10 rounded w-1/4"></div>
+                        </div>
                       </div>
                     </div>
                   ) : (
-                    // Page 2: Form for entering user details
-                    <div className="p-6">
-                      <div className="flex flex-col gap-4">
-                        <div className="mt-4">
-                          <span className="text-sm font-medium text-white block mb-2">
-                            Quantity
-                          </span>
-                          <div className="flex items-center justify-between">
-                            {/* Left: Quantity Selector */}
-                            <div className="flex items-center bg-primary px-1 py-1 rounded-full w-max">
-                              <button
-                                onClick={handleDecrement}
-                                className={`p-3 font-inter bg-[#141414] text-white rounded-full ${
-                                  ticketCount === null
-                                    ? "cursor-not-allowed opacity-50"
-                                    : "hover:bg-gray-500 hover:bg-opacity-30"
-                                }`}
-                                disabled={ticketCount === null}
+                    <form
+                      onSubmit={handleSubmit(onValid)}
+                      style={{ maxHeight: "calc(90vh - 150px)" }}
+                    >
+                      {/* The close button is moved inside the form */}
+                      {/* Header Area */}
+                      <div className="flex flex-col gap-y-3 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
+                        {showTicketCards ? (
+                          <>
+                            <DialogTitle>Select a ticket</DialogTitle>
+                            <DialogDescription>
+                              Choose a complimentary ticket from below to
+                              proceed.
+                            </DialogDescription>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => setShowTicketCards(true)}
+                              className="flex items-center gap-2 text-sm h-8 w-fit rounded-md border border-white/10 border-dashed px-2 text-white/70 hover:text-white transition-colors"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
                               >
-                                <MinusIcon width={16} height={16} />
-                              </button>
-                              <span className="mx-4 font-inter">
-                                {ticketCount === null
-                                  ? "Choose tickets"
-                                  : `${ticketCount} ticket${
-                                      ticketCount > 1 ? "s" : ""
-                                    }`}
-                              </span>
-                              <button
-                                onClick={handleIncrement}
-                                className="p-3 bg-[#141414] text-white rounded-full hover:bg-gray-500 hover:bg-opacity-30"
-                              >
-                                <PlusIcon width={16} height={16} />
-                              </button>
-                            </div>
+                                <path d="M19 12H5M12 19l-7-7 7-7" />
+                              </svg>
+                              Back
+                            </button>
+                            <DialogTitle>
+                              Send a complimentary ticket
+                            </DialogTitle>
+                            <DialogDescription>
+                              Provide your details to send a free ticket for
+                              your event.
+                            </DialogDescription>
+                          </>
+                        )}
+                      </div>
 
-                            {/* Right: Progress Bars & Count */}
-                            {ticketData &&
-                              (() => {
-                                const totalTickets =
-                                  (soldTickets[ticketData.ticket_name] || 0) +
-                                  (remainCount[ticketData.ticket_name] || 0);
-                                const soldPercentage =
-                                  totalTickets > 0
-                                    ? ((soldTickets[ticketData.ticket_name] ||
-                                        0) /
-                                        totalTickets) *
-                                      100
-                                    : 0;
-                                return (
-                                  <div className="text-white/70 text-right">
-                                    <div className="flex items-center gap-3 justify-end">
-                                      <div className="flex gap-0.5">
-                                        {[...Array(4)].map((_, i) => {
-                                          const barFillPercentage = Math.min(
-                                            Math.max(
-                                              soldPercentage - i * 25,
-                                              0
-                                            ),
-                                            25
-                                          );
-                                          let barColor;
-                                          if (soldPercentage <= 25) {
-                                            barColor = "#10B981";
-                                          } else if (soldPercentage <= 50) {
-                                            barColor = "#A3E635";
-                                          } else {
-                                            barColor = "#F97316";
-                                          }
-                                          return (
-                                            <div
-                                              key={i}
-                                              className="h-4 w-1.5 rounded-full bg-white/10 overflow-hidden"
-                                            >
-                                              <div
-                                                className="h-full transition-all duration-300 ease-out"
-                                                style={{
-                                                  transform: `scaleY(${
-                                                    barFillPercentage / 25
-                                                  })`,
-                                                  transformOrigin: "bottom",
-                                                  backgroundColor: barColor,
-                                                }}
-                                              />
+                      {/* Main Content Area */}
+                      {showTicketCards ? (
+                        // Page 1: Grid of Ticket Cards
+                        <div className="p-6">
+                          <div className="grid grid-cols-1 gap-4 pt-4">
+                            {event?.tickets?.map((ticket) => {
+                              const totalTickets =
+                                (soldTickets[ticket.ticket_name] || 0) +
+                                (remainCount[ticket.ticket_name] || 0);
+                              const soldPercentage =
+                                totalTickets > 0
+                                  ? ((soldTickets[ticket.ticket_name] || 0) /
+                                      totalTickets) *
+                                    100
+                                  : 0;
+                              return (
+                                <div
+                                  key={ticket.id}
+                                  className="bg-white/[0.03] rounded-2xl space-y-2"
+                                >
+                                  <div className="flex w-full">
+                                    <div className="w-full">
+                                      <div className="w-full flex items-center justify-between p-4 border-b-2 border-dashed border-[#0F0F0F]">
+                                        <div className="flex items-center gap-2">
+                                          {ticketTypesIcons["regular"]}
+                                          <span className="flex items-center uppercase text-sm">
+                                            {ticket.ticket_name}
+                                          </span>
+                                        </div>
+                                        <div className="text-white/70">
+                                          <div className="flex items-center gap-3">
+                                            <div className="flex gap-0.5">
+                                              {[...Array(4)].map((_, i) => {
+                                                const barFillPercentage =
+                                                  Math.min(
+                                                    Math.max(
+                                                      soldPercentage - i * 25,
+                                                      0
+                                                    ),
+                                                    25
+                                                  );
+                                                let barColor;
+                                                if (soldPercentage <= 25) {
+                                                  barColor = "#10B981";
+                                                } else if (
+                                                  soldPercentage <= 50
+                                                ) {
+                                                  barColor = "#A3E635";
+                                                } else {
+                                                  barColor = "#F97316";
+                                                }
+                                                return (
+                                                  <div
+                                                    key={i}
+                                                    className="h-4 w-1.5 rounded-full bg-white/10 overflow-hidden"
+                                                  >
+                                                    <div
+                                                      className="h-full transition-all duration-300 ease-out"
+                                                      style={{
+                                                        transform: `scaleY(${
+                                                          barFillPercentage / 25
+                                                        })`,
+                                                        transformOrigin:
+                                                          "bottom",
+                                                        backgroundColor:
+                                                          barColor,
+                                                      }}
+                                                    />
+                                                  </div>
+                                                );
+                                              })}
                                             </div>
-                                          );
-                                        })}
+                                            <span className="text-sm">
+                                              {soldTickets[
+                                                ticket.ticket_name
+                                              ] || 0}
+                                              /{totalTickets || 0}
+                                            </span>
+                                          </div>
+                                        </div>
                                       </div>
-                                      <span className="text-sm">
-                                        {soldTickets[ticketData.ticket_name] ||
-                                          0}
-                                        /{totalTickets || 0}
-                                      </span>
+                                      <div className="flex flex-col items-baseline gap-y-2.5 p-4">
+                                        <p className="text-2xl font-bold">
+                                          {ticket.status === "paused" && (
+                                            <span className="text-white/70">
+                                              Paused –{" "}
+                                            </span>
+                                          )}
+                                          <span className="text-white/70">
+                                            ${" "}
+                                          </span>
+                                          {ticket.price}
+                                        </p>
+                                        <p
+                                          className="text-white/70"
+                                          dangerouslySetInnerHTML={{
+                                            __html: ticket.ticket_description,
+                                          }}
+                                        ></p>
+                                      </div>
                                     </div>
-                                    <span className="block mt-1 text-sm">
-                                      {totalTickets -
-                                        (soldTickets[ticketData.ticket_name] ||
-                                          0)}{" "}
-                                      Available
-                                    </span>
                                   </div>
-                                );
-                              })()}
+                                  <div className="flex items-center justify-between p-4">
+                                    {ticket.status === "inactive" ? (
+                                      <button
+                                        onClick={() => {
+                                          handleRenewSales(ticket);
+                                          setTicketData(ticket);
+                                        }}
+                                        className="bg-[#0F0F0F] rounded-full px-4 py-2 h-10 flex items-center gap-2"
+                                      >
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="16"
+                                          height="16"
+                                          viewBox="0 0 16 16"
+                                          fill="none"
+                                        >
+                                          <path
+                                            d="M3 3.73173C3 3.46303 3.07242 3.19929 3.20934 2.96809C3.34626 2.73689 3.54277 2.54671 3.77833 2.41744C4.01389 2.28816 4.27985 2.22453 4.54841 2.2332C4.81697 2.24187 5.07827 2.32253 5.305 2.46673L12.011 6.73373C12.2239 6.86921 12.3992 7.0562 12.5206 7.27741C12.642 7.49862 12.7057 7.74688 12.7057 7.99923C12.7057 8.25158 12.642 8.49984 12.5206 8.72105C12.3992 8.94226 12.2239 9.12925 12.011 9.26473L5.305 13.5327C5.0782 13.677 4.81681 13.7576 4.54816 13.7663C4.27951 13.7749 4.01348 13.7112 3.77789 13.5818C3.5423 13.4524 3.3458 13.2621 3.20896 13.0307C3.07211 12.7994 2.99994 12.5355 3 12.2667V3.73173Z"
+                                            fill="white"
+                                            fillOpacity="0.5"
+                                          />
+                                        </svg>
+                                        <span>Renew sales</span>
+                                      </button>
+                                    ) : soldPercentage === 100 ? (
+                                      <button
+                                        disabled
+                                        className="bg-[#2A2A2A] text-[#AAAAAA] border border-[#333333] rounded-full px-4 py-2 h-10 flex items-center gap-2 cursor-not-allowed"
+                                      >
+                                        <span>Sold Out</span>
+                                      </button>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          setTicketData(ticket);
+                                          setShowTicketCards(false);
+                                          const initCount = ticket.min_count
+                                            ? Number(ticket.min_count)
+                                            : 1;
+                                          setTicketCount(initCount);
+                                        }}
+                                        className="bg-[#0F0F0F] rounded-full px-4 py-2 h-10 flex items-center gap-2"
+                                      >
+                                        <span>Select ticket</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
+                      ) : (
+                        // Page 2: Form for entering user details
+                        <div className="p-6">
+                          <div className="flex flex-col gap-4">
+                            <div className="mt-4">
+                              <span className="text-sm font-medium text-white block mb-2">
+                                Quantity
+                              </span>
+                              <div className="flex items-center justify-between">
+                                {/* Left: Quantity Selector */}
+                                <div className="flex items-center bg-primary px-1 py-1 rounded-full w-max">
+                                  <button
+                                    onClick={handleDecrement}
+                                    className={`p-3 font-inter bg-[#141414] text-white rounded-full ${
+                                      ticketCount === null
+                                        ? "cursor-not-allowed opacity-50"
+                                        : "hover:bg-gray-500 hover:bg-opacity-30"
+                                    }`}
+                                    disabled={ticketCount === null}
+                                  >
+                                    <MinusIcon width={16} height={16} />
+                                  </button>
+                                  <span className="mx-4 font-inter">
+                                    {ticketCount === null
+                                      ? "Choose tickets"
+                                      : `${ticketCount} ticket${
+                                          ticketCount > 1 ? "s" : ""
+                                        }`}
+                                  </span>
+                                  <button
+                                    onClick={handleIncrement}
+                                    className="p-3 bg-[#141414] text-white rounded-full hover:bg-gray-500 hover:bg-opacity-30"
+                                  >
+                                    <PlusIcon width={16} height={16} />
+                                  </button>
+                                </div>
 
-                        <div className="h-[1px] mt-2 mb-2 bg-white/5" />
-
-                        <div className="flex flex-col gap-3 w-full">
-                          <span className="text-sm font-medium text-white">
-                            Full Name
-                          </span>
-                          <input
-                            {...register("fullName", {
-                              required: "Full Name is required",
-                            })}
-                            placeholder="John Doe"
-                            className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
-                          />
-                          {errors.fullName && (
-                            <span className="text-xs text-red-500">
-                              {errors.fullName.message}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col gap-3 w-full">
-                          <span className="text-sm font-medium text-white">
-                            Email
-                          </span>
-                          <input
-                            {...register("email", {
-                              required: "Email is required",
-                              pattern: {
-                                value: /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/,
-                                message: "Invalid email address",
-                              },
-                            })}
-                            placeholder="johndoe@gmail.com"
-                            className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
-                          />
-                          {errors.email && (
-                            <span className="text-xs text-red-500">
-                              {errors.email.message}
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col gap-3 w-full">
-                          <span className="text-sm font-medium text-white">
-                            Phone Number
-                          </span>
-                          <div className="relative w-full">
-                            <div className="flex items-center bg-primary border border-white/10 h-10 rounded-lg px-2 py-2.5 w-full">
-                              <div className="flex items-center h-10 gap-1 px-1 pr-3 border-r border-white/10">
-                                <img
-                                  src="https://flagcdn.com/w40/us.png"
-                                  alt="US Flag"
-                                  className="w-4 h-4 rounded-full"
-                                />
-                                <span className="text-white text-sm">+1</span>
+                                {/* Right: Progress Bars & Count */}
+                                {ticketData &&
+                                  (() => {
+                                    const totalTickets =
+                                      (soldTickets[ticketData.ticket_name] ||
+                                        0) +
+                                      (remainCount[ticketData.ticket_name] ||
+                                        0);
+                                    const soldPercentage =
+                                      totalTickets > 0
+                                        ? ((soldTickets[
+                                            ticketData.ticket_name
+                                          ] || 0) /
+                                            totalTickets) *
+                                          100
+                                        : 0;
+                                    return (
+                                      <div className="text-white/70 text-right">
+                                        <div className="flex items-center gap-3 justify-end">
+                                          <div className="flex gap-0.5">
+                                            {[...Array(4)].map((_, i) => {
+                                              const barFillPercentage =
+                                                Math.min(
+                                                  Math.max(
+                                                    soldPercentage - i * 25,
+                                                    0
+                                                  ),
+                                                  25
+                                                );
+                                              let barColor;
+                                              if (soldPercentage <= 25) {
+                                                barColor = "#10B981";
+                                              } else if (soldPercentage <= 50) {
+                                                barColor = "#A3E635";
+                                              } else {
+                                                barColor = "#F97316";
+                                              }
+                                              return (
+                                                <div
+                                                  key={i}
+                                                  className="h-4 w-1.5 rounded-full bg-white/10 overflow-hidden"
+                                                >
+                                                  <div
+                                                    className="h-full transition-all duration-300 ease-out"
+                                                    style={{
+                                                      transform: `scaleY(${
+                                                        barFillPercentage / 25
+                                                      })`,
+                                                      transformOrigin: "bottom",
+                                                      backgroundColor: barColor,
+                                                    }}
+                                                  />
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                          <span className="text-sm">
+                                            {soldTickets[
+                                              ticketData.ticket_name
+                                            ] || 0}
+                                            /{totalTickets || 0}
+                                          </span>
+                                        </div>
+                                        <span className="block mt-1 text-sm">
+                                          {totalTickets -
+                                            (soldTickets[
+                                              ticketData.ticket_name
+                                            ] || 0)}{" "}
+                                          Available
+                                        </span>
+                                      </div>
+                                    );
+                                  })()}
                               </div>
+                            </div>
+
+                            <div className="h-[1px] mt-2 mb-2 bg-white/5" />
+
+                            <div className="flex flex-col gap-3 w-full">
+                              <span className="text-sm font-medium text-white">
+                                Full Name
+                              </span>
                               <input
-                                {...register("phoneNumber", {
-                                  required: "Phone number is required",
+                                {...register("fullName", {
+                                  required: "Full Name is required",
+                                })}
+                                placeholder="John Doe"
+                                className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
+                              />
+                              {errors.fullName && (
+                                <span className="text-xs text-red-500">
+                                  {errors.fullName.message}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex flex-col gap-3 w-full">
+                              <span className="text-sm font-medium text-white">
+                                Email
+                              </span>
+                              <input
+                                {...register("email", {
+                                  required: "Email is required",
                                   pattern: {
-                                    value: /^[0-9]{10}$/,
-                                    message: "Phone number must be 10 digits",
+                                    value: /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/,
+                                    message: "Invalid email address",
                                   },
                                 })}
-                                type="tel"
-                                placeholder="Enter phone number"
-                                className="bg-transparent text-sm flex-1 focus:outline-none px-2 text-white mx-3"
+                                placeholder="johndoe@gmail.com"
+                                className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
                               />
+                              {errors.email && (
+                                <span className="text-xs text-red-500">
+                                  {errors.email.message}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex flex-col gap-3 w-full">
+                              <span className="text-sm font-medium text-white">
+                                Phone Number
+                              </span>
+                              <div className="relative w-full">
+                                <div className="flex items-center bg-primary border border-white/10 h-10 rounded-lg px-2 py-2.5 w-full">
+                                  <div className="flex items-center h-10 gap-1 px-1 pr-3 border-r border-white/10">
+                                    <img
+                                      src="https://flagcdn.com/w40/us.png"
+                                      alt="US Flag"
+                                      className="w-4 h-4 rounded-full"
+                                    />
+                                    <span className="text-white text-sm">
+                                      +1
+                                    </span>
+                                  </div>
+                                  <input
+                                    {...register("phoneNumber", {
+                                      required: "Phone number is required",
+                                      pattern: {
+                                        value: /^[0-9]{10}$/,
+                                        message:
+                                          "Phone number must be 10 digits",
+                                      },
+                                    })}
+                                    type="tel"
+                                    placeholder="Enter phone number"
+                                    className="bg-transparent text-sm flex-1 focus:outline-none px-2 text-white mx-3"
+                                  />
+                                </div>
+                              </div>
+                              {errors.phoneNumber && (
+                                <span className="text-xs text-red-500">
+                                  {errors.phoneNumber.message}
+                                </span>
+                              )}
                             </div>
                           </div>
-                          {errors.phoneNumber && (
-                            <span className="text-xs text-red-500">
-                              {errors.phoneNumber.message}
-                            </span>
-                          )}
                         </div>
-                      </div>
-                    </div>
+                      )}
+                      {/* Sticky Bottom Container */}
+                      {!showTicketCards && (
+                        <div className="flex flex-col md:flex-row border-t border-white/10 sticky bottom-0 bg-white/[0.03] backdrop-blur-xl justify-between w-full gap-3 p-4">
+                          <button
+                            type="submit"
+                            disabled={!isValid}
+                            className="bg-white hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed text-black px-4 py-2 w-full rounded-full text-sm font-medium"
+                          >
+                            Confirm and send ticket
+                          </button>
+                        </div>
+                      )}
+                    </form>
                   )}
-
-                  {/* Sticky Bottom Container */}
-                  {!showTicketCards && (
-                    <div className="flex flex-col md:flex-row border-t border-white/10 sticky bottom-0 bg-white/[0.03] backdrop-blur-xl justify-between w-full gap-3 p-4">
-                      <button
-                        type="submit"
-                        disabled={!isValid}
-                        className="bg-white hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed text-black px-4 py-2 w-full rounded-full text-sm font-medium"
-                      >
-                        Confirm and send ticket
-                      </button>
-                    </div>
-                  )}
-                </form>
+                </div>
               </DialogContent>
             </Dialog>
           </>
 
           <>
-            {showActivateNotification && (
+            {showActivatesNotification && (
               <motion.div
                 initial={{ y: -50, opacity: 0, scale: 0.9 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
@@ -1661,10 +1820,12 @@ export default function EventDetails() {
                       fill="#10B981"
                     />
                   </svg>
-                  <p className="text-sm">{notificationMessage}</p>
+                  <p className="text-sm">
+                    ${ticketData.ticket_name} ticket sales has been renewed.
+                  </p>
                 </div>
                 <button
-                  onClick={() => setShowActivateNotification(false)}
+                  onClick={() => setShowActivatesNotification(false)}
                   className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
                 >
                   <svg
@@ -1706,7 +1867,7 @@ export default function EventDetails() {
                       fillOpacity="0.4"
                     />
                   </svg>{" "}
-                  <p className="text-sm">Failed to renew ticket sales.</p>
+                  <p className="text-sm">Failed to send ticket.</p>
                 </div>
                 <button
                   onClick={() => setShowInActiveNotification(false)}
@@ -1735,11 +1896,9 @@ export default function EventDetails() {
               <DialogContent className="overflow-y-auto min-h-[90vh] hide-scrollbar relative !gap-0">
                 {/* Single scrollable form container */}
                 <form
-                  onSubmit={handleSubmit(onValid)}
+                  onSubmit={handleSubmit(onSubmit)}
                   style={{ maxHeight: "calc(90vh - 150px)" }}
                 >
-                  {/* The close button is moved inside the form */}
-                  {/* Header Area */}
                   <div className="flex flex-col gap-y-3 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
                     {showTicketCards ? (
                       <>
@@ -1967,7 +2126,7 @@ export default function EventDetails() {
                             {/* Left: Quantity Selector */}
                             <div className="flex items-center bg-primary px-1 py-1 rounded-full w-max">
                               <button
-                                onClick={handleDecrement}
+                                onClick={handleDecrements}
                                 className={`p-3 font-inter bg-[#141414] text-white rounded-full ${
                                   ticketCount === null
                                     ? "cursor-not-allowed opacity-50"
@@ -1985,7 +2144,7 @@ export default function EventDetails() {
                                     }`}
                               </span>
                               <button
-                                onClick={handleIncrement}
+                                onClick={handleIncrements}
                                 className="p-3 bg-[#141414] text-white rounded-full hover:bg-gray-500 hover:bg-opacity-30"
                               >
                                 <PlusIcon width={16} height={16} />
@@ -2150,9 +2309,12 @@ export default function EventDetails() {
                         disabled={!isValid}
                         className="bg-white hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed text-black px-4 py-2 w-full rounded-full text-sm font-medium flex items-center justify-center"
                       >
-                        ${ticketData.price}
+                        $
+                        {ticketData && ticketCount
+                          ? (Number(ticketData.price) * ticketCount).toFixed(2)
+                          : ticketData.price}
                         <svg
-                          className="mr-[10px]"
+                          className="mx-2"
                           width="5"
                           height="6"
                           viewBox="0 0 5 6"
@@ -2176,7 +2338,7 @@ export default function EventDetails() {
               </DialogContent>
             </Dialog>
           </>
-
+          {/* Renew ticket */}
           <Dialog
             open={renewDialogOpen}
             onOpenChange={(open) => {

@@ -206,18 +206,33 @@ const Ticket = () => {
     const calculateTotal = () => {
         const subtotal = counts * selectedTicketPrice;
         const taxValue = parseFloat(event.tax) || 0;
-        const organizerTax = subtotal * (taxValue / 100);
+        const taxType = event.tax_type || "percentage";
+
+        // Calculate organizer tax based on tax type
+        let organizerTax = 0;
+        if (taxType === "percentage") {
+            organizerTax = subtotal * (taxValue / 100);
+        } else if (taxType === "fixed") {
+            organizerTax = taxValue;
+        }
+
+        // Platform fee = 9% of (subtotal + tax) + $0.89
         const platformFee = ((subtotal + organizerTax) * 0.09) + 0.89;
+
+        // Apply discount
         let total = subtotal;
         if (amount && type) {
-            if (type === 'amount') {
+            if (type === "amount") {
                 total -= parseFloat(amount) || 0;
-            } else if (type === 'percentage') {
+            } else if (type === "percentage") {
                 const discount = (total * (parseFloat(amount) || 0)) / 100;
                 total -= discount;
             }
         }
-        total = total + platformFee;
+
+        // Add tax and platform fee
+        total = total + organizerTax + platformFee;
+
         return total.toFixed(2);
     };
 
@@ -748,29 +763,63 @@ const Ticket = () => {
                                                 <p className='font-inter text-gray-400 text-sm'>Ticket</p>
                                                 <p className='font-inter text-white text-sm'>${(counts * selectedTicketPrice).toFixed(2)}</p>
                                             </div>
+                                            {
+                                                event.tax_name && (
+                                                    <div className='flex flex-row justify-between mt-1'>
+                                                        <p className='font-inter text-gray-400 text-sm'>{event.tax_name} ({event.tax_type === 'fixed' && "$"}{event.tax}{event.tax_type === 'percentage' && "%"})</p>
+                                                        <p className="font-inter text-white text-sm">
+                                                            {(() => {
+                                                                const subtotal = count * selectedTicketPrice;
+                                                                const taxValue = parseFloat(event.tax) || 0;
+                                                                const taxType = event.tax_type || "percentage";
+
+                                                                let organizerTax = 0;
+                                                                if (taxType === "percentage") {
+                                                                    organizerTax = subtotal * (taxValue / 100);
+                                                                } else if (taxType === "fixed") {
+                                                                    organizerTax = taxValue;
+                                                                }
+
+                                                                return `$${organizerTax.toFixed(2)}`;
+                                                            })()}
+                                                        </p>
+                                                    </div>
+                                                )
+                                            }
                                             <div className='flex flex-row justify-between mt-1'>
                                                 <p className='font-inter text-gray-400 text-sm'>Platform fee</p>
-                                                <p className='font-inter text-white text-sm'>
+                                                <p className="font-inter text-white text-sm">
                                                     {
-                                                        event.tax !== 'undefined' && typeof event.tax === 'number' ? (
-                                                            <>
-                                                                <span className="text-white">
-                                                                    ${
-                                                                        ((((count * selectedTicketPrice) + ((count * selectedTicketPrice) * (event.tax / 100))) * 0.09) + 0.89).toFixed(2)
-                                                                    }
-                                                                </span>
-                                                            </>
+                                                        typeof event.tax !== "undefined" && !isNaN(event.tax) ? (
+                                                            (() => {
+                                                                const subtotal = count * selectedTicketPrice;
+                                                                const taxValue = parseFloat(event.tax) || 0;
+                                                                const taxType = event.tax_type || "percentage";
+
+                                                                let organizerTax = 0;
+                                                                if (taxType === "percentage") {
+                                                                    organizerTax = subtotal * (taxValue / 100);
+                                                                } else if (taxType === "fixed") {
+                                                                    organizerTax = taxValue;
+                                                                }
+
+                                                                const platformFee = ((subtotal + organizerTax) * 0.09) + 0.89;
+                                                                return (
+                                                                    <span className="text-white">
+                                                                        ${platformFee.toFixed(2)}
+                                                                    </span>
+                                                                );
+                                                            })()
                                                         ) : ticket.price === 0 ? (
                                                             "$0.00"
                                                         ) : (
-                                                            <>
-                                                                <span className="text-white">
-                                                                    ${((count * selectedTicketPrice * 0.09) + 0.89).toFixed(2)}
-                                                                </span>
-                                                            </>
+                                                            <span className="text-white">
+                                                                ${((count * selectedTicketPrice * 0.09) + 0.89).toFixed(2)}
+                                                            </span>
                                                         )
                                                     }
                                                 </p>
+
                                             </div>
                                             {
                                                 type && (

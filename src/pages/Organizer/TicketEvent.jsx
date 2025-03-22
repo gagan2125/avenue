@@ -160,6 +160,7 @@ export default function TicketEvent() {
     const [step, setStep] = useState(1);
     const navigate = useNavigate();
     const [eventName, setEventName] = useState("");
+    const [eventSlug, setEventSlug] = useState("");
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -211,8 +212,8 @@ export default function TicketEvent() {
     const [isTicketStartTimeModalOpen, setIsTicketStartTimeModalOpen] = useState(false);
     const [isTicketEndTimeModalOpen, setIsTicketEndTimeModalOpen] = useState(false);
 
-    const [oragnizerId, setOragnizerId] = useState(null);
-    const [userId, setUserId] = useState(null);
+    const [userId, setUserId] = useState(localStorage.getItem('userID'));
+    const [oragnizerId, setOragnizerId] = useState(localStorage.getItem('organizerId'));
     const [tickets, setTickets] = useState([]);
     const [editingIndex, setEditingIndex] = useState(null);
     const [showAddForm, setShowAddForm] = useState(false)
@@ -305,19 +306,90 @@ export default function TicketEvent() {
         },
     ];
 
+    const convertToWebP = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob) {
+                                const webpFile = new File([blob], `${Date.now()}.webp`, {
+                                    type: 'image/webp',
+                                });
+                                resolve(webpFile);
+                            } else {
+                                reject('Failed to convert image to webp');
+                            }
+                        },
+                        'image/webp',
+                        0.8 // Quality: 0.8 is usually good enough
+                    );
+                };
+                img.onerror = reject;
+                img.src = event.target.result;
+            };
+
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const convertBlobToWebP = (blob) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const url = URL.createObjectURL(blob);
+
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+
+                canvas.toBlob((webpBlob) => {
+                    if (webpBlob) {
+                        const file = new File([webpBlob], `${Date.now()}.webp`, {
+                            type: "image/webp",
+                        });
+                        resolve(file);
+                    } else {
+                        reject("Failed to convert blob to webp.");
+                    }
+                    URL.revokeObjectURL(url);
+                }, "image/webp", 0.8);
+            };
+
+            img.onerror = reject;
+            img.src = url;
+        });
+    };
+
+
     const handleImageUpload = (event) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
 
-            // Reset previous image states to ensure clean state
+            // Reset image states
             setImageFile(null);
             setImagePreview(null);
 
-            // Set the new temp file and open the cropper
+            // Keep the raw file for cropping
             setTempImageFile(file);
-            setIsCropperOpen(true);
+            setIsCropperOpen(true); // Open cropper with original file
         }
     };
+
 
     const handleLineImageUpload = (event, index) => {
         if (event.target.files && event.target.files[0]) {
@@ -348,26 +420,25 @@ export default function TicketEvent() {
         }
     };
 
-    const handleCropComplete = ({
+    const handleCropComplete = async ({
         croppedImage,
         fullImage,
         previewUrl,
         dimensions,
     }) => {
-        // Store the cropped image blob
-        setImageFile(croppedImage);
+        try {
+            // Convert the cropped image (Blob) to .webp File
+            const webpFile = await convertBlobToWebP(croppedImage);
 
-        // Store the original image file
-        setOriginalImage(fullImage);
-
-        // Store the preview URL for display
-        setImagePreview(previewUrl);
-
-        // Store dimensions if needed
-        setImageDimensions(dimensions);
-
-        // Close the cropper
-        setIsCropperOpen(false);
+            setImageFile(webpFile); // Final .webp
+            setOriginalImage(fullImage); // Optional
+            setImagePreview(URL.createObjectURL(webpFile)); // For preview
+            setImageDimensions(dimensions);
+            setIsCropperOpen(false);
+        } catch (error) {
+            console.error("Failed to convert to webp:", error);
+            alert("Failed to process image.");
+        }
     };
 
     const removeImage = () => {
@@ -513,6 +584,7 @@ export default function TicketEvent() {
         const formData = new FormData();
         formData.append('organizer_id', orgId);
         formData.append('event_name', eventName);
+        formData.append('event_slug', eventSlug);
         formData.append('event_type', id === "ticketed" ? "ticket" : "rsvp");
         formData.append('category', "");
         formData.append('flyer', getImagesForUpload());
@@ -569,7 +641,13 @@ export default function TicketEvent() {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            setEventId(response.data?.event?._id)
+
+            const eventId = response.data?.event?._id;
+            if (eventId) {
+                localStorage.setItem('organizer_eventId', eventId);
+                setEventId(eventId);
+            }
+
             if (redirect === 'redirect') {
                 setStep((prevStep) => prevStep + 1);
             }
@@ -623,6 +701,39 @@ export default function TicketEvent() {
         }
     };
 
+    const handleLoginComplete = () => {
+        const freshUserId = localStorage.getItem('userID');
+        const freshOrganizerId = localStorage.getItem('organizerId');
+
+        setUserId(freshUserId);
+        setOragnizerId(freshOrganizerId);
+
+    };
+
+    const generateSlug = (text) => {
+        return text
+            .normalize("NFD")                     // Decompose accented letters
+            .replace(/[\u0300-\u036f]/g, "")      // Remove diacritics
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")         // Remove all non-alphanumeric except space and dash
+            .replace(/[\s_-]+/g, "-")             // Replace spaces/underscores/double dashes with a single dash
+            .replace(/^-+|-+$/g, "");             // Trim leading/trailing dashes
+    };
+
+    const handleEventNameChange = (e) => {
+        const name = e.target.value;
+        setEventName(name);
+        setEventSlug(generateSlug(name));
+    };
+
+    const handleSlugChange = (e) => {
+        const value = e.target.value
+            .replace(/\s+/g, "-")           // replace spaces with dash
+            .replace(/[^a-z0-9\-]/gi, "");  // remove non-alphanumeric or dashes
+
+        setEventSlug(value.toLowerCase());
+    };
+
     // Form steps content
     const formSteps = [
         {
@@ -631,15 +742,27 @@ export default function TicketEvent() {
             description: "Let's start with the basic information about your event",
             fields: (
                 <div className="w-full">
-                    <div className="w-full">
+                    <div className="w-full mt-2">
                         <label className="block text-sm font-medium text-white mb-3">
                             Event name
                         </label>
                         <input
                             type="text"
                             value={eventName}
-                            onChange={(e) => setEventName(e.target.value)}
+                            onChange={handleEventNameChange}
                             placeholder="After Hours, Electric Dreams, etc."
+                            className="w-full bg-transparent border border-white/5 rounded-lg px-4 py-2.5 h-10 text-white placeholder:text-white/30 placeholder:text-sm"
+                        />
+                    </div>
+                    <div className="w-full mt-2">
+                        <label className="block text-sm font-medium text-white mb-3">
+                            Event slug
+                        </label>
+                        <input
+                            type="text"
+                            value={eventSlug}
+                            onChange={handleSlugChange}
+                            placeholder="after-hours, electric-dreams, etc."
                             className="w-full bg-transparent border border-white/5 rounded-lg px-4 py-2.5 h-10 text-white placeholder:text-white/30 placeholder:text-sm"
                         />
                     </div>
@@ -1195,13 +1318,6 @@ export default function TicketEvent() {
                     </p>
 
                     <div className="flex items-center gap-2 mt-4">
-                        {/* <input
-                            type="checkbox"
-                            id="showExtraFields"
-                            checked={showExtraFields}
-                            onChange={(e) => setShowExtraFields(e.target.checked)}
-                            className="size-4 rounded bg-transparent border-white/10"
-                        /> */}
                         <Checkbox
                             checked={showExtraFields}
                             onCheckedChange={(checked) => setShowExtraFields(checked)}
@@ -1964,15 +2080,17 @@ export default function TicketEvent() {
                     {/* Scrollable left side */}
                     <div className="w-full order-2 md:order-1 md:w-1/2 min-h-[calc(100vh-64px)] overflow-y-auto flex flex-col items-center justify-center">
                         <div className="p-8 max-w-xl mx-auto flex flex-col w-full">
-                            <div className="mb-6">
-                                <h2 className="text-2xl font-semibold text-white">
-                                    {formSteps[step - 1].title}
-                                </h2>
-                                <p className="text-white/60 text-sm mt-1">
-                                    {formSteps[step - 1].description}
-                                </p>
-                            </div>
-                            {formSteps[step - 1].fields}
+                            {formSteps[step - 1] && (
+                                <div className="mb-6">
+                                    <h2 className="text-2xl font-semibold text-white">
+                                        {formSteps[step - 1].title}
+                                    </h2>
+                                    <p className="text-white/60 text-sm mt-1">
+                                        {formSteps[step - 1].description}
+                                    </p>
+                                    {formSteps[step - 1].fields}
+                                </div>
+                            )}
                             <div className="flex justify-between gap-5 mt-8 w-full">
                                 {
                                     step === 6 ? (
@@ -1990,25 +2108,23 @@ export default function TicketEvent() {
                                     <>
                                         <button
                                             onClick={() => {
-
                                                 if (!userId && !oragnizerId) {
-                                                    setIsModalOpen(true)
-                                                    return
+                                                    setIsModalOpen(true);
+                                                    return;
                                                 }
 
                                                 if (userId && !oragnizerId) {
-                                                    setIsModalDetailsOpen(true)
-                                                    return
-                                                }
-
-                                                if (step === 1) {
-                                                    console.log("Images ready for upload", getImagesForUpload());
+                                                    setIsModalDetailsOpen(true);
+                                                    return;
                                                 }
 
                                                 if (step === 5) {
-                                                    setStatusNotify("draft")
-                                                    handleAddEvent("NO", oragnizerId, "redirect");
-                                                } else {
+                                                    setStatusNotify("draft"); // or "live"
+                                                    handleAddEvent("NO", oragnizerId, "redirect"); // or "YES"
+                                                    return;
+                                                }
+
+                                                if (step < 6) {
                                                     setStep((prevStep) => prevStep + 1);
                                                 }
                                             }}
@@ -2025,23 +2141,22 @@ export default function TicketEvent() {
                                         <button
                                             onClick={() => {
                                                 if (!userId && !oragnizerId) {
-                                                    setIsModalOpen(true)
-                                                    return
+                                                    setIsModalOpen(true);
+                                                    return;
                                                 }
 
                                                 if (userId && !oragnizerId) {
-                                                    setIsModalDetailsOpen(true)
-                                                    return
-                                                }
-
-                                                if (step === 1) {
-                                                    console.log("Images ready for upload", getImagesForUpload());
+                                                    setIsModalDetailsOpen(true);
+                                                    return;
                                                 }
 
                                                 if (step === 5) {
-                                                    setStatusNotify("live")
+                                                    setStatusNotify("live");
                                                     handleAddEvent("YES", oragnizerId, "redirect");
-                                                } else {
+                                                    return;
+                                                }
+
+                                                if (step < 6) {
                                                     setStep((prevStep) => prevStep + 1);
                                                 }
                                             }}
@@ -2055,7 +2170,13 @@ export default function TicketEvent() {
                                         >
                                             {isAdding && addStatus === "live" ? "Loading..." : "Publish"}
                                         </button>
-                                        <OnboardLogin isAdding={isAdding} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onTrigger={handleAddEvent} />
+                                        <OnboardLogin
+                                            isOpen={isModalOpen}
+                                            isAdding={isAdding}
+                                            onClose={() => setIsModalOpen(false)}
+                                            loginClosed={handleLoginComplete}
+                                            onTrigger={handleAddEvent}
+                                        />
                                         <OnboardDetails isAdding={isAdding} isOpen={isModalDetailsOpen} onClose={() => setIsModalDetailsOpen(false)} onTrigger={handleAddEvent} userId={userId} />
                                     </>
                                 ) : step === 6 ? (
@@ -2088,7 +2209,10 @@ export default function TicketEvent() {
 
                                             if (step === 5) {
                                                 handleAddEvent("YES", oragnizerId, "redirect");
-                                            } else {
+                                                return
+                                            }
+
+                                            if (step < 6) {
                                                 setStep((prevStep) => prevStep + 1);
                                             }
                                         }}
@@ -2183,7 +2307,7 @@ export default function TicketEvent() {
                     onOpenChange={setCustomFeeModal}
                     className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
                 >
-                    <DialogContent className="max-h-[90vh] !gap-0">
+                    <DialogContent className="max-h-[90vh] !gap-0 relative">
                         <div className="flex flex-col gap-y-2.5 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
                             <div className="h-12 w-12 bg-[#34B2DA1A] flex items-center justify-center border border-[#0F0F0F] rounded-lg">
                                 <svg
@@ -2332,7 +2456,7 @@ export default function TicketEvent() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col md:flex-row border-t border-white/10 sticky bottom-0 bg-primary justify-between w-full gap-3 p-4">
+                        <div className="flex flex-col md:flex-row border-t border-white/10 bottom-0 bg-primary justify-between w-full gap-3 p-4">
                             <button
                                 onClick={() => setCustomFeeModal(false)}
                                 className="px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-full border border-white/10 w-full"

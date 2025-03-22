@@ -206,6 +206,18 @@ export default function OrganizeMembers() {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState(false)
+  const [newRoleDialogOpen, setNewRoleDialogOpen] = useState(false);
+  const [newRole, setNewRole] = useState({
+    name: "",
+    description: "",
+    accessLevel: "full",
+  });
+  const [selectedExistingRole, setSelectedExistingRole] = useState(null);
+  const [roles, setRoles] = useState([
+    { name: "Admin", access: ["full", "limited", "basic"] },
+    { name: "Manager", access: ["limited", "basic"] },
+    { name: "Staff", access: ["basic"] },
+  ]);
 
   const {
     register,
@@ -637,6 +649,27 @@ export default function OrganizeMembers() {
                     </DropdownItem>
                   </DropdownContent>
                 </Dropdown>
+                <button
+                  onClick={() => setNewRoleDialogOpen(true)}
+                  className="flex items-center gap-2 border border-white/10 hover:bg-white/10 transition-colors px-4 py-2 rounded-full text-sm font-medium"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    fill="none"
+                  >
+                    <path
+                      d="M8 3.33337V12.6667M3.33333 8.00004H12.6667"
+                      stroke="white"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  New role
+                </button>
               </div>
               <div className="relative w-full @4xl:w-fit flex justify-end h-fit">
                 <input
@@ -856,11 +889,11 @@ export default function OrganizeMembers() {
                                 </td>
                                 <td className="py-4 pl-4">{member.events?.length + " events" || "-"}</td>
                                 <td className="py-4 pl-4">
-                                <div className="flex items-center gap-2">
-                                  {statusIcons[member.status]}
-                                  <span>{member.status ? member.status.charAt(0).toUpperCase() + member.status.slice(1) : "-"}</span>
-                                </div>
-                              </td>
+                                  <div className="flex items-center gap-2">
+                                    {statusIcons[member.status]}
+                                    <span>{member.status ? member.status.charAt(0).toUpperCase() + member.status.slice(1) : "-"}</span>
+                                  </div>
+                                </td>
                                 <td className="py-4 pl-4">
                                   <DirectionAwareMenu>
                                     <MenuTrigger>
@@ -995,6 +1028,273 @@ export default function OrganizeMembers() {
           </div >
         )
       }
+
+      {/* New role form */}
+      <Dialog
+        open={newRoleDialogOpen}
+        onOpenChange={setNewRoleDialogOpen}
+        className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
+      >
+        <DialogContent className="!gap-0 text-white">
+          <div className="flex flex-col gap-y-3 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
+            <DialogTitle>Add new member</DialogTitle>
+            <DialogDescription>
+              Add a new member to your team.
+            </DialogDescription>
+          </div>
+          <div>
+            <div className="max-h-[70vh] overflow-y-auto">
+              {/* Existing Roles Section */}
+              <div className="p-4 text-white ">
+                <h3 className="text-sm font-semibold mb-3">Existing Roles</h3>
+                <div className="flex flex-col divide-y divide-white/10 border border-white/10 rounded-lg">
+                  {roles.map((role) => (
+                    <div
+                      key={role.name}
+                      onClick={() => setSelectedExistingRole(role)}
+                      className={`flex flex-col cursor-pointer transition-colors ${selectedExistingRole?.name === role.name
+                        ? "bg-white/[0.03]"
+                        : "hover:bg-white/5"
+                        }`}
+                    >
+                      <div className="flex items-center justify-between text-sm p-3">
+                        <span>{role.name}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedExistingRole(role);
+                          }}
+                          className="text-white/60 hover:text-white transition-colors"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M11 4H4a2 2 0 0 0-2 2v6c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1"></path>
+                            <path d="M7 8h3"></path>
+                          </svg>
+                        </button>
+                      </div>
+
+                      {selectedExistingRole?.name === role.name && (
+                        <div className="border-t border-white/10 p-4">
+                          <div className="text-sm text-white/60 mb-2">
+                            Access Level
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={role.access.includes("full")}
+                                onCheckedChange={(checked) => {
+                                  const updatedRoles = roles.map((r) => {
+                                    if (r.name === role.name) {
+                                      return {
+                                        ...r,
+                                        access: checked
+                                          ? [...r.access, "full"]
+                                          : r.access.filter(
+                                            (level) => level !== "full"
+                                          ),
+                                      };
+                                    }
+                                    return r;
+                                  });
+                                  setRoles(updatedRoles);
+                                }}
+                                className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                              />
+                              Full Access
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={role.access.includes("limited")}
+                                onCheckedChange={(checked) => {
+                                  const updatedRoles = roles.map((r) => {
+                                    if (r.name === role.name) {
+                                      return {
+                                        ...r,
+                                        access: checked
+                                          ? [...r.access, "limited"]
+                                          : r.access.filter(
+                                            (level) => level !== "limited"
+                                          ),
+                                      };
+                                    }
+                                    return r;
+                                  });
+                                  setRoles(updatedRoles);
+                                }}
+                                className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                              />
+                              Limited Access
+                            </label>
+                            <label className="flex items-center gap-2 text-sm">
+                              <Checkbox
+                                checked={role.access.includes("basic")}
+                                onCheckedChange={(checked) => {
+                                  const updatedRoles = roles.map((r) => {
+                                    if (r.name === role.name) {
+                                      return {
+                                        ...r,
+                                        access: checked
+                                          ? [...r.access, "basic"]
+                                          : r.access.filter(
+                                            (level) => level !== "basic"
+                                          ),
+                                      };
+                                    }
+                                    return r;
+                                  });
+                                  setRoles(updatedRoles);
+                                }}
+                                className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                              />
+                              Basic Access
+                            </label>
+                          </div>
+                          <div className="flex justify-end gap-2 mt-3">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedExistingRole(null);
+                              }}
+                              className="px-3 py-1 text-sm rounded-lg hover:bg-white/5"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                console.log(
+                                  "Saving changes for role:",
+                                  role.name
+                                );
+                                setSelectedExistingRole(null);
+                              }}
+                              className="px-3 py-1 text-sm bg-[#34B2DA] rounded-lg hover:bg-[#34B2DA]/90"
+                            >
+                              Save Changes
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* New Role Form */}
+              <form className="flex flex-col gap-4 mt-2 p-4">
+                <div>
+                  <label className="text-sm font-medium mb-3 block">
+                    Role Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-primary border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/30"
+                    placeholder="Enter role name"
+                  />
+                </div>
+
+                {/* Replace the select element with Dropdown */}
+                <div className="flex flex-col gap-4">
+                  <label className="text-sm font-medium text-white">
+                    Access Level
+                  </label>
+                  <div className="flex flex-col divide-y divide-white/10 border border-white/10 rounded-lg">
+                    <div className="flex items-center justify-between p-2">
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={newRole.accessLevel.includes("full")}
+                          onCheckedChange={(checked) => {
+                            const updatedAccess = checked
+                              ? [...newRole.accessLevel, "full"]
+                              : newRole.accessLevel.filter(
+                                (level) => level !== "full"
+                              );
+                            setNewRole({
+                              ...newRole,
+                              accessLevel: updatedAccess,
+                            });
+                          }}
+                          className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                        />
+                        Full Access
+                      </label>
+                      <span className="text-white/60 text-sm">
+                        All permissions
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2">
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={newRole.accessLevel.includes("limited")}
+                          onCheckedChange={(checked) => {
+                            const updatedAccess = checked
+                              ? [...newRole.accessLevel, "limited"]
+                              : newRole.accessLevel.filter(
+                                (level) => level !== "limited"
+                              );
+                            setNewRole({
+                              ...newRole,
+                              accessLevel: updatedAccess,
+                            });
+                          }}
+                          className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                        />
+                        Limited Access
+                      </label>
+                      <span className="text-white/60 text-sm">
+                        Some restrictions
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-2">
+                      <label className="flex items-center gap-2 text-sm">
+                        <Checkbox
+                          checked={newRole.accessLevel.includes("basic")}
+                          onCheckedChange={(checked) => {
+                            const updatedAccess = checked
+                              ? [...newRole.accessLevel, "basic"]
+                              : newRole.accessLevel.filter(
+                                (level) => level !== "basic"
+                              );
+                            setNewRole({
+                              ...newRole,
+                              accessLevel: updatedAccess,
+                            });
+                          }}
+                          className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                        />
+                        Basic Access
+                      </label>
+                      <span className="text-white/60 text-sm">
+                        Minimal permissions
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+            {/* Replace the bottom button container div with this */}
+            <div className="w-full bg-white/[0.03] border-t border-white/10 rounded-b-xl p-4 backdrop-blur-xl z-10">
+              <button
+                type="submit"
+                className="w-full bg-white hover:bg-white/90 text-black border-white/10 border text-center rounded-full h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
+              >
+                Create Role
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* New Member Dialog */}
       <Dialog

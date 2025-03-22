@@ -213,7 +213,7 @@ const Info = () => {
         const encodedName = encodeURIComponent(name);
 
         try {
-            const response = await axios.get(`${url}/event/get-event-by-name/${encodedName}`);
+            const response = await axios.get(`${url}/event/get-event-by-name/${name}`);
             console.log(response.data)
             localStorage.setItem('user_event_id', response.data?._id);
             localStorage.setItem('user_event_name', response.data?.event_name);

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import {
   BrowserRouter,
   Route,
@@ -34,6 +35,7 @@ import EditEvent from "./pages/Organizer/EditEvent";
 import Preview from "./pages/Organizer/Preview";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsCondition from "./pages/TermsCondition";
+import StripeSuccess from "./pages/StripeSuccess";
 
 function App() {
   const location = useLocation();
@@ -136,6 +138,7 @@ function App() {
           <Route path="/organizer/edit-event/:id" element={<EditEvent />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-and-conditions" element={<TermsCondition />} />
+          <Route path="/stripe-success" element={<StripeSuccess />} />
           <Route
             path="/organizer/create-ticket/ticketedevent/:id"
             element={<TicketEvent />}

@@ -680,7 +680,7 @@ export default function PromosTab({ eventId }) {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col md:flex-row border-t border-white/10 sticky bottom-0 bg-primary justify-between w-full gap-3 p-4">
+                                <div className="flex flex-col md:flex-row border-t border-white/10 bottom-0 bg-primary justify-between w-full gap-3 p-4">
                                     <button
                                         onClick={() => setAddPromoDialogOpen(false)}
                                         className="px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-full border border-white/10 w-full"

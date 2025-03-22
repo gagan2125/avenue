@@ -6,7 +6,7 @@ import url from '../../constants/url';
 import axios from 'axios';
 import OnboardVerify from './OnboardVerify';
 
-const OnboardLogin = ({ isOpen, onClose, onTrigger, isAdding }) => {
+const OnboardLogin = ({ isOpen, onClose, onTrigger, isAdding, loginClosed }) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isButtonDisabled, setIsButtonDisabled] = useState(true);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
@@ -30,7 +30,7 @@ const OnboardLogin = ({ isOpen, onClose, onTrigger, isAdding }) => {
   const numberWithCode = '+1' + phoneNumber;
 
   const handleSendOtp = async () => {
-    setLoading(true); 
+    setLoading(true);
     try {
       const response = await axios.post(`${url}/auth/send-otp`, { phone: numberWithCode });
       setLoading(false);
@@ -93,7 +93,12 @@ const OnboardLogin = ({ isOpen, onClose, onTrigger, isAdding }) => {
           </button>
           <OnboardVerify
             isOpen={isVerificationModalOpen}
-            onClose={() => setIsVerificationModalOpen(false)}
+            onClose={() => {
+              setIsVerificationModalOpen(false);
+              onClose(); // close login modal also
+            }}
+            loginClose={onClose}
+            loginClosed={loginClosed}
             phoneNumber={phoneNumber}
             onTrigger={onTrigger}
             isAdding={isAdding}

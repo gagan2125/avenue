@@ -6,7 +6,7 @@ import axios from 'axios';
 import { Spin } from "antd";
 import OnboardDetails from './OnboardDetails';
 
-const OnboardVerify = ({ isOpen, onClose, phoneNumber, onTrigger, isAdding }) => {
+const OnboardVerify = ({ isOpen, onClose, phoneNumber, onTrigger, isAdding, loginClose, loginClosed }) => {
     const [code, setCode] = useState(['', '', '', '', '', '']);
     const inputRefs = useRef([...Array(6)].map(() => React.createRef()));
     const [error, setError] = useState(null);
@@ -17,6 +17,26 @@ const OnboardVerify = ({ isOpen, onClose, phoneNumber, onTrigger, isAdding }) =>
     const timerRef = useRef(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [userId, setUserId] = useState("");
+    const [oragnizerId, setOragnizerId] = useState(null);
+
+    useEffect(() => {
+        const loadFromLocalStorage = () => {
+            const storedUserOrganizerId = localStorage.getItem("organizerId");
+            const storedUserId = localStorage.getItem("userID");
+            setOragnizerId(storedUserOrganizerId || null);
+            setUserId(storedUserId || null);
+        };
+        loadFromLocalStorage();
+
+        const handleStorageChange = () => {
+            loadFromLocalStorage();
+        };
+
+        window.addEventListener("storage", handleStorageChange);
+        return () => {
+            window.removeEventListener("storage", handleStorageChange);
+        };
+    }, []);
 
     const handleChange = (index, value) => {
         if (value.length > 1) return;
@@ -85,8 +105,14 @@ const OnboardVerify = ({ isOpen, onClose, phoneNumber, onTrigger, isAdding }) =>
 
                         if (timeLeft <= 0) {
                             clearInterval(timerRef.current);
-                            setIsDetailsModalOpen(true)
+                            if (!organizer) {
+                                setIsDetailsModalOpen(true);
+                            } else {
+                                onClose();           // Close verification modal
+                                loginClosed();       // Tell parent to refresh userId & organizerId
+                            }
                         }
+
                     }, 1000);
                 } else {
                     setError('Invalid OTP');

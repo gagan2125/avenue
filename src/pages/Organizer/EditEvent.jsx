@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+/* eslint-disable react/no-unknown-property */
+/* eslint-disable no-unused-vars */
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { Check, ArrowLeft, Delete } from "lucide-react";
 import DateModal from "../../components/modals/DateModal";
@@ -14,6 +16,14 @@ import axios from "axios";
 import url from "../../constants/url"
 import GeneralDateModal from "../../components/modals/GeneralDateModal";
 import success from "../../assets/success.png"
+import { LoadScript, Autocomplete } from "@react-google-maps/api";
+import { Checkbox } from "../../components/ui/Checkbox";
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogDescription,
+} from "../../components/ui/Dailog";
 
 const ticketTypes = [
     {
@@ -142,11 +152,14 @@ const ticketTypes = [
     },
 ];
 
+const GOOGLE_MAPS_API_KEY = "AIzaSyAud4bABsBaBvVj-2H-WIof5QFHubYKNZM";
+
 export default function EditEvent() {
     const { id } = useParams()
     const [step, setStep] = useState(1);
     const navigate = useNavigate();
     const [eventName, setEventName] = useState("");
+    const [eventSlug, setEventSlug] = useState("");
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
@@ -168,6 +181,7 @@ export default function EditEvent() {
     // Location states
     const [venueName, setVenueName] = useState("");
     const [venueAddress, setVenueAddress] = useState("");
+    const autocompleteRef = useRef(null);
 
     // Event details states
     const [eventDescription, setEventDescription] = useState("");
@@ -193,6 +207,10 @@ export default function EditEvent() {
         useState(false);
     const [ticketStartDate, setTicketStartDate] = useState(null);
     const [ticketEndDate, setTicketEndDate] = useState(null);
+    const [isTicketStartTimeModalOpen, setIsTicketStartTimeModalOpen] = useState(false);
+    const [isTicketEndTimeModalOpen, setIsTicketEndTimeModalOpen] = useState(false);
+    const [ticketStartTime, setTicketStartTime] = useState("");
+    const [ticketEndTime, setTicketEndTime] = useState("");
 
     const [oragnizerId, setOragnizerId] = useState(null);
     const [tickets, setTickets] = useState([]);
@@ -203,6 +221,12 @@ export default function EditEvent() {
     const [event, setEvent] = useState({})
     const [isUpdating, setIsUpdating] = useState(false)
     const [updateStatus, setUpdateStatus] = useState(null)
+    const [showExtraFields, setShowExtraFields] = useState(false);
+    const [extraFields, setExtraFields] = useState([{ name: "", instagramUrl: "", image: "" }]);
+    const [isCustomFeeModal, setCustomFeeModal] = useState(false);
+    const [discountType, setDiscountType] = useState("percentage");
+    const [customName, setCustomName] = useState("");
+    const [customFee, setCustomFee] = useState("");
 
     const categories = [
         {
@@ -283,6 +307,7 @@ export default function EditEvent() {
             setEvent(response.data);
 
             setEventName(response.data?.event_name)
+            setEventSlug(response.data?.event_slug)
             if (response.data?.category && categories.length) {
                 const matchingCategory = categories.find(
                     (category) => category.name === response.data.category
@@ -301,6 +326,15 @@ export default function EditEvent() {
             setEventDescription(response.data.event_description)
             setRefundPolicy(response.data.refund_policy)
             setShowAttendees(response.data.show === 'YES' ? true : false)
+            const formattedProfiles = response.data.social_profiles.map(profile => ({
+                name: profile.name || "",
+                instagramUrl: profile.instagram_link || "",
+                image: profile.profile_photo || ""
+            }));
+            setExtraFields(formattedProfiles);
+            setCustomName(response.data?.tax_name)
+            setDiscountType(response.data?.tax_type)
+            setCustomFee(response.data?.tax)
 
             const formattedTickets = response.data?.tickets?.map(ticket => ({
                 ticketName: ticket.ticket_name || "",
@@ -310,6 +344,8 @@ export default function EditEvent() {
                 ticketDescription: ticket.ticket_description || ticket.description || "",
                 startSale: new Date(ticket.sale_start) || "",
                 endSale: new Date(ticket.sale_end) || "",
+                ticketStartTime: ticket.sale_start_time || "",
+                ticketEndTime: ticket.sale_end_time || "",
                 minLimit: ticket.min_count || 1,
                 maxLimit: ticket.max_count || 10,
             })) || [];
@@ -403,6 +439,8 @@ export default function EditEvent() {
             ticketDescription,
             startSale: ticketSaleStartDate ? ticketSaleStartDate : "",
             endSale: ticketSaleEndDate ? ticketSaleEndDate : "",
+            ticketStartTime: ticketStartTime,
+            ticketEndTime: ticketEndTime,
             showDates: "YES",
             limit: "YES",
             minLimit: minPurchase,
@@ -431,6 +469,8 @@ export default function EditEvent() {
         setTicketQuantity(ticket.quantity);
         setTicketSaleStartDate(ticket.startSale ? new Date(Date.parse(ticket.startSale)) : null);
         setTicketSaleEndDate(ticket.endSale ? new Date(Date.parse(ticket.endSale)) : null);
+        setTicketStartTime(ticket.ticketStartTime)
+        setTicketEndTime(ticket.ticketEndTime)
         setMinPurchase(ticket.minLimit);
         setMaxPurchase(ticket.maxLimit);
         setEditingIndex(index);
@@ -476,9 +516,17 @@ export default function EditEvent() {
         price: ticket.price,
         sale_start: ticket.startSale,
         sale_end: ticket.endSale,
+        sale_start_time: ticket.ticketStartTime,
+        sale_end_time: ticket.ticketEndTime,
         min_count: ticket.minLimit,
         max_count: ticket.maxLimit,
         ticket_description: ticket.ticketDescription
+    }));
+
+    const formattedSocialProfiles = extraFields.map((extra) => ({
+        name: extra.name,
+        profile_photo: extra.image,
+        instagram_link: extra.instagramUrl
     }));
 
     const handleUpdateEvent = async (status) => {
@@ -491,6 +539,7 @@ export default function EditEvent() {
         const formData = new FormData();
         formData.append('organizer_id', oragnizerId);
         formData.append('event_name', eventName || event.event_name);
+        formData.append('event_slug', eventSlug || event.event_slug);
         formData.append('event_type', event.event_type);
         formData.append('category', "");
         formData.append('flyer', getImagesForUpload());
@@ -507,6 +556,9 @@ export default function EditEvent() {
         formData.append('show', showAttendees ? "YES" : "NO");
         formData.append('refund_policy', refundPolicy || event.refund_policy);
         formData.append('status', "active");
+        formData.append('tax_name', customName);
+        formData.append('tax_type', discountType);
+        formData.append('tax', customFee);
 
         // formData.append('language', language);
         // formData.append('duration', duration);
@@ -527,11 +579,15 @@ export default function EditEvent() {
         //     formData.append(`members[${index}]`, tag.id);
         // });
 
-        // formattedLineUp.forEach((line, index) => {
-        //     for (const key in line) {
-        //         formData.append(`social_profiles[${index}][${key}]`, line[key]);
-        //     }
-        // });
+        if (showExtraFields && formattedSocialProfiles.length > 0) {
+            formattedSocialProfiles.forEach((line, index) => {
+                for (const key in line) {
+                    formData.append(`social_profiles[${index}][${key}]`, line[key]);
+                }
+            });
+        } else {
+            formData.append('social_profiles', ''); // Ensure an empty value is sent when unchecked
+        }
 
         // for (let [key, value] of formData.entries()) {
         //     console.log(`${key}:`, value);
@@ -556,6 +612,110 @@ export default function EditEvent() {
         }
     };
 
+    const handlePlaceSelect = () => {
+        if (autocompleteRef.current) {
+            const place = autocompleteRef.current.getPlace();
+            if (place.formatted_address) {
+                setVenueAddress(place.formatted_address);
+            }
+        }
+    };
+
+    const handleLineImageUpload = (event, index) => {
+        if (event.target.files && event.target.files[0]) {
+            const file = event.target.files[0];
+
+            // Validate file type
+            const validTypes = ["image/jpeg", "image/png", "image/webp"];
+            if (!validTypes.includes(file.type)) {
+                alert("Invalid file type. Please upload a JPEG, PNG, or WEBP image.");
+                return;
+            }
+
+            // Validate file size (limit to 2MB)
+            if (file.size > 2 * 1024 * 1024) {
+                alert("File size exceeds 2MB. Please upload a smaller image.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setExtraFields(prevFields =>
+                    prevFields.map((field, i) =>
+                        i === index ? { ...field, image: e.target.result } : field
+                    )
+                );
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleAddExtraField = () => {
+        setExtraFields([...extraFields, { name: "", instagramUrl: "" }]);
+    };
+
+    const handleExtraFieldChange = (index, field, value) => {
+        const updatedFields = [...extraFields];
+        updatedFields[index][field] = value;
+        setExtraFields(updatedFields);
+    };
+
+    const handleRemoveExtraField = (index) => {
+        setExtraFields(extraFields.filter((_, i) => i !== index));
+    };
+
+    const validateUrl = (e, index) => {
+        let value = e.target.value;
+        const urlRegex = /^(https?:\/\/)?([\w.-]+)\.([a-z]{2,})(\/\S*)?$/i;
+
+        const updatedFields = [...extraFields];
+        updatedFields[index].instagramUrl = value; // Ensure consistency with input field
+
+        if (value && !urlRegex.test(value)) {
+            updatedFields[index].error = "Invalid URL";
+        } else {
+            updatedFields[index].error = "";
+        }
+
+        setExtraFields(updatedFields);
+    };
+
+    useEffect(() => {
+        if (extraFields.length > 0 && extraFields.some(field => field.name || field.instagramUrl || field.image)) {
+            setShowExtraFields(true);
+        } else {
+            setShowExtraFields(false);
+        }
+    }, [extraFields]);
+
+    const handleCheckboxChange = (checked) => {
+        setShowExtraFields(checked);
+    };
+
+    const generateSlug = (text) => {
+        return text
+            .normalize("NFD")                     // Decompose accented letters
+            .replace(/[\u0300-\u036f]/g, "")      // Remove diacritics
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "")         // Remove all non-alphanumeric except space and dash
+            .replace(/[\s_-]+/g, "-")             // Replace spaces/underscores/double dashes with a single dash
+            .replace(/^-+|-+$/g, "");             // Trim leading/trailing dashes
+    };
+
+    const handleEventNameChange = (e) => {
+        const name = e.target.value;
+        setEventName(name);
+        setEventSlug(generateSlug(name));
+    };
+
+    const handleSlugChange = (e) => {
+        const value = e.target.value
+            .replace(/\s+/g, "-")           // replace spaces with dash
+            .replace(/[^a-z0-9\-]/gi, "");  // remove non-alphanumeric or dashes
+
+        setEventSlug(value.toLowerCase());
+    };
+
     const minPrice = tickets.length > 0 ? Math.min(...tickets.map(ticket => ticket.price)) : 0;
 
     // Form steps content
@@ -566,15 +726,27 @@ export default function EditEvent() {
             description: "Let's start with the basic information about your event",
             fields: (
                 <div className="w-full">
-                    <div className="w-full">
+                    <div className="w-full mt-2">
                         <label className="block text-sm font-medium text-white mb-3">
                             Event name
                         </label>
                         <input
                             type="text"
                             value={eventName}
-                            onChange={(e) => setEventName(e.target.value)}
+                            onChange={handleEventNameChange}
                             placeholder="After Hours, Electric Dreams, etc."
+                            className="w-full bg-transparent border border-white/5 rounded-lg px-4 py-2.5 h-10 text-white placeholder:text-white/30 placeholder:text-sm"
+                        />
+                    </div>
+                    <div className="w-full mt-2">
+                        <label className="block text-sm font-medium text-white mb-3">
+                            Event slug
+                        </label>
+                        <input
+                            type="text"
+                            value={eventSlug}
+                            onChange={handleSlugChange}
+                            placeholder="after-hours, electric-dreams, etc."
                             className="w-full bg-transparent border border-white/5 rounded-lg px-4 py-2.5 h-10 text-white placeholder:text-white/30 placeholder:text-sm"
                         />
                     </div>
@@ -628,27 +800,33 @@ export default function EditEvent() {
                                     <p className="text-white/40 text-xs mt-1">
                                         Recommended size: 1200x630px • PNG or JPG
                                     </p>
+                                    <p className="text-white/40 text-xs mt-1">
+                                        Max 10 MB upload size
+                                    </p>
                                 </label>
                             ) : (
-                                <div className="">
-                                    <div className="flex items-center justify-center h-full">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    {/* Image Preview */}
+                                    <div className="w-48 aspect-square flex items-center justify-center rounded-xl overflow-hidden">
                                         <img
                                             src={imagePreview}
-                                            alt="Preview"
-                                            className="w-32 h-32 object-contain border border-white/[0.03] rounded-lg"
+                                            alt="Event Cover"
+                                            className="w-full h-full object-cover"
                                         />
                                     </div>
-                                    <div className="p-4 grid gap-5 items-center justify-between">
-                                        <div className="flex items-center justify-center gap-3">
-                                            <div>
-                                                <p className="text-white text-sm font-medium truncate max-w-[200px]">
-                                                    {imageFile.name}
-                                                </p>
-                                                {/* <p className="text-white/40 text-xs text-center font-semibold">
-                                                    {(imageFile.size / (1024 * 1024)).toFixed(2)} MB
-                                                </p> */}
-                                            </div>
+
+                                    {/* File Details */}
+                                    <div className="p-4 grid gap-3 items-center justify-center text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <p className="text-white text-sm font-medium truncate max-w-[200px]">
+                                                {imageFile.name}
+                                            </p>
+                                            {/* <p className="text-white/40 text-xs font-semibold">
+                                                {(imageFile.size / (1024 * 1024)).toFixed(2)} MB
+                                            </p> */}
                                         </div>
+
+                                        {/* Remove Button */}
                                         <button
                                             onClick={removeImage}
                                             className="px-3 py-1.5 border border-white/5 rounded-full text-white/60 text-sm hover:bg-white/5 transition-colors"
@@ -951,18 +1129,59 @@ export default function EditEvent() {
                             className="w-full bg-transparent h-10 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30"
                         />
                     </div>
-                    <div className="w-full mt-4">
-                        <label className="block text-sm font-medium text-white mb-3">
-                            Address
-                        </label>
-                        <input
-                            type="text"
-                            value={venueAddress}
-                            onChange={(e) => setVenueAddress(e.target.value)}
-                            placeholder="Enter address"
-                            className="w-full bg-transparent h-10 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30"
-                        />
-                    </div>
+                    <LoadScript googleMapsApiKey={GOOGLE_MAPS_API_KEY} libraries={["places"]}>
+                        <div className="w-full mt-4">
+                            <label className="block text-sm font-medium text-white mb-3">
+                                Address
+                            </label>
+                            <Autocomplete
+                                onLoad={(autocomplete) => (autocompleteRef.current = autocomplete)}
+                                onPlaceChanged={handlePlaceSelect}
+                            >
+                                <input
+                                    type="text"
+                                    value={venueAddress}
+                                    onChange={(e) => setVenueAddress(e.target.value)}
+                                    placeholder="Enter address"
+                                    className="w-full bg-transparent h-10 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30"
+                                />
+                            </Autocomplete>
+                        </div>
+
+                        {/* Dark Mode Styling for Autocomplete Dropdown */}
+                        <style>{`
+                                                .pac-container {
+                                                    background-color: #0F0F0F !important; /* Dark background */
+                                                    color: #AFAFAF !important; /* Light gray text */
+                                                    border-radius: 0px 0px 4px 4px;
+                                                    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+                                                    padding: 4px; /* Reduced padding */
+                                                    max-height: 180px !important; /* Limit dropdown height */
+                                                    overflow-y: auto !important; /* Scroll if needed */
+                                                    border: 1px solid #fff !important; /* Light gray border */
+                                                }
+                                                .pac-item {
+                                                    color: #AFAFAF !important; /* Light gray text */
+                                                    font-size: 13px; /* Slightly smaller font */
+                                                    padding: 8px 10px !important; /* Reduced padding for smaller height */
+                                                    border-radius: 0px;
+                                                    border: 0px solid #474747 !important;
+                                                    overflow: hidden !important;
+                                                    transition: background-color 0.2s ease-in-out;
+                                                }
+                                                .pac-item:hover {
+                                                    background-color: #333 !important; /* Slightly darker hover effect */
+                                                }
+                                                .pac-icon {
+                                                    filter: invert(1); /* Makes the icon visible on dark background */
+                                                }
+                                                .pac-item-query {
+                                                    color: #FFFFFF !important; /* Make first main word white */
+                                                    font-weight: 600 !important; /* Slightly bold */
+                                                }
+                                            `}
+                        </style>
+                    </LoadScript>
                 </div>
             ),
         },
@@ -1030,17 +1249,22 @@ export default function EditEvent() {
                             value={refundPolicy}
                             onChange={(e) => setRefundPolicy(e.target.value)}
                             placeholder="Enter refund & other policies"
-                            className="w-full h-[120px] bg-transparent border border-white/5 rounded-lg px-4 py-3 text-white placeholder:text-white/30 resize-none placeholder:text-sm"
+                            className="w-full h-[60px] bg-transparent border border-white/5 rounded-lg px-4 py-3 text-white placeholder:text-white/30 resize-none placeholder:text-sm"
                         />
                     </div>
 
                     <div className="flex items-center gap-2 mt-4">
-                        <input
+                        {/* <input
                             type="checkbox"
                             id="showAttendees"
                             checked={showAttendees}
                             onChange={(e) => setShowAttendees(e.target.checked)}
                             className="size-4 rounded bg-transparent border-white/10"
+                        /> */}
+                        <Checkbox
+                            checked={showAttendees}
+                            onCheckedChange={(checked) => setShowAttendees(checked)}
+                            className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
                         />
                         <label htmlFor="showAttendees" className="text-sm text-white">
                             Show attendees on event page
@@ -1049,6 +1273,99 @@ export default function EditEvent() {
                     <p className="text-white/30 text-xs">
                         Let people see who&apos;s attending your event
                     </p>
+                    <div className="flex items-center gap-2 mt-4">
+                        <Checkbox
+                            checked={showExtraFields}
+                            onCheckedChange={handleCheckboxChange}
+                            className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                        />
+                        <label htmlFor="showExtraFields" className="text-sm text-white">
+                            Add artist lineup
+                        </label>
+                    </div>
+                    {showExtraFields && (
+                        <div className="space-y-4">
+                            {extraFields.map((field, index) => (
+                                <div key={index} className="w-full flex flex-col gap-2">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex justify-center">
+                                            <label className="relative w-16 h-16 rounded-full border border-white/10 flex items-center justify-center cursor-pointer overflow-hidden">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={(event) => handleLineImageUpload(event, index)}
+                                                    className="hidden"
+                                                />
+                                                {field.image ? (
+                                                    <img src={field.image} alt="Preview" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M12 16V8M16 12L12 8L8 12M4 16V20H20V16" />
+                                                    </svg>
+                                                )}
+                                            </label>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            value={field.name}
+                                            onChange={(e) => handleExtraFieldChange(index, "name", e.target.value)}
+                                            placeholder="Enter artist Name"
+                                            className="w-1/2 h-10 bg-transparent border border-white/5 rounded-lg px-4 py-2 text-white placeholder:text-white/30 placeholder:text-sm"
+                                        />
+                                        <input
+                                            type="url"
+                                            value={field.instagramUrl} // Ensure consistency
+                                            onChange={(e) => validateUrl(e, index)}
+                                            placeholder="Enter URL"
+                                            className="w-1/2 h-10 bg-transparent border border-white/5 rounded-lg px-4 py-2 text-white placeholder:text-white/30 placeholder:text-sm"
+                                        />
+                                        <button onClick={() => handleRemoveExtraField(index)}>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 16 16"
+                                                fill="none"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    clipRule="evenodd"
+                                                    d="M5 3.25V4H2.75C2.55109 4 2.36032 4.07902 2.21967 4.21967C2.07902 4.36032 2 4.55109 2 4.75C2 4.94891 2.07902 5.13968 2.21967 5.28033C2.36032 5.42098 2.55109 5.5 2.75 5.5H3.05L3.865 13.65C3.90218 14.0199 4.0754 14.3628 4.35107 14.6123C4.62675 14.8617 4.98523 14.9999 5.357 15H10.642C11.0139 15.0001 11.3727 14.8621 11.6486 14.6126C11.9244 14.3631 12.0978 14.0201 12.135 13.65L12.95 5.5H13.25C13.4489 5.5 13.6397 5.42098 13.7803 5.28033C13.921 5.13968 14 4.94891 14 4.75C14 4.55109 13.921 4.36032 13.7803 4.21967C13.6397 4.07902 13.4489 4 13.25 4H11V3.25C11 2.65326 10.7629 2.08097 10.341 1.65901C9.91903 1.23705 9.34674 1 8.75 1H7.25C6.65326 1 6.08097 1.23705 5.65901 1.65901C5.23705 2.08097 5 2.65326 5 3.25ZM7.25 2.5C7.05109 2.5 6.86032 2.57902 6.71967 2.71967C6.57902 2.86032 6.5 3.05109 6.5 3.25V4H9.5V3.25C9.5 3.05109 9.42098 2.86032 9.28033 2.71967C9.13968 2.57902 8.94891 2.5 8.75 2.5H7.25ZM6.05 6C6.14852 5.99502 6.24705 6.00952 6.33996 6.04268C6.43286 6.07584 6.51832 6.127 6.59142 6.19323C6.66453 6.25946 6.72385 6.33946 6.76599 6.42865C6.80813 6.51784 6.83226 6.61447 6.837 6.713L7.112 12.213C7.11933 12.4101 7.04872 12.6022 6.91546 12.7476C6.7822 12.893 6.59702 12.9801 6.40002 12.9899C6.20302 12.9998 6.01007 12.9317 5.86295 12.8003C5.71583 12.6689 5.62639 12.4849 5.614 12.288L5.339 6.788C5.33388 6.68956 5.34821 6.59107 5.38118 6.49818C5.41416 6.40528 5.46511 6.3198 5.53115 6.24661C5.59718 6.17343 5.677 6.11397 5.76603 6.07166C5.85506 6.02934 5.95155 6.00499 6.05 6ZM9.95 6C10.0484 6.00487 10.145 6.02909 10.234 6.07129C10.3231 6.11349 10.403 6.17283 10.4691 6.24592C10.5353 6.31901 10.5863 6.40442 10.6194 6.49726C10.6525 6.59011 10.667 6.68856 10.662 6.787L10.387 12.287C10.3746 12.4839 10.2852 12.6679 10.138 12.7993C9.99093 12.9307 9.79798 12.9988 9.60098 12.9889C9.40398 12.9791 9.2188 12.892 9.08554 12.7466C8.95228 12.6012 8.88167 12.4091 8.889 12.212L9.164 6.712C9.17409 6.51354 9.26253 6.32719 9.4099 6.19389C9.55727 6.06058 9.75152 5.99021 9.95 6Z"
+                                                    fill="red"
+                                                />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                    {field.error && <p className="text-red-500 text-sm">{field.error}</p>}
+                                </div>
+                            ))}
+
+                            {/* Button aligned to the right */}
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={handleAddExtraField}
+                                    className="flex items-center gap-2 border border-white/10 hover:bg-white/10 transition-colors px-3 py-2 rounded-md text-sm font-medium"
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 16 16"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M8 3.33337V12.6667M3.33333 8.00004H12.6667"
+                                            stroke="white"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </svg>
+
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             ),
         },
@@ -1073,60 +1390,6 @@ export default function EditEvent() {
                                         className="w-full h-10 bg-transparent border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder:text-white/30"
                                     />
                                 </div>
-
-                                <div className="w-full">
-                                    <label className="block text-sm font-medium text-white mb-3">
-                                        Ticket type
-                                    </label>
-                                    <Dropdown>
-                                        <DropdownTrigger>
-                                            <button className="w-full h-10 bg-transparent border border-white/10 rounded-lg px-4 py-2.5 text-white flex items-center justify-between">
-                                                <div className="flex items-center gap-2">
-                                                    <span>
-                                                        {
-                                                            ticketTypes.find((type) => type.value === ticketType)
-                                                                ?.icon
-                                                        }
-                                                    </span>
-                                                    <span>
-                                                        {ticketTypes.find((type) => type.value === ticketType)
-                                                            ?.label || "Select ticket type"}
-                                                    </span>
-                                                </div>
-                                                <svg
-                                                    className="w-4 h-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 16 16"
-                                                    fill="none"
-                                                >
-                                                    <path
-                                                        d="M4 6L8 10L12 6"
-                                                        stroke="white"
-                                                        strokeOpacity="0.3"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </DropdownTrigger>
-                                        <DropdownContent className="bg-[#1A1A1A] border border-white/10 rounded-lg shadow-lg w-full">
-                                            {ticketTypes.map((type) => (
-                                                <DropdownItem
-                                                    key={type.value}
-                                                    onClick={() => setTicketType(type.value)}
-                                                    className={`px-4 py-2 hover:bg-white/5 flex items-center gap-3 ${ticketType === type.value ? "bg-white/5" : ""
-                                                        }`}
-                                                >
-                                                    <span className="text-xl">{type.icon}</span>
-                                                    <div>
-                                                        <p className="text-white font-medium">{type.label}</p>
-                                                    </div>
-                                                </DropdownItem>
-                                            ))}
-                                        </DropdownContent>
-                                    </Dropdown>
-                                </div>
-
                                 <div className="w-full">
                                     <label className="block text-sm font-medium text-white mb-3">
                                         Ticket price
@@ -1239,6 +1502,43 @@ export default function EditEvent() {
                                     {/* Ticket Sale End Date */}
                                     <div>
                                         <label className="block text-sm font-medium text-white mb-3">
+                                            Ticket sale start time
+                                        </label>
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setIsTicketStartTimeModalOpen(true)}
+                                                className="w-full bg-transparent border border-white/5 rounded-lg px-4 py-2.5 h-10 text-white/60 text-sm text-left flex items-center justify-between"
+                                            >
+                                                <span>{ticketStartTime || "Click to select"}</span>
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 16 16"
+                                                    fill="none"
+                                                >
+                                                    <path
+                                                        d="M6 12L10 8L6 4"
+                                                        stroke="white"
+                                                        strokeOpacity="0.6"
+                                                        strokeWidth="1.5"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <TimeModal
+                                        isOpen={isTicketStartTimeModalOpen}
+                                        onClose={() => setIsTicketStartTimeModalOpen(false)}
+                                        onTimeChange={(time) => setTicketStartTime(time)}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Ticket Sale Start Date */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
                                             Ticket sale end date
                                         </label>
                                         <div className="relative">
@@ -1246,9 +1546,12 @@ export default function EditEvent() {
                                                 onClick={() => setIsTicketEndDateModalOpen(true)}
                                                 className="w-full h-10 bg-transparent border border-white/10 rounded-lg px-4 py-2.5 text-left text-white/60"
                                             >
-                                                {ticketSaleEndDate
-                                                    ? ticketSaleEndDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
-                                                    : "Select date"}
+                                                {
+                                                    ticketSaleEndDate && ticketSaleEndDate instanceof Date && !isNaN(ticketSaleEndDate)
+                                                        ? ticketSaleEndDate.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+                                                        : "Select date"
+                                                }
+
                                             </button>
                                             <svg
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
@@ -1271,8 +1574,8 @@ export default function EditEvent() {
                                         <GeneralDateModal
                                             isOpen={isTicketEndDateModalOpen}
                                             onClose={() => setIsTicketEndDateModalOpen(false)}
-                                            onDateChange={(startDate) => {
-                                                setTicketSaleEndDate(startDate);
+                                            onDateChange={(endDate) => {
+                                                setTicketSaleEndDate(endDate);
                                             }}
                                             startDate={ticketSaleEndDate}
                                             setStartDate={setTicketSaleEndDate}
@@ -1280,6 +1583,42 @@ export default function EditEvent() {
                                             setEndDate={setTicketSaleEndDate}
                                         />
                                     </div>
+
+                                    {/* Ticket Sale End Date */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-white mb-3">
+                                            Ticket sale end time
+                                        </label>
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setIsTicketEndTimeModalOpen(true)}
+                                                className="w-full bg-transparent border border-white/5 rounded-lg px-4 py-2.5 h-10 text-white/60 text-sm text-left flex items-center justify-between"
+                                            >
+                                                <span>{ticketEndTime || "Click to select"}</span>
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 16 16"
+                                                    fill="none"
+                                                >
+                                                    <path
+                                                        d="M6 12L10 8L6 4"
+                                                        stroke="white"
+                                                        strokeOpacity="0.6"
+                                                        strokeWidth="1.5"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <TimeModal
+                                        isOpen={isTicketEndTimeModalOpen}
+                                        onClose={() => setIsTicketEndTimeModalOpen(false)}
+                                        onTimeChange={(time) => setTicketEndTime(time)}
+                                    />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
@@ -1396,6 +1735,82 @@ export default function EditEvent() {
                                     </button>
                                 </div>
                             ))
+                        }
+                        <div className="w-full">
+                            <label className="block text-sm font-medium text-white mb-3">
+                                Custom Fee <span className="text-white/30 text-xs mt-1">(optional)</span>
+                            </label>
+                        </div>
+                        <button
+                            onClick={() => setCustomFeeModal(true)}
+                            className="w-full h-10 text-sm bg-white/[0.03] border-2 border-dashed border-white/10 rounded-lg px-4 py-2.5 text-white flex items-center gap-3"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="10"
+                                viewBox="0 0 14 10"
+                                fill="none"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    clipRule="evenodd"
+                                    d="M0 1.5C0 1.10218 0.158035 0.720644 0.43934 0.43934C0.720644 0.158035 1.10218 0 1.5 0H12.5C12.8978 0 13.2794 0.158035 13.5607 0.43934C13.842 0.720644 14 1.10218 14 1.5V2.5C14 2.776 13.773 2.994 13.505 3.062C13.0743 3.1718 12.6925 3.42192 12.4198 3.77286C12.1472 4.1238 11.9991 4.55557 11.9991 5C11.9991 5.44443 12.1472 5.8762 12.4198 6.22714C12.6925 6.57808 13.0743 6.8282 13.505 6.938C13.773 7.006 14 7.224 14 7.5V8.5C14 8.89782 13.842 9.27936 13.5607 9.56066C13.2794 9.84196 12.8978 10 12.5 10H1.5C1.10218 10 0.720644 9.84196 0.43934 9.56066C0.158035 9.27936 0 8.89782 0 8.5V7.5C0 7.224 0.227 7.006 0.495 6.938C0.925654 6.8282 1.30747 6.57808 1.58016 6.22714C1.85285 5.8762 2.00088 5.44443 2.00088 5C2.00088 4.55557 1.85285 4.1238 1.58016 3.77286C1.30747 3.42192 0.925654 3.1718 0.495 3.062C0.227 2.994 0 2.776 0 2.5V1.5ZM9 2.75C9 2.55109 9.07902 2.36032 9.21967 2.21967C9.36032 2.07902 9.55109 2 9.75 2C9.94891 2 10.1397 2.07902 10.2803 2.21967C10.421 2.36032 10.5 2.55109 10.5 2.75V3.75C10.5 3.94891 10.421 4.13968 10.2803 4.28033C10.1397 4.42098 9.94891 4.5 9.75 4.5C9.55109 4.5 9.36032 4.42098 9.21967 4.28033C9.07902 4.13968 9 3.94891 9 3.75V2.75ZM9.75 5.5C9.55109 5.5 9.36032 5.57902 9.21967 5.71967C9.07902 5.86032 9 6.05109 9 6.25V7.25C9 7.44891 9.07902 7.63968 9.21967 7.78033C9.36032 7.92098 9.55109 8 9.75 8C9.94891 8 10.1397 7.92098 10.2803 7.78033C10.421 7.63968 10.5 7.44891 10.5 7.25V6.25C10.5 6.05109 10.421 5.86032 10.2803 5.71967C10.1397 5.57902 9.94891 5.5 9.75 5.5Z"
+                                    fill="#A3E635"
+                                />
+                            </svg>
+                            Add custom fee
+                        </button>
+                        {
+                            customName && (
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => setCustomFeeModal(true)}
+                                        className="w-full h-10 text-sm bg-white/[0.01] border-2 border-white/5 rounded-lg px-4 py-2.5 text-white flex items-center justify-between"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="14"
+                                                height="10"
+                                                viewBox="0 0 14 10"
+                                                fill="none"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    clipRule="evenodd"
+                                                    d="M0 1.5C0 1.10218 0.158035 0.720644 0.43934 0.43934C0.720644 0.158035 1.10218 0 1.5 0H12.5C12.8978 0 13.2794 0.158035 13.5607 0.43934C13.842 0.720644 14 1.10218 14 1.5V2.5C14 2.776 13.773 2.994 13.505 3.062C13.0743 3.1718 12.6925 3.42192 12.4198 3.77286C12.1472 4.1238 11.9991 4.55557 11.9991 5C11.9991 5.44443 12.1472 5.8762 12.4198 6.22714C12.6925 6.57808 13.0743 6.8282 13.505 6.938C13.773 7.006 14 7.224 14 7.5V8.5C14 8.89782 13.842 9.27936 13.5607 9.56066C13.2794 9.84196 12.8978 10 12.5 10H1.5C1.10218 10 0.720644 9.84196 0.43934 9.56066C0.158035 9.27936 0 8.89782 0 8.5V7.5C0 7.224 0.227 7.006 0.495 6.938C0.925654 6.8282 1.30747 6.57808 1.58016 6.22714C1.85285 5.8762 2.00088 5.44443 2.00088 5C2.00088 4.55557 1.85285 4.1238 1.58016 3.77286C1.30747 3.42192 0.925654 3.1718 0.495 3.062C0.227 2.994 0 2.776 0 2.5V1.5ZM9 2.75C9 2.55109 9.07902 2.36032 9.21967 2.21967C9.36032 2.07902 9.55109 2 9.75 2C9.94891 2 10.1397 2.07902 10.2803 2.21967C10.421 2.36032 10.5 2.55109 10.5 2.75V3.75C10.5 3.94891 10.421 4.13968 10.2803 4.28033C10.1397 4.42098 9.94891 4.5 9.75 4.5C9.55109 4.5 9.36032 4.42098 9.21967 4.28033C9.07902 4.13968 9 3.94891 9 3.75V2.75ZM9.75 5.5C9.55109 5.5 9.36032 5.57902 9.21967 5.71967C9.07902 5.86032 9 6.05109 9 6.25V7.25C9 7.44891 9.07902 7.63968 9.21967 7.78033C9.36032 7.92098 9.55109 8 9.75 8C9.94891 8 10.1397 7.92098 10.2803 7.78033C10.421 7.63968 10.5 7.44891 10.5 7.25V6.25C10.5 6.05109 10.421 5.86032 10.2803 5.71967C10.1397 5.57902 9.94891 5.5 9.75 5.5Z"
+                                                    fill="#A3E635"
+                                                />
+                                            </svg>
+                                            <span>{customName}</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-white">{discountType === 'percentage' ? "%" : "$"}{customFee}</span>
+                                            <button onClick={() => {
+                                                setCustomName("")
+                                                setDiscountType("percentage")
+                                                setCustomFee("")
+                                            }}>
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 16 16"
+                                                    fill="none"
+                                                >
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        clipRule="evenodd"
+                                                        d="M5 3.25V4H2.75C2.55109 4 2.36032 4.07902 2.21967 4.21967C2.07902 4.36032 2 4.55109 2 4.75C2 4.94891 2.07902 5.13968 2.21967 5.28033C2.36032 5.42098 2.55109 5.5 2.75 5.5H3.05L3.865 13.65C3.90218 14.0199 4.0754 14.3628 4.35107 14.6123C4.62675 14.8617 4.98523 14.9999 5.357 15H10.642C11.0139 15.0001 11.3727 14.8621 11.6486 14.6126C11.9244 14.3631 12.0978 14.0201 12.135 13.65L12.95 5.5H13.25C13.4489 5.5 13.6397 5.42098 13.7803 5.28033C13.921 5.13968 14 4.94891 14 4.75C14 4.55109 13.921 4.36032 13.7803 4.21967C13.6397 4.07902 13.4489 4 13.25 4H11V3.25C11 2.65326 10.7629 2.08097 10.341 1.65901C9.91903 1.23705 9.34674 1 8.75 1H7.25C6.65326 1 6.08097 1.23705 5.65901 1.65901C5.23705 2.08097 5 2.65326 5 3.25ZM7.25 2.5C7.05109 2.5 6.86032 2.57902 6.71967 2.71967C6.57902 2.86032 6.5 3.05109 6.5 3.25V4H9.5V3.25C9.5 3.05109 9.42098 2.86032 9.28033 2.71967C9.13968 2.57902 8.94891 2.5 8.75 2.5H7.25ZM6.05 6C6.14852 5.99502 6.24705 6.00952 6.33996 6.04268C6.43286 6.07584 6.51832 6.127 6.59142 6.19323C6.66453 6.25946 6.72385 6.33946 6.76599 6.42865C6.80813 6.51784 6.83226 6.61447 6.837 6.713L7.112 12.213C7.11933 12.4101 7.04872 12.6022 6.91546 12.7476C6.7822 12.893 6.59702 12.9801 6.40002 12.9899C6.20302 12.9998 6.01007 12.9317 5.86295 12.8003C5.71583 12.6689 5.62639 12.4849 5.614 12.288L5.339 6.788C5.33388 6.68956 5.34821 6.59107 5.38118 6.49818C5.41416 6.40528 5.46511 6.3198 5.53115 6.24661C5.59718 6.17343 5.677 6.11397 5.76603 6.07166C5.85506 6.02934 5.95155 6.00499 6.05 6ZM9.95 6C10.0484 6.00487 10.145 6.02909 10.234 6.07129C10.3231 6.11349 10.403 6.17283 10.4691 6.24592C10.5353 6.31901 10.5863 6.40442 10.6194 6.49726C10.6525 6.59011 10.667 6.68856 10.662 6.787L10.387 12.287C10.3746 12.4839 10.2852 12.6679 10.138 12.7993C9.99093 12.9307 9.79798 12.9988 9.60098 12.9889C9.40398 12.9791 9.2188 12.892 9.08554 12.7466C8.95228 12.6012 8.88167 12.4091 8.889 12.212L9.164 6.712C9.17409 6.51354 9.26253 6.32719 9.4099 6.19389C9.55727 6.06058 9.75152 5.99021 9.95 6Z"
+                                                        fill="red"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </button>
+                                </div>
+                            )
                         }
                     </div>
                 </div>
@@ -1589,17 +2004,48 @@ export default function EditEvent() {
                                 <button
                                     onClick={() => {
                                         if (step === 1) {
+                                            if (!eventName.trim()) {
+                                                alert("Please enter an event name before proceeding.");
+                                                return;
+                                            }
+                                            if (!getImagesForUpload()) {
+                                                alert("Please upload a flyer before proceeding.");
+                                                return;
+                                            }
                                             console.log("Images ready for upload", getImagesForUpload());
                                         }
 
+                                        if (step === 2) {
+                                            if (!ticketStartDate) {
+                                                alert("Please select a ticket start date before proceeding.");
+                                                return;
+                                            }
+                                            if (!ticketEndDate) {
+                                                alert("Please select a ticket end date before proceeding.");
+                                                return;
+                                            }
+                                        }
+
                                         if (step === 5) {
-                                            handleUpdateEvent("NO")
+                                            //handleAddEvent("YES", oragnizerId, "redirect");
                                         } else {
                                             setStep((prevStep) => prevStep + 1);
                                         }
                                     }}
-                                    className="px-4 py-2 w-full rounded-full h-10 bg-white font-semibold text-primary flex items-center justify-center gap-2"
-                                    disabled={step === 5}
+                                    className={`px-4 py-2 w-full bg-white rounded-full h-10 font-semibold flex items-center justify-center gap-2
+                                                ${step === 5 ||
+                                            step === 1 && (!eventName.trim() || !getImagesForUpload()) ||
+                                            step === 2 && (!ticketStartDate || !ticketEndDate) ||
+                                            step === 3 && (!venueAddress || !venueName)
+                                            ? "disabled:opacity-50 cursor-not-allowed text-black"
+                                            : "text-black"
+                                        }`}
+                                    disabled={
+                                        step === 5 ||
+                                        step === 1 && (!eventName.trim() || !getImagesForUpload()) ||
+                                        step === 2 && (!ticketStartDate || !ticketEndDate) ||
+                                        step === 3 && (!venueAddress || !venueName)
+                                    }
                                 >
                                     {step === 6 ? "Complete creating Event" : "Continue"}
                                 </button>
@@ -1613,11 +2059,11 @@ export default function EditEvent() {
                     <div className="bg-white/[0.03] mx-auto rounded-3xl grid grid-rows-[1fr_70px] p-2">
                         <div className="bg-[#0F0F0F] rounded-2xl h-[350px] w-[350px] xl:h-[450px] xl:w-[450px] flex items-center justify-center">
                             {imagePreview ? (
-                                <div className="w-full h-full flex items-center justify-center rounded-xl overflow-hidden">
+                                <div className="w-full aspect-square flex items-center justify-center rounded-xl overflow-hidden">
                                     <img
                                         src={imagePreview}
-                                        alt="Event cover"
-                                        className="max-w-full max-h-full object-contain"
+                                        alt="Event Cover"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
                             ) : (
@@ -1671,6 +2117,177 @@ export default function EditEvent() {
                     </div>
                 </div>
             </div>
+
+            <Dialog
+                open={isCustomFeeModal}
+                onOpenChange={setCustomFeeModal}
+                className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
+            >
+                <DialogContent className="max-h-[90vh] !gap-0 relative">
+                    <div className="flex flex-col gap-y-2.5 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
+                        <div className="h-12 w-12 bg-[#34B2DA1A] flex items-center justify-center border border-[#0F0F0F] rounded-lg">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    clipRule="evenodd"
+                                    d="M7.875 3C6.97989 3 6.12145 3.35558 5.48851 3.98851C4.85558 4.62145 4.5 5.47989 4.5 6.375V19.875C4.49983 20.0813 4.5564 20.2837 4.66353 20.4601C4.77066 20.6364 4.92422 20.7799 5.10741 20.8748C5.29061 20.9697 5.49638 21.0124 5.70221 20.9983C5.90805 20.9841 6.10603 20.9136 6.2745 20.7945L8.8125 19.002L11.3505 20.7945C11.5404 20.9288 11.7674 21.0009 12 21.0009C12.2326 21.0009 12.4596 20.9288 12.6495 20.7945L15.1875 19.002L17.727 20.7945C17.8955 20.9132 18.0933 20.9834 18.2989 20.9973C18.5045 21.0112 18.71 20.9684 18.8929 20.8736C19.0759 20.7787 19.2292 20.6354 19.3363 20.4593C19.4433 20.2832 19.5 20.0811 19.5 19.875V6.375C19.5 5.47989 19.1444 4.62145 18.5115 3.98851C17.8785 3.35558 17.0201 3 16.125 3H7.875ZM16.17 9.42C16.2805 9.31701 16.3692 9.19281 16.4307 9.05481C16.4922 8.91681 16.5252 8.76784 16.5279 8.61678C16.5306 8.46573 16.5028 8.31569 16.4462 8.1756C16.3896 8.03552 16.3054 7.90827 16.1986 7.80144C16.0917 7.69461 15.9645 7.6104 15.8244 7.55382C15.6843 7.49723 15.5343 7.46945 15.3832 7.47211C15.2322 7.47478 15.0832 7.50784 14.9452 7.56933C14.8072 7.63082 14.683 7.71947 14.58 7.83L7.83 14.58C7.71947 14.683 7.63082 14.8072 7.56933 14.9452C7.50784 15.0832 7.47478 15.2322 7.47211 15.3832C7.46945 15.5343 7.49723 15.6843 7.55382 15.8244C7.6104 15.9645 7.69461 16.0917 7.80144 16.1986C7.90827 16.3054 8.03552 16.3896 8.1756 16.4462C8.31569 16.5028 8.46573 16.5306 8.61678 16.5279C8.76784 16.5252 8.91681 16.4922 9.05481 16.4307C9.19281 16.3692 9.31701 16.2805 9.42 16.17L16.17 9.42ZM10.5 9.375C10.5 9.52274 10.4709 9.66903 10.4144 9.80552C10.3578 9.94201 10.275 10.066 10.1705 10.1705C10.066 10.275 9.94201 10.3578 9.80552 10.4144C9.66903 10.4709 9.52274 10.5 9.375 10.5C9.22726 10.5 9.08097 10.4709 8.94448 10.4144C8.80799 10.3578 8.68397 10.275 8.5795 10.1705C8.47504 10.066 8.39217 9.94201 8.33564 9.80552C8.2791 9.66903 8.25 9.52274 8.25 9.375C8.25 9.07663 8.36853 8.79048 8.5795 8.5795C8.79048 8.36853 9.07663 8.25 9.375 8.25C9.67337 8.25 9.95952 8.36853 10.1705 8.5795C10.3815 8.79048 10.5 9.07663 10.5 9.375ZM14.625 15.75C14.9234 15.75 15.2095 15.6315 15.4205 15.4205C15.6315 15.2095 15.75 14.9234 15.75 14.625C15.75 14.3266 15.6315 14.0405 15.4205 13.8295C15.2095 13.6185 14.9234 13.5 14.625 13.5C14.3266 13.5 14.0405 13.6185 13.8295 13.8295C13.6185 14.0405 13.5 14.3266 13.5 14.625C13.5 14.9234 13.6185 15.2095 13.8295 15.4205C14.0405 15.6315 14.3266 15.75 14.625 15.75Z"
+                                    fill="#89DBF0"
+                                />
+                            </svg>
+                        </div>
+                        <DialogTitle className="mt-4">Add custom fee</DialogTitle>
+                        <DialogDescription>
+                            Add tax or any other fee for you event
+                        </DialogDescription>
+                    </div>
+                    <div className="flex flex-col gap-4 p-6">
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-white">
+                                Custom fee name
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Sales tax"
+                                value={customName}
+                                onChange={(e) => setCustomName(e.target.value)}
+                                className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-3 focus:outline-none w-full"
+                            />
+                        </div>
+                        <div className="flex flex-col gap-2.5">
+                            <label className="text-sm font-medium text-white">
+                                Custom fee type
+                            </label>
+                            <div className="flex gap-2 bg-[#0F0F0F] p-1 border border-white/[0.03] h-12 rounded-full">
+                                <button
+                                    onClick={() => setDiscountType("percentage")}
+                                    className={`flex-1 flex items-center text-white justify-center gap-2 rounded-full py-2 text-sm ${discountType === "percentage"
+                                        ? "bg-white/5 border border-white/[0.03] opacity-100"
+                                        : "opacity-50"
+                                        }`}
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 16 16"
+                                        fill="none"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            clipRule="evenodd"
+                                            d="M3.39526 6.09276C2.98993 6.22088 2.63597 6.47482 2.38473 6.81772C2.13349 7.16063 1.99805 7.57467 1.99805 7.99976C1.99805 8.42486 2.13349 8.83889 2.38473 9.1818C2.63597 9.5247 2.98993 9.77864 3.39526 9.90676C3.19919 10.284 3.12841 10.7139 3.19321 11.134C3.25802 11.5542 3.45502 11.9428 3.75563 12.2434C4.05625 12.544 4.44483 12.741 4.865 12.8058C5.28516 12.8706 5.71504 12.7998 6.09226 12.6038C6.22038 13.0091 6.47432 13.3631 6.81722 13.6143C7.16013 13.8655 7.57417 14.001 7.99926 14.001C8.42436 14.001 8.83839 13.8655 9.1813 13.6143C9.52421 13.3631 9.77814 13.0091 9.90626 12.6038C10.2835 12.7995 10.7133 12.87 11.1333 12.8051C11.5533 12.7402 11.9418 12.5432 12.2424 12.2427C12.5429 11.9423 12.74 11.5539 12.8051 11.1339C12.8702 10.7139 12.7998 10.2841 12.6043 9.90676C13.0096 9.77853 13.3635 9.52451 13.6146 9.18153C13.8657 8.83856 14.0011 8.42449 14.001 7.99939C14.0009 7.5743 13.8653 7.1603 13.614 6.81746C13.3627 6.47462 13.0086 6.22078 12.6033 6.09276C12.799 5.7155 12.8695 5.28572 12.8046 4.8657C12.7397 4.44568 12.5427 4.05724 12.2422 3.75666C11.9418 3.45608 11.5534 3.25898 11.1334 3.19391C10.7134 3.12884 10.2836 3.19919 9.90626 3.39476C9.77803 2.98947 9.52401 2.63557 9.18103 2.38442C8.83806 2.13327 8.42399 1.99794 7.99889 1.99805C7.5738 1.99816 7.1598 2.13371 6.81696 2.38504C6.47412 2.63637 6.22027 2.9904 6.09226 3.39576C5.71504 3.19969 5.28516 3.12891 4.865 3.19372C4.44483 3.25852 4.05625 3.45552 3.75563 3.75613C3.45502 4.05675 3.25802 4.44533 3.19321 4.8655C3.12841 5.28566 3.19919 5.71554 3.39526 6.09276ZM5.99926 6.99976C6.26448 6.99976 6.51883 6.8944 6.70637 6.70687C6.8939 6.51933 6.99926 6.26498 6.99926 5.99976C6.99926 5.73454 6.8939 5.48019 6.70637 5.29265C6.51883 5.10512 6.26448 4.99976 5.99926 4.99976C5.73404 4.99976 5.47969 5.10512 5.29215 5.29265C5.10462 5.48019 4.99926 5.73454 4.99926 5.99976C4.99926 6.26498 5.10462 6.51933 5.29215 6.70687C5.47969 6.8944 5.73404 6.99976 5.99926 6.99976ZM9.46926 5.46976C9.53792 5.39607 9.62072 5.33697 9.71272 5.29598C9.80472 5.25499 9.90404 5.23295 10.0047 5.23117C10.1054 5.22939 10.2055 5.24792 10.2989 5.28564C10.3922 5.32336 10.4771 5.3795 10.5483 5.45072C10.6195 5.52194 10.6757 5.60678 10.7134 5.70016C10.7511 5.79355 10.7696 5.89358 10.7679 5.99428C10.7661 6.09499 10.744 6.1943 10.703 6.2863C10.6621 6.3783 10.6029 6.4611 10.5293 6.52976L6.52926 10.5298C6.4606 10.6034 6.3778 10.6625 6.2858 10.7035C6.1938 10.7445 6.09449 10.7666 5.99378 10.7684C5.89308 10.7701 5.79305 10.7516 5.69966 10.7139C5.60628 10.6762 5.52144 10.62 5.45022 10.5488C5.379 10.4776 5.32286 10.3927 5.28514 10.2994C5.24742 10.206 5.22889 10.1059 5.23067 10.0052C5.23245 9.90454 5.25449 9.80522 5.29548 9.71322C5.33647 9.62122 5.39557 9.53842 5.46926 9.46976L9.46926 5.46976ZM10.9993 9.99976C10.9993 10.265 10.8939 10.5193 10.7064 10.7069C10.5188 10.8944 10.2645 10.9998 9.99926 10.9998C9.73404 10.9998 9.47969 10.8944 9.29215 10.7069C9.10462 10.5193 8.99926 10.265 8.99926 9.99976C8.99926 9.73454 9.10462 9.48019 9.29215 9.29265C9.47969 9.10512 9.73404 8.99976 9.99926 8.99976C10.2645 8.99976 10.5188 9.10512 10.7064 9.29265C10.8939 9.48019 10.9993 9.73454 10.9993 9.99976Z"
+                                            fill="white"
+                                        />
+                                    </svg>
+                                    Percentage
+                                </button>
+                                <button
+                                    onClick={() => setDiscountType("fixed")}
+                                    className={`flex-1 text-white flex items-center justify-center gap-2 rounded-full py-2 text-sm ${discountType === "fixed"
+                                        ? "bg-white/5 border border-white/[0.03] opacity-100"
+                                        : "opacity-50"
+                                        }`}
+                                >
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="17"
+                                        height="16"
+                                        viewBox="0 0 17 16"
+                                        fill="none"
+                                    >
+                                        <path
+                                            d="M6.875 5.5H7.75V7.25H6.875C6.76009 7.25 6.64631 7.22737 6.54015 7.18339C6.43399 7.13942 6.33753 7.07497 6.25628 6.99372C6.17503 6.91247 6.11058 6.81601 6.06661 6.70985C6.02263 6.60369 6 6.48991 6 6.375C6 6.26009 6.02263 6.14631 6.06661 6.04015C6.11058 5.93399 6.17503 5.83753 6.25628 5.75628C6.33753 5.67503 6.43399 5.61058 6.54015 5.56661C6.64631 5.52263 6.76009 5.5 6.875 5.5ZM9.25 10.5V8.75H10.125C10.3571 8.75 10.5796 8.84219 10.7437 9.00628C10.9078 9.17038 11 9.39294 11 9.625C11 9.85706 10.9078 10.0796 10.7437 10.2437C10.5796 10.4078 10.3571 10.5 10.125 10.5H9.25Z"
+                                            fill="white"
+                                        />
+                                        <path
+                                            fillRule="evenodd"
+                                            clipRule="evenodd"
+                                            d="M15.5 8C15.5 9.85652 14.7625 11.637 13.4497 12.9497C12.137 14.2625 10.3565 15 8.5 15C6.64348 15 4.86301 14.2625 3.55025 12.9497C2.2375 11.637 1.5 9.85652 1.5 8C1.5 6.14348 2.2375 4.36301 3.55025 3.05025C4.86301 1.7375 6.64348 1 8.5 1C10.3565 1 12.137 1.7375 13.4497 3.05025C14.7625 4.36301 15.5 6.14348 15.5 8ZM7.75 3.75C7.75 3.55109 7.82902 3.36032 7.96967 3.21967C8.11032 3.07902 8.30109 3 8.5 3C8.69891 3 8.88968 3.07902 9.03033 3.21967C9.17098 3.36032 9.25 3.55109 9.25 3.75V4H11.75C11.9489 4 12.1397 4.07902 12.2803 4.21967C12.421 4.36032 12.5 4.55109 12.5 4.75C12.5 4.94891 12.421 5.13968 12.2803 5.28033C12.1397 5.42098 11.9489 5.5 11.75 5.5H9.25V7.25H10.125C10.7549 7.25 11.359 7.50022 11.8044 7.94562C12.2498 8.39102 12.5 8.99511 12.5 9.625C12.5 10.2549 12.2498 10.859 11.8044 11.3044C11.359 11.7498 10.7549 12 10.125 12H9.25V12.25C9.25 12.4489 9.17098 12.6397 9.03033 12.7803C8.88968 12.921 8.69891 13 8.5 13C8.30109 13 8.11032 12.921 7.96967 12.7803C7.82902 12.6397 7.75 12.4489 7.75 12.25V12H5.25C5.05109 12 4.86032 11.921 4.71967 11.7803C4.57902 11.6397 4.5 11.4489 4.5 11.25C4.5 11.0511 4.57902 10.8603 4.71967 10.7197C4.86032 10.579 5.05109 10.5 5.25 10.5H7.75V8.75H6.875C6.24511 8.75 5.64102 8.49978 5.19562 8.05438C4.75022 7.60898 4.5 7.00489 4.5 6.375C4.5 5.74511 4.75022 5.14102 5.19562 4.69562C5.64102 4.25022 6.24511 4 6.875 4H7.75V3.75Z"
+                                            fill="white"
+                                        />
+                                    </svg>
+                                    Fixed amount
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <label className="text-sm font-medium text-white">
+                                Custom {discountType === "percentage" ? "percentage" : "amount"}
+                            </label>
+                            <div className="relative">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60">
+                                    {
+                                        discountType === "percentage" ? (
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 16 16"
+                                                fill="none"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    clipRule="evenodd"
+                                                    d="M3.39526 6.09276C2.98993 6.22088 2.63597 6.47482 2.38473 6.81772C2.13349 7.16063 1.99805 7.57467 1.99805 7.99976C1.99805 8.42486 2.13349 8.83889 2.38473 9.1818C2.63597 9.5247 2.98993 9.77864 3.39526 9.90676C3.19919 10.284 3.12841 10.7139 3.19321 11.134C3.25802 11.5542 3.45502 11.9428 3.75563 12.2434C4.05625 12.544 4.44483 12.741 4.865 12.8058C5.28516 12.8706 5.71504 12.7998 6.09226 12.6038C6.22038 13.0091 6.47432 13.3631 6.81722 13.6143C7.16013 13.8655 7.57417 14.001 7.99926 14.001C8.42436 14.001 8.83839 13.8655 9.1813 13.6143C9.52421 13.3631 9.77814 13.0091 9.90626 12.6038C10.2835 12.7995 10.7133 12.87 11.1333 12.8051C11.5533 12.7402 11.9418 12.5432 12.2424 12.2427C12.5429 11.9423 12.74 11.5539 12.8051 11.1339C12.8702 10.7139 12.7998 10.2841 12.6043 9.90676C13.0096 9.77853 13.3635 9.52451 13.6146 9.18153C13.8657 8.83856 14.0011 8.42449 14.001 7.99939C14.0009 7.5743 13.8653 7.1603 13.614 6.81746C13.3627 6.47462 13.0086 6.22078 12.6033 6.09276C12.799 5.7155 12.8695 5.28572 12.8046 4.8657C12.7397 4.44568 12.5427 4.05724 12.2422 3.75666C11.9418 3.45608 11.5534 3.25898 11.1334 3.19391C10.7134 3.12884 10.2836 3.19919 9.90626 3.39476C9.77803 2.98947 9.52401 2.63557 9.18103 2.38442C8.83806 2.13327 8.42399 1.99794 7.99889 1.99805C7.5738 1.99816 7.1598 2.13371 6.81696 2.38504C6.47412 2.63637 6.22027 2.9904 6.09226 3.39576C5.71504 3.19969 5.28516 3.12891 4.865 3.19372C4.44483 3.25852 4.05625 3.45552 3.75563 3.75613C3.45502 4.05675 3.25802 4.44533 3.19321 4.8655C3.12841 5.28566 3.19919 5.71554 3.39526 6.09276ZM5.99926 6.99976C6.26448 6.99976 6.51883 6.8944 6.70637 6.70687C6.8939 6.51933 6.99926 6.26498 6.99926 5.99976C6.99926 5.73454 6.8939 5.48019 6.70637 5.29265C6.51883 5.10512 6.26448 4.99976 5.99926 4.99976C5.73404 4.99976 5.47969 5.10512 5.29215 5.29265C5.10462 5.48019 4.99926 5.73454 4.99926 5.99976C4.99926 6.26498 5.10462 6.51933 5.29215 6.70687C5.47969 6.8944 5.73404 6.99976 5.99926 6.99976ZM9.46926 5.46976C9.53792 5.39607 9.62072 5.33697 9.71272 5.29598C9.80472 5.25499 9.90404 5.23295 10.0047 5.23117C10.1054 5.22939 10.2055 5.24792 10.2989 5.28564C10.3922 5.32336 10.4771 5.3795 10.5483 5.45072C10.6195 5.52194 10.6757 5.60678 10.7134 5.70016C10.7511 5.79355 10.7696 5.89358 10.7679 5.99428C10.7661 6.09499 10.744 6.1943 10.703 6.2863C10.6621 6.3783 10.6029 6.4611 10.5293 6.52976L6.52926 10.5298C6.4606 10.6034 6.3778 10.6625 6.2858 10.7035C6.1938 10.7445 6.09449 10.7666 5.99378 10.7684C5.89308 10.7701 5.79305 10.7516 5.69966 10.7139C5.60628 10.6762 5.52144 10.62 5.45022 10.5488C5.379 10.4776 5.32286 10.3927 5.28514 10.2994C5.24742 10.206 5.22889 10.1059 5.23067 10.0052C5.23245 9.90454 5.25449 9.80522 5.29548 9.71322C5.33647 9.62122 5.39557 9.53842 5.46926 9.46976L9.46926 5.46976ZM10.9993 9.99976C10.9993 10.265 10.8939 10.5193 10.7064 10.7069C10.5188 10.8944 10.2645 10.9998 9.99926 10.9998C9.73404 10.9998 9.47969 10.8944 9.29215 10.7069C9.10462 10.5193 8.99926 10.265 8.99926 9.99976C8.99926 9.73454 9.10462 9.48019 9.29215 9.29265C9.47969 9.10512 9.73404 8.99976 9.99926 8.99976C10.2645 8.99976 10.5188 9.10512 10.7064 9.29265C10.8939 9.48019 10.9993 9.73454 10.9993 9.99976Z"
+                                                    fill="white"
+                                                />
+                                            </svg>
+                                        ) : (
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="17"
+                                                height="16"
+                                                viewBox="0 0 17 16"
+                                                fill="none"
+                                            >
+                                                <path
+                                                    d="M6.875 5.5H7.75V7.25H6.875C6.76009 7.25 6.64631 7.22737 6.54015 7.18339C6.43399 7.13942 6.33753 7.07497 6.25628 6.99372C6.17503 6.91247 6.11058 6.81601 6.06661 6.70985C6.02263 6.60369 6 6.48991 6 6.375C6 6.26009 6.02263 6.14631 6.06661 6.04015C6.11058 5.93399 6.17503 5.83753 6.25628 5.75628C6.33753 5.67503 6.43399 5.61058 6.54015 5.56661C6.64631 5.52263 6.76009 5.5 6.875 5.5ZM9.25 10.5V8.75H10.125C10.3571 8.75 10.5796 8.84219 10.7437 9.00628C10.9078 9.17038 11 9.39294 11 9.625C11 9.85706 10.9078 10.0796 10.7437 10.2437C10.5796 10.4078 10.3571 10.5 10.125 10.5H9.25Z"
+                                                    fill="white"
+                                                />
+                                                <path
+                                                    fillRule="evenodd"
+                                                    clipRule="evenodd"
+                                                    d="M15.5 8C15.5 9.85652 14.7625 11.637 13.4497 12.9497C12.137 14.2625 10.3565 15 8.5 15C6.64348 15 4.86301 14.2625 3.55025 12.9497C2.2375 11.637 1.5 9.85652 1.5 8C1.5 6.14348 2.2375 4.36301 3.55025 3.05025C4.86301 1.7375 6.64348 1 8.5 1C10.3565 1 12.137 1.7375 13.4497 3.05025C14.7625 4.36301 15.5 6.14348 15.5 8ZM7.75 3.75C7.75 3.55109 7.82902 3.36032 7.96967 3.21967C8.11032 3.07902 8.30109 3 8.5 3C8.69891 3 8.88968 3.07902 9.03033 3.21967C9.17098 3.36032 9.25 3.55109 9.25 3.75V4H11.75C11.9489 4 12.1397 4.07902 12.2803 4.21967C12.421 4.36032 12.5 4.55109 12.5 4.75C12.5 4.94891 12.421 5.13968 12.2803 5.28033C12.1397 5.42098 11.9489 5.5 11.75 5.5H9.25V7.25H10.125C10.7549 7.25 11.359 7.50022 11.8044 7.94562C12.2498 8.39102 12.5 8.99511 12.5 9.625C12.5 10.2549 12.2498 10.859 11.8044 11.3044C11.359 11.7498 10.7549 12 10.125 12H9.25V12.25C9.25 12.4489 9.17098 12.6397 9.03033 12.7803C8.88968 12.921 8.69891 13 8.5 13C8.30109 13 8.11032 12.921 7.96967 12.7803C7.82902 12.6397 7.75 12.4489 7.75 12.25V12H5.25C5.05109 12 4.86032 11.921 4.71967 11.7803C4.57902 11.6397 4.5 11.4489 4.5 11.25C4.5 11.0511 4.57902 10.8603 4.71967 10.7197C4.86032 10.579 5.05109 10.5 5.25 10.5H7.75V8.75H6.875C6.24511 8.75 5.64102 8.49978 5.19562 8.05438C4.75022 7.60898 4.5 7.00489 4.5 6.375C4.5 5.74511 4.75022 5.14102 5.19562 4.69562C5.64102 4.25022 6.24511 4 6.875 4H7.75V3.75Z"
+                                                    fill="white"
+                                                />
+                                            </svg>
+                                        )
+                                    }
+                                </div>
+                                <input
+                                    type="number"
+                                    placeholder={discountType === "percentage" ? "0%" : "0"}
+                                    value={customFee}
+                                    onChange={(e) => setCustomFee(e.target.value)}
+                                    className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg pl-8 pr-3 focus:outline-none w-full"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row border-t border-white/10 bottom-0 bg-primary justify-between w-full gap-3 p-4">
+                        <button
+                            onClick={() => setCustomFeeModal(false)}
+                            className="px-4 py-2 text-sm font-medium text-white hover:bg-white/10 rounded-full border border-white/10 w-full"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={() => setCustomFeeModal(false)}
+                            className="bg-white hover:bg-white/90 text-black px-4 py-2 w-full rounded-full text-sm font-medium"
+                        >
+                            Add custom fee
+                        </button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

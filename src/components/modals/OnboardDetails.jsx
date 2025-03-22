@@ -16,17 +16,14 @@ const OnboardDetails = ({ isOpen, onClose, onTrigger, userId, isAdding }) => {
     const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [oragnizerId, setOragnizerId] = useState(null);
-    //const [userId, setUserId] = useState(null);
-    const [userOragnizerId, setUserOragnizerId] = useState("")
+    const [userOragnizerId, setUserOragnizerId] = useState("");
     const [isStripeModalOpen, setIsStripeModalOpen] = useState(false);
     const [accountLink, setAccountLink] = useState(null);
 
     useEffect(() => {
         const loadFromLocalStorage = () => {
             const storedUserOrganizerId = localStorage.getItem("organizerId");
-            const storedUserId = localStorage.getItem("userID");
             setOragnizerId(storedUserOrganizerId || null);
-            //setUserId(storedUserId || null);
         };
         loadFromLocalStorage();
 
@@ -64,6 +61,7 @@ const OnboardDetails = ({ isOpen, onClose, onTrigger, userId, isAdding }) => {
 
     const handleBasicDetails = async () => {
         try {
+            setLoading(true);
             const basicInfoResponse = await axios.post(`${url}/auth/basic-info/${userId}`, {
                 firstName: name,
                 lastName: "",
@@ -87,7 +85,9 @@ const OnboardDetails = ({ isOpen, onClose, onTrigger, userId, isAdding }) => {
                         onTrigger("NO", organizerId, "noRedirect");
                     }, 500);
 
-                    setIsStripeModalOpen(true);
+                    setTimeout(() => {
+                        setIsStripeModalOpen(true);
+                    }, 300);
                 } else {
                     alert("Error", connectedAccountResponse.data.message || "Failed to create connected account!");
                 }
@@ -97,6 +97,8 @@ const OnboardDetails = ({ isOpen, onClose, onTrigger, userId, isAdding }) => {
         } catch (error) {
             console.error("API Error:", error);
             alert("Error", "An error occurred. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -119,32 +121,37 @@ const OnboardDetails = ({ isOpen, onClose, onTrigger, userId, isAdding }) => {
                         <h2 className="text-2xl font-semibold text-white font-inter">Basic Information</h2>
                         <p className="text-gray-400 text-sm mt-1 font-inter">Let's onboard you as organizer</p>
                     </div>
-                    <div className="flex mb-4 bg-[#151515] rounded-xl border border-[#202020]">
-                        <input
-                            type="text"
-                            placeholder="Organization name"
-                            className="flex-1 bg-transparent text-white px-4 py-2 focus:outline-none focus:ring-0"
-                            value={name}
-                            name="name"
-                            onChange={handleInputChange}
-                        />
-                    </div>
-                    <div className="flex mb-4 bg-[#151515] rounded-xl border border-[#202020]">
-                        <input
-                            type="text"
-                            placeholder="Organization email id"
-                            className="flex-1 bg-transparent text-white px-4 py-2 focus:outline-none focus:ring-0"
-                            value={email}
-                            name="email"
-                            onChange={handleInputChange}
-                        />
+                    <div className='space-y-5'>
+                        <div className="flex flex-col gap-3 w-full">
+                            <span className="text-sm font-medium text-white">Organization Name</span>
+                            <input
+                                type="text"
+                                placeholder="Organization name"
+                                className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
+                                value={name}
+                                name="name"
+                                onChange={handleInputChange}
+                            />
+                        </div>
+
+                        <div className="flex flex-col gap-3 w-full">
+                            <span className="text-sm font-medium text-white">Organization Email</span>
+                            <input
+                                type="text"
+                                placeholder="Organization email id"
+                                className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
+                                value={email}
+                                name="email"
+                                onChange={handleInputChange}
+                            />
+                        </div>
                     </div>
                     <button
                         onClick={handleBasicDetails}
-                        disabled={isAdding} // Use isAdding to disable button
-                        className={`w-full rounded-full px-4 py-3 font-inter transition duration-200 ${isAdding ? 'bg-gray-400 text-gray-800 cursor-not-allowed' : 'bg-white text-black hover:bg-[#f2f2f2]'}`}
+                        disabled={loading || isAdding}
+                        className={`w-full mt-5 rounded-full px-4 py-3 font-inter transition duration-200 ${loading || isAdding ? 'bg-gray-400 text-gray-800 cursor-not-allowed' : 'bg-white text-black hover:bg-[#f2f2f2]'}`}
                     >
-                        {isAdding ? <Spin size="small" /> : "Next"}
+                        {loading || isAdding ? <Spin size="small" /> : "Next"}
                     </button>
                     <OnboardStripe
                         isOpen={isStripeModalOpen}

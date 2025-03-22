@@ -115,7 +115,7 @@ const Home = () => {
     hours = hours % 12;
     hours = hours ? hours : 12;
 
-    return `${month} ${day}, ${hours}:${minutes} ${ampm}`;
+    return `${month} ${day}`;
   };
 
   const fetchEvents = async () => {
@@ -139,7 +139,7 @@ const Home = () => {
 
     localStorage.setItem('user_event_id', id);
     localStorage.setItem('user_event_name', name);
-    navigate(`/${encodeURIComponent(cleanName)}`);
+    navigate(`/${name}`);
   };
 
   const handleDateChange = (start, end) => {
@@ -176,13 +176,27 @@ const Home = () => {
     const minPrice = sliderValue ? sliderValue[0] : null;
     const maxPrice = sliderValue ? sliderValue[1] : null;
 
-    const currentDate = getDateOnly(new Date());  // Compare dates properly (string or timestamp)
+    const yesterday = new Date();
+yesterday.setDate(yesterday.getDate() - 1);
+const allowedDate = getDateOnly(yesterday);
+const isAllowedEvent = eventDate >= allowedDate;
 
-    const isFutureEvent = eventDate >= currentDate;
+
+    // const isWithinPriceRange =
+    //   (minPrice === null || (event.ticket_start_price || 0) >= minPrice) &&
+    //   (maxPrice === null || (event.ticket_start_price || 0) <= maxPrice);
+
+    const getLowestTicketPrice = (tickets) => {
+      if (!tickets || tickets.length === 0) return 0;
+      return Math.min(...tickets.map((ticket) => Number(ticket.price) || 0));
+    };
+
+    const ticketPrice = getLowestTicketPrice(event.tickets);
 
     const isWithinPriceRange =
-      (minPrice === null || (event.ticket_start_price || 0) >= minPrice) &&
-      (maxPrice === null || (event.ticket_start_price || 0) <= maxPrice);
+      (minPrice === null || ticketPrice >= minPrice) &&
+      (maxPrice === null || ticketPrice <= maxPrice);
+
 
     const isWithinDateRange = (() => {
       if (startDateOnly && endDateOnly) {
@@ -212,7 +226,7 @@ const Home = () => {
       isWithinPriceRange &&
       isWithinDateRange &&
       isFreeEvent &&
-      isFutureEvent
+      isAllowedEvent
     );
   });
 
@@ -371,7 +385,7 @@ const Home = () => {
 
           return (
             <button
-              onClick={() => handleDetail(card._id, card.event_name.replace(/\s+/g, "-"))}
+              onClick={() => handleDetail(card._id, card.event_slug)}
               key={card.id}
               className="bg-neutral-800 bg-opacity-15 px-4 py-3 rounded-2xl shadow-lg text-left flex flex-col transition-transform duration-300 transform hover:scale-105"
             >
@@ -412,7 +426,7 @@ const Home = () => {
 
               </div>
 
-              <div className="flex items-center justify-between w-full mb-2 gap-2">
+              {/* <div className="flex items-center justify-between w-full mb-2 gap-2">
                 <div className="flex items-center min-w-0">
                   <h2 className="text-white/50 text-xs uppercase font-inter truncate">
                     {card.category}
@@ -421,7 +435,7 @@ const Home = () => {
                 <p className="text-white/50 text-xs font-inter flex-shrink-0">
                   {formatDate(card.start_date)}
                 </p>
-              </div>
+              </div> */}
 
               <div className="flex items-center justify-between w-full mb-2 gap-2">
                 <div className="min-w-0 flex-1">
@@ -438,10 +452,12 @@ const Home = () => {
                 <div className="flex-shrink-0">
                   {
                     card.event_type === 'ticket' ? (
-                      <p className="text-white font-medium whitespace-nowrap">
-                        <span className="text-gray-500 text-2xl font-inter">$</span>
-                        <span className="text-2xl font-semibold font-inter">
-                          {card.ticket_start_price}+
+                      <p className="text-white font-medium whitespace-nowrap text-center">
+                        <span className="text-gray-500 text-sm font-inter block">
+                          {formatDate(card.start_date).split(" ")[0]} {/* Month */}
+                        </span>
+                        <span className="text-xl font-semibold font-inter block">
+                          {formatDate(card.start_date).split(" ")[1]} {/* Date */}
                         </span>
                       </p>
                     ) : (
