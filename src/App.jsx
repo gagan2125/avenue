@@ -47,12 +47,12 @@ function App() {
     "/organizer/events",
     "/organizer/wallet",
     "/organizer/members",
-    "/organizer/analytics",
     "/organizer/create-event",
     "/organizer/create-ticket/ticketedevent",
     "/organizer/edit-event",
     "/privacy-policy",
     "/terms-and-conditions",
+    "/stripe-success",
   ];
   const hideFooter = [
     "/login",
