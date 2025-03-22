@@ -1,11 +1,9 @@
-/* eslint-disable no-unused-vars */
 import {
   BrowserRouter,
   Route,
   Routes,
   useLocation,
   useNavigate,
-  Navigate,
 } from "react-router-dom";
 import Header from "../src/components/layouts/Header";
 import Footer from "../src/components/layouts/Footer";
@@ -14,7 +12,6 @@ import Info from "./pages/User/Info";
 import Creater from "./pages/User/Creater";
 import Checkout from "./pages/User/Checkout";
 import { stripePromise } from "./constants/stripePromise";
-import Element from "antd/es/skeleton/Element";
 import { Elements } from "@stripe/react-stripe-js";
 import QrTicket from "./pages/User/QrTicket";
 import Tickets from "./pages/User/Tickets";
