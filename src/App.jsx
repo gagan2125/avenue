@@ -26,7 +26,6 @@ import OrganizerProfile from "./pages/Organizer/OrganizerProfile";
 import OrganizerDashboard from "./pages/Organizer/OrganizerDashboard";
 import OrganizerEvents from "./pages/Organizer/OrganizerEvents";
 import OrganizerWallet from "./pages/Organizer/OrganizerWallet";
-import OrganizerAnalytics from "./pages/Organizer/OrganizerAnalytics";
 import EventDetails from "./pages/Organizer/EventDetails";
 import OrganizeMembers from "./pages/Organizer/OrganizeMembers";
 import CreateEvent from "./pages/Organizer/CreateEvent";
@@ -36,6 +35,7 @@ import Preview from "./pages/Organizer/Preview";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsCondition from "./pages/TermsCondition";
 import StripeSuccess from "./pages/StripeSuccess";
+import OrganizerAnalytics from "./pages/Organizer/OrganizerAnalytics";
 
 function App() {
   const location = useLocation();
@@ -47,6 +47,7 @@ function App() {
     "/organizer/profile",
     "/organizer/dashboard",
     "/organizer/events",
+    "/organizer/analytics",
     "/organizer/wallet",
     "/organizer/members",
     "/organizer/create-event",
@@ -69,6 +70,7 @@ function App() {
     "/organizer/profile",
     "/organizer/dashboard",
     "/organizer/events",
+    "/organizer/analytics",
     "/organizer/wallet",
     "/organizer/members",
     "/organizer/create-event",
@@ -130,8 +132,8 @@ function App() {
           <Route path="/organizer/profile" element={<OrganizerProfile />} />
           <Route path="/organizer/dashboard" element={<OrganizerDashboard />} />
           <Route path="/organizer/events" element={<OrganizerEvents />} />
-          <Route path="/organizer/wallet" element={<OrganizerWallet />} />
           <Route path="/organizer/analytics" element={<OrganizerAnalytics />} />
+          <Route path="/organizer/wallet" element={<OrganizerWallet />} />
           <Route path="/organizer/events/:id" element={<EventDetails />} />
           <Route path="/organizer/members" element={<OrganizeMembers />} />
           <Route path="/organizer/create-event" element={<CreateEvent />} />
