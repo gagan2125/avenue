@@ -318,11 +318,44 @@ export default function SalesTab({ eventId, event }) {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [isViewTicketOpen, setIsViewTicketOpen] = useState(false);
   const [cardDetails, setCardDetails] = useState(null);
+  const [isLoadingTicket, setIsLoadingTicket] = useState(false);
 
-  const handleViewTicket = (sale) => {
+  const handleViewTicket = async (sale) => {
+    setIsLoadingTicket(true);
     setSelectedTicket(sale);
+    setCardDetails(null); // Clear previous card details
+
+    // Add a small delay to show the loading state
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     setIsViewTicketOpen(true);
+    setIsLoadingTicket(false);
   };
+
+
+  useEffect(() => {
+    const fetchCardDetails = async () => {
+      if (!selectedTicket?.transaction_id || selectedTicket?.amount === 0) {
+        return; // Don't fetch for comp tickets
+      }
+
+      const paymentId = extractPaymentId(selectedTicket.transaction_id);
+
+      try {
+        const res = await fetch(`${url}/payment-detail/${paymentId}`);
+        const data = await res.json();
+
+        console.log("✅ Payment details:", data);
+        setCardDetails(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("❌ Failed to fetch payment info:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchCardDetails();
+  }, [selectedTicket?.transaction_id]);
 
   const filteredSalesHistory = book.filter((sale) => {
     const isRefund = sale.refund === "true";
@@ -685,7 +718,7 @@ export default function SalesTab({ eventId, event }) {
                     <p className="text-gray-400 flex items-center">
                       <span>{stat.title}</span>
                       {stat.title === "Revenue" ||
-                      stat.title === "Currently Live" ? (
+                        stat.title === "Currently Live" ? (
                         <span className="ml-1">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1075,9 +1108,12 @@ export default function SalesTab({ eventId, event }) {
                                 <Ellipsis />
                               </MenuTrigger>
                               <MenuItem
-                              onClick={() => handleViewTicket(payout)}
+                                onClick={() => handleViewTicket(payout)}
                               >
                                 <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                  {isLoadingTicket ? (
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  ) : (
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     width="16"
@@ -1097,8 +1133,9 @@ export default function SalesTab({ eventId, event }) {
                                       fill="white"
                                       fillOpacity="0.5"
                                     />
-                                  </svg>
-                                  <span>View details</span>
+                                    </svg>
+                                  )}
+                                  <span>View ticket</span>
                                 </div>
                               </MenuItem>
                               {payout.refund !== "true" && (
@@ -1129,30 +1166,30 @@ export default function SalesTab({ eventId, event }) {
                                     </div>
                                   </MenuItem>
                                   {payout.transaction_id && (
-                                  <MenuItem
-                                    onClick={() => {
-                                      setSelectedPay(payout);
-                                      setIsRefundOpen(true);
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="17"
-                                        height="16"
-                                        viewBox="0 0 17 16"
-                                        fill="none"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          clipRule="evenodd"
-                                          d="M13.2501 9.74985C13.2501 9.38871 13.1789 9.03111 13.0407 8.69747C12.9025 8.36382 12.7 8.06066 12.4446 7.8053C12.1893 7.54994 11.8861 7.34738 11.5525 7.20918C11.2188 7.07098 10.8612 6.99985 10.5001 6.99985H5.31007L7.53007 9.21985C7.60376 9.28851 7.66286 9.37131 7.70385 9.46331C7.74485 9.55531 7.76689 9.65462 7.76866 9.75532C7.77044 9.85603 7.75192 9.95606 7.7142 10.0494C7.67647 10.1428 7.62033 10.2277 7.54911 10.2989C7.47789 10.3701 7.39306 10.4262 7.29967 10.464C7.20628 10.5017 7.10625 10.5202 7.00555 10.5184C6.90485 10.5167 6.80553 10.4946 6.71353 10.4536C6.62154 10.4126 6.53873 10.3535 6.47007 10.2798L2.97007 6.77985C2.82962 6.63922 2.75073 6.4486 2.75073 6.24985C2.75073 6.0511 2.82962 5.86047 2.97007 5.71985L6.47007 2.21985C6.61225 2.08737 6.80029 2.01524 6.9946 2.01867C7.1889 2.0221 7.37428 2.10081 7.51169 2.23822C7.64911 2.37564 7.72782 2.56102 7.73125 2.75532C7.73468 2.94963 7.66255 3.13767 7.53007 3.27985L5.31007 5.49985H10.5001C11.6272 5.49985 12.7082 5.94761 13.5053 6.74464C14.3023 7.54167 14.7501 8.62268 14.7501 9.74985C14.7501 10.877 14.3023 11.958 13.5053 12.7551C12.7082 13.5521 11.6272 13.9998 10.5001 13.9998H9.50007C9.30116 13.9998 9.11039 13.9208 8.96974 13.7802C8.82909 13.6395 8.75007 13.4488 8.75007 13.2498C8.75007 13.0509 8.82909 12.8602 8.96974 12.7195C9.11039 12.5789 9.30116 12.4998 9.50007 12.4998H10.5001C10.8612 12.4998 11.2188 12.4287 11.5525 12.2905C11.8861 12.1523 12.1893 11.9498 12.4446 11.6944C12.7 11.439 12.9025 11.1359 13.0407 10.8022C13.1789 10.4686 13.2501 10.111 13.2501 9.74985Z"
-                                          fill="#F43F5E"
-                                        />
-                                      </svg>
-                                      <span>Refund</span>
-                                    </div>
-                                  </MenuItem>
+                                    <MenuItem
+                                      onClick={() => {
+                                        setSelectedPay(payout);
+                                        setIsRefundOpen(true);
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="17"
+                                          height="16"
+                                          viewBox="0 0 17 16"
+                                          fill="none"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            clipRule="evenodd"
+                                            d="M13.2501 9.74985C13.2501 9.38871 13.1789 9.03111 13.0407 8.69747C12.9025 8.36382 12.7 8.06066 12.4446 7.8053C12.1893 7.54994 11.8861 7.34738 11.5525 7.20918C11.2188 7.07098 10.8612 6.99985 10.5001 6.99985H5.31007L7.53007 9.21985C7.60376 9.28851 7.66286 9.37131 7.70385 9.46331C7.74485 9.55531 7.76689 9.65462 7.76866 9.75532C7.77044 9.85603 7.75192 9.95606 7.7142 10.0494C7.67647 10.1428 7.62033 10.2277 7.54911 10.2989C7.47789 10.3701 7.39306 10.4262 7.29967 10.464C7.20628 10.5017 7.10625 10.5202 7.00555 10.5184C6.90485 10.5167 6.80553 10.4946 6.71353 10.4536C6.62154 10.4126 6.53873 10.3535 6.47007 10.2798L2.97007 6.77985C2.82962 6.63922 2.75073 6.4486 2.75073 6.24985C2.75073 6.0511 2.82962 5.86047 2.97007 5.71985L6.47007 2.21985C6.61225 2.08737 6.80029 2.01524 6.9946 2.01867C7.1889 2.0221 7.37428 2.10081 7.51169 2.23822C7.64911 2.37564 7.72782 2.56102 7.73125 2.75532C7.73468 2.94963 7.66255 3.13767 7.53007 3.27985L5.31007 5.49985H10.5001C11.6272 5.49985 12.7082 5.94761 13.5053 6.74464C14.3023 7.54167 14.7501 8.62268 14.7501 9.74985C14.7501 10.877 14.3023 11.958 13.5053 12.7551C12.7082 13.5521 11.6272 13.9998 10.5001 13.9998H9.50007C9.30116 13.9998 9.11039 13.9208 8.96974 13.7802C8.82909 13.6395 8.75007 13.4488 8.75007 13.2498C8.75007 13.0509 8.82909 12.8602 8.96974 12.7195C9.11039 12.5789 9.30116 12.4998 9.50007 12.4998H10.5001C10.8612 12.4998 11.2188 12.4287 11.5525 12.2905C11.8861 12.1523 12.1893 11.9498 12.4446 11.6944C12.7 11.439 12.9025 11.1359 13.0407 10.8022C13.1789 10.4686 13.2501 10.111 13.2501 9.74985Z"
+                                            fill="#F43F5E"
+                                          />
+                                        </svg>
+                                        <span>Refund</span>
+                                      </div>
+                                    </MenuItem>
                                   )}
                                 </>
                               )}
@@ -1168,7 +1205,7 @@ export default function SalesTab({ eventId, event }) {
         </div>
       </div>
 
- {/* View Details Dialog */}
+      {/* View Details Dialog */}
       <Dialog
         open={isViewTicketOpen}
         onOpenChange={setIsViewTicketOpen}
@@ -1211,15 +1248,17 @@ export default function SalesTab({ eventId, event }) {
                 Transaction Details
               </h4>
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-white/50">Amount</span>
-                  <span className="font-medium">
-                    $
-                    {selectedTicket?.amount
-                      ? formatAmount(selectedTicket.amount)
-                      : "0.00"}
-                  </span>
-                </div>
+                {selectedTicket?.transaction_id && selectedTicket?.amount > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-white/50">Amount</span>
+                    <span className="font-medium">
+                      $
+                      {selectedTicket?.amount
+                        ? formatAmount(selectedTicket.amount)
+                        : "0.00"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-white/50">Date</span>
                   <span className="font-medium">
@@ -1229,53 +1268,55 @@ export default function SalesTab({ eventId, event }) {
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm text-white/50">
-                      Payment Method
-                    </span>
+                  {selectedTicket?.transaction_id && selectedTicket?.amount > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-white/50">
+                        Payment Method
+                      </span>
 
-                    {cardDetails?.paymentMethod?.card ? (
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const brand = cardDetails.paymentMethod.card.brand;
-                          const last4 =
-                            cardDetails.paymentMethod.card.last4 ||
-                            cardDetails.paymentMethod.card.dynamic_last4 ||
-                            "0000";
-                          const wallet =
-                            cardDetails.paymentMethod.card.wallet?.type;
+                      {cardDetails?.paymentMethod?.card ? (
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const brand = cardDetails.paymentMethod.card.brand;
+                            const last4 =
+                              cardDetails.paymentMethod.card.last4 ||
+                              cardDetails.paymentMethod.card.dynamic_last4 ||
+                              "0000";
+                            const wallet =
+                              cardDetails.paymentMethod.card.wallet?.type;
 
-                          return (
-                            <>
-                              {wallet && paymentIcons[wallet] && (
-                                <img
-                                  src={paymentIcons[wallet]}
-                                  alt={wallet}
-                                  className="w-6 h-4 object-contain"
-                                />
-                              )}
+                            return (
+                              <>
+                                {wallet && paymentIcons[wallet] && (
+                                  <img
+                                    src={paymentIcons[wallet]}
+                                    alt={wallet}
+                                    className="w-7 h-5 object-contain"
+                                  />
+                                )}
 
-                              {brand && paymentIcons[brand] && (
-                                <img
-                                  src={paymentIcons[brand]}
-                                  alt={brand}
-                                  className="w-6 h-4 object-contain"
-                                />
-                              )}
+                                {brand && paymentIcons[brand] && (
+                                  <img
+                                    src={paymentIcons[brand]}
+                                    alt={brand}
+                                    className="w-8 h-6 object-contain"
+                                  />
+                                )}
 
-                              <span className="font-medium text-white">
-                                {brand?.charAt(0).toUpperCase() +
-                                  brand?.slice(1)}{" "}
-                                * {last4}
-                              </span>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-white/40">Loading...</span>
-                    )}
-                  </div>
+                                <span className="font-medium text-white">
+                                  {brand?.charAt(0).toUpperCase() +
+                                    brand?.slice(1)}{" "}
+                                  * {last4}
+                                </span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-white/40">Loading...</span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-white/50">Type</span>
@@ -1346,7 +1387,7 @@ export default function SalesTab({ eventId, event }) {
             <div className="flex flex-col gap-3 p-6 pt-0">
               <button
                 type="submit"
-                disabled={() => {}}
+                disabled={() => { }}
                 className="w-full bg-white hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed text-black border-white/10 border text-center rounded-full h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
               >
                 Resend Ticket
