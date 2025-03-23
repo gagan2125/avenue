@@ -26,6 +26,7 @@ import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import paymentIcons from "../../lib/paymentIcons";
 
 const ticketTypesIcons = {
   regular: (
@@ -198,7 +199,44 @@ const saleTypesIcons = {
     </svg>
   ),
 };
-
+const saleTypeIcons = {
+  Sale: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="17"
+      height="16"
+      viewBox="0 0 17 16"
+      fill="none"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M1.75 3C1.75 2.73478 1.85536 2.48043 2.04289 2.29289C2.23043 2.10536 2.48478 2 2.75 2H14.75C15.0152 2 15.2696 2.10536 15.4571 2.29289C15.6446 2.48043 15.75 2.73478 15.75 3V9C15.75 9.26522 15.6446 9.51957 15.4571 9.70711C15.2696 9.89464 15.0152 10 14.75 10H2.75C2.48478 10 2.23043 9.89464 2.04289 9.70711C1.85536 9.51957 1.75 9.26522 1.75 9V3ZM10.75 6C10.75 6.53043 10.5393 7.03914 10.1642 7.41421C9.78914 7.78929 9.28043 8 8.75 8C8.21957 8 7.71086 7.78929 7.33579 7.41421C6.96071 7.03914 6.75 6.53043 6.75 6C6.75 5.46957 6.96071 4.96086 7.33579 4.58579C7.71086 4.21071 8.21957 4 8.75 4C9.28043 4 9.78914 4.21071 10.1642 4.58579C10.5393 4.96086 10.75 5.46957 10.75 6ZM4.5 5.25C4.30109 5.25 4.11032 5.32902 3.96967 5.46967C3.82902 5.61032 3.75 5.80109 3.75 6C3.75 6.19891 3.82902 6.38968 3.96967 6.53033C4.11032 6.67098 4.30109 6.75 4.5 6.75C4.69891 6.75 4.88968 6.67098 5.03033 6.53033C5.17098 6.38968 5.25 6.19891 5.25 6C5.25 5.80109 5.17098 5.61032 5.03033 5.46967C4.88968 5.32902 4.69891 5.25 4.5 5.25ZM12.25 6C12.25 5.80109 12.329 5.61032 12.4697 5.46967C12.6103 5.32902 12.8011 5.25 13 5.25C13.1989 5.25 13.3897 5.32902 13.5303 5.46967C13.671 5.61032 13.75 5.80109 13.75 6C13.75 6.19891 13.671 6.38968 13.5303 6.53033C13.3897 6.67098 13.1989 6.75 13 6.75C12.8011 6.75 12.6103 6.67098 12.4697 6.53033C12.329 6.38968 12.25 6.19891 12.25 6Z"
+        fill="#A3E635"
+      />
+      <path
+        d="M13.75 11.75C13.75 11.5511 13.671 11.3603 13.5303 11.2197C13.3897 11.079 13.1989 11 13 11C12.8011 11 12.6103 11.079 12.4697 11.2197C12.329 11.3603 12.25 11.5511 12.25 11.75V11.929C12.25 12.079 12.112 12.209 11.944 12.184C8.81671 11.7277 5.66041 11.4991 2.5 11.5C2.30109 11.5 2.11032 11.579 1.96967 11.7197C1.82902 11.8603 1.75 12.0511 1.75 12.25C1.75 12.4489 1.82902 12.6397 1.96967 12.7803C2.11032 12.921 2.30109 13 2.5 13C5.635 13 8.715 13.228 11.727 13.668C11.9774 13.7052 12.2328 13.688 12.476 13.6177C12.7192 13.5474 12.9444 13.4256 13.1363 13.2605C13.3282 13.0954 13.4823 12.891 13.5882 12.6611C13.6941 12.4311 13.7493 12.1811 13.75 11.928V11.75Z"
+        fill="#A3E635"
+      />
+    </svg>
+  ),
+  refund: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="17"
+      height="16"
+      viewBox="0 0 17 16"
+      fill="none"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M13.2501 9.74985C13.2501 9.38871 13.1789 9.03111 13.0407 8.69747C12.9025 8.36382 12.7 8.06066 12.4446 7.8053C12.1893 7.54994 11.8861 7.34738 11.5525 7.20918C11.2188 7.07098 10.8612 6.99985 10.5001 6.99985H5.31007L7.53007 9.21985C7.60376 9.28851 7.66286 9.37131 7.70385 9.46331C7.74485 9.55531 7.76689 9.65462 7.76866 9.75532C7.77044 9.85603 7.75192 9.95606 7.7142 10.0494C7.67647 10.1428 7.62033 10.2277 7.54911 10.2989C7.47789 10.3701 7.39306 10.4262 7.29967 10.464C7.20628 10.5017 7.10625 10.5202 7.00555 10.5184C6.90485 10.5167 6.80553 10.4946 6.71353 10.4536C6.62154 10.4126 6.53873 10.3535 6.47007 10.2798L2.97007 6.77985C2.82962 6.63922 2.75073 6.4486 2.75073 6.24985C2.75073 6.0511 2.82962 5.86047 2.97007 5.71985L6.47007 2.21985C6.61225 2.08737 6.80029 2.01524 6.9946 2.01867C7.1889 2.0221 7.37428 2.10081 7.51169 2.23822C7.64911 2.37564 7.72782 2.56102 7.73125 2.75532C7.73468 2.94963 7.66255 3.13767 7.53007 3.27985L5.31007 5.49985H10.5001C11.6272 5.49985 12.7082 5.94761 13.5053 6.74464C14.3023 7.54167 14.7501 8.62268 14.7501 9.74985C14.7501 10.877 14.3023 11.958 13.5053 12.7551C12.7082 13.5521 11.6272 13.9998 10.5001 13.9998H9.50007C9.30116 13.9998 9.11039 13.9208 8.96974 13.7802C8.82909 13.6395 8.75007 13.4488 8.75007 13.2498C8.75007 13.0509 8.82909 12.8602 8.96974 12.7195C9.11039 12.5789 9.30116 12.4998 9.50007 12.4998H10.5001C10.8612 12.4998 11.2188 12.4287 11.5525 12.2905C11.8861 12.1523 12.1893 11.9498 12.4446 11.6944C12.7 11.439 12.9025 11.1359 13.0407 10.8022C13.1789 10.4686 13.2501 10.111 13.2501 9.74985Z"
+        fill="#F43F5E"
+      />
+    </svg>
+  ),
+};
 const eventSalesHistory = [
   {
     date: "Today 13:55",
@@ -277,6 +315,14 @@ export default function SalesTab({ eventId, event }) {
   const [includeFee, setIncludeFee] = useState(false);
   const [maxAmount, setMaxAmount] = useState(0);
   const [amountEntered, setAmountEntered] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [isViewTicketOpen, setIsViewTicketOpen] = useState(false);
+  const [cardDetails, setCardDetails] = useState(null);
+
+  const handleViewTicket = (sale) => {
+    setSelectedTicket(sale);
+    setIsViewTicketOpen(true);
+  };
 
   const filteredSalesHistory = book.filter((sale) => {
     const isRefund = sale.refund === "true";
@@ -488,7 +534,12 @@ export default function SalesTab({ eventId, event }) {
   useEffect(() => {
     fetchBook();
   }, [eventId]);
-
+  const formatAmount = (amount) => {
+    return (Math.abs(amount / 100 - 0.89) / 1.09).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const dayOfWeek = date.toLocaleString("en-US", { weekday: "short" });
@@ -1023,7 +1074,9 @@ export default function SalesTab({ eventId, event }) {
                               <MenuTrigger>
                                 <Ellipsis />
                               </MenuTrigger>
-                              <MenuItem>
+                              <MenuItem
+                              onClick={() => handleViewTicket(payout)}
+                              >
                                 <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -1114,6 +1167,146 @@ export default function SalesTab({ eventId, event }) {
           </div>
         </div>
       </div>
+
+ {/* View Details Dialog */}
+      <Dialog
+        open={isViewTicketOpen}
+        onOpenChange={setIsViewTicketOpen}
+        className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
+      >
+        <DialogContent className="max-h-[90vh] !gap-0 text-white overflow-y-auto">
+          <div className="flex flex-col gap-y-3 bg-white/[0.03] rounded-t-xl border-b border-white/10 p-6">
+            <DialogTitle>Ticket Details</DialogTitle>
+            <DialogDescription>
+              View the details of the ticket.
+            </DialogDescription>
+          </div>
+          <div className="flex flex-col">
+            {/* Ticket Image and Basic Info */}
+            <div className="flex gap-4 p-6">
+              <div className="w-16 h-16 rounded-lg bg-white/10">
+                <img src={selectedTicket?.party?.flyer || ""} alt="" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h3 className="font-medium">
+                  {selectedTicket?.party?.event_name || "Event Name"}
+                </h3>
+                <p className="text-sm text-white/70">
+                  Reference: #
+                  {selectedTicket?.transaction_id?.slice(-6) || "000000"}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  {statusIcons["paid"]}
+                  <span className="text-sm">Completed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-white/10" />
+
+            {/* Transaction Details */}
+            <div className="flex flex-col gap-4 p-6">
+              <h4 className="text-sm font-medium text-white/70">
+                Transaction Details
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-white/50">Amount</span>
+                  <span className="font-medium">
+                    $
+                    {selectedTicket?.amount
+                      ? formatAmount(selectedTicket.amount)
+                      : "0.00"}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-white/50">Date</span>
+                  <span className="font-medium">
+                    {selectedTicket?.date
+                      ? formatDate(selectedTicket.date)
+                      : "Today"}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-white/50">
+                      Payment Method
+                    </span>
+
+                    {cardDetails?.paymentMethod?.card ? (
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const brand = cardDetails.paymentMethod.card.brand;
+                          const last4 =
+                            cardDetails.paymentMethod.card.last4 ||
+                            cardDetails.paymentMethod.card.dynamic_last4 ||
+                            "0000";
+                          const wallet =
+                            cardDetails.paymentMethod.card.wallet?.type;
+
+                          return (
+                            <>
+                              {wallet && paymentIcons[wallet] && (
+                                <img
+                                  src={paymentIcons[wallet]}
+                                  alt={wallet}
+                                  className="w-6 h-4 object-contain"
+                                />
+                              )}
+
+                              {brand && paymentIcons[brand] && (
+                                <img
+                                  src={paymentIcons[brand]}
+                                  alt={brand}
+                                  className="w-6 h-4 object-contain"
+                                />
+                              )}
+
+                              <span className="font-medium text-white">
+                                {brand?.charAt(0).toUpperCase() +
+                                  brand?.slice(1)}{" "}
+                                * {last4}
+                              </span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-white/40">Loading...</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-white/50">Type</span>
+                  <div className="flex items-center gap-2">
+                    {saleTypeIcons["Sale"]}
+                    <span className="font-medium">Sale</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-2 p-6 border-t border-white/10">
+              <button
+                // onClick={handleDownloadReceipt}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Download Receipt
+              </button>
+              <button
+                onClick={() =>
+                  (window.location.href = "mailto:support@avenue.tickets")
+                }
+                className="flex-1 bg-white hover:bg-white/90 text-black rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Contact Support
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* resend email */}
       <Dialog
