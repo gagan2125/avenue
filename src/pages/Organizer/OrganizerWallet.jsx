@@ -531,6 +531,7 @@ export default function OrganizerWallet() {
   const [sortColumn, setSortColumn] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc");
   const [isLoadingTicket, setIsLoadingTicket] = useState(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
 
   const handleViewTicket = async (sale) => {
     setIsLoadingTicket(true);
@@ -647,6 +648,7 @@ export default function OrganizerWallet() {
   const handleDownloadReceipt = async () => {
     if (!selectedTicket) return;
 
+    setIsDownloadingReceipt(true);
     const element = receiptRef.current;
 
     // Show the element
@@ -678,6 +680,7 @@ export default function OrganizerWallet() {
       console.error("Error generating PDF:", error);
     } finally {
       element.style.display = "none";
+      setIsDownloadingReceipt(false);
 
       // Revert to original image if needed (optional)
       if (flyerImgEl && selectedTicket?.party?.flyer) {
@@ -3118,9 +3121,14 @@ export default function OrganizerWallet() {
             <div className="flex gap-3 mt-2 p-6 border-t border-white/10">
               <button
                 onClick={handleDownloadReceipt}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
+                disabled={isDownloadingReceipt}
               >
-                Download Receipt
+                {isDownloadingReceipt ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  "Download Receipt"
+                )}
               </button>
               <button
                 onClick={() =>
