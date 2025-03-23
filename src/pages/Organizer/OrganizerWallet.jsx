@@ -529,8 +529,10 @@ export default function OrganizerWallet() {
   const [amountEntered, setAmountEntered] = useState(false);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc");
+  
   const handleViewTicket = (sale) => {
     setSelectedTicket(sale);
+    setCardDetails(null); // Clear previous card details
     setIsViewTicketOpen(true);
   };
   useEffect(() => {
@@ -558,7 +560,9 @@ export default function OrganizerWallet() {
   }
   useEffect(() => {
     const fetchCardDetails = async () => {
-      if (!selectedTicket?.transaction_id) return;
+      if (!selectedTicket?.transaction_id || selectedTicket?.amount === 0) {
+        return; // Don't fetch for comp tickets
+      }
 
       const paymentId = extractPaymentId(selectedTicket.transaction_id);
 
@@ -630,48 +634,48 @@ export default function OrganizerWallet() {
             reader.readAsDataURL(blob);
           })
       );
-  
-      const handleDownloadReceipt = async () => {
-        if (!selectedTicket) return;
-      
-        const element = receiptRef.current;
-      
-        // Show the element
-        element.style.display = "block";
-      
-        // Convert flyer image to base64
-        const flyerImgEl = flyerImgRef.current;
-        if (flyerImgEl && selectedTicket?.party?.flyer) {
-          try {
-            const base64 = await toDataURL(selectedTicket.party.flyer);
-            flyerImgEl.src = base64;
-          } catch (error) {
-            console.warn("Failed to convert flyer to base64", error);
-          }
-        }
-      
-        // Proceed to generate the PDF
-        const opt = {
-          margin: 10,
-          filename: `receipt-${selectedTicket?.transaction_id?.slice(-6)}.pdf`,
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2 },
-          jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
-        };
-      
-        try {
-          await html2pdf().set(opt).from(element).save();
-        } catch (error) {
-          console.error("Error generating PDF:", error);
-        } finally {
-          element.style.display = "none";
-      
-          // Revert to original image if needed (optional)
-          if (flyerImgEl && selectedTicket?.party?.flyer) {
-            flyerImgEl.src = selectedTicket.party.flyer;
-          }
-        }
-      };      
+
+  const handleDownloadReceipt = async () => {
+    if (!selectedTicket) return;
+
+    const element = receiptRef.current;
+
+    // Show the element
+    element.style.display = "block";
+
+    // Convert flyer image to base64
+    const flyerImgEl = flyerImgRef.current;
+    if (flyerImgEl && selectedTicket?.party?.flyer) {
+      try {
+        const base64 = await toDataURL(selectedTicket.party.flyer);
+        flyerImgEl.src = base64;
+      } catch (error) {
+        console.warn("Failed to convert flyer to base64", error);
+      }
+    }
+
+    // Proceed to generate the PDF
+    const opt = {
+      margin: 10,
+      filename: `receipt-${selectedTicket?.transaction_id?.slice(-6)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
+    };
+
+    try {
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      element.style.display = "none";
+
+      // Revert to original image if needed (optional)
+      if (flyerImgEl && selectedTicket?.party?.flyer) {
+        flyerImgEl.src = selectedTicket.party.flyer;
+      }
+    }
+  };
   const handleViewQR = (sale) => {
     setSelectedTicket(sale);
     setIsQROpen(true);
@@ -732,7 +736,7 @@ export default function OrganizerWallet() {
       const matchesSearch =
         sale?.party?.event_name.toLowerCase().includes(searchLower) ||
         ticketName.toLowerCase().includes(searchLower) ||
-        sale?.firstName.toLowerCase().includes(searchLower) ||
+        sale?.firstName?.toLowerCase().includes(searchLower) ||
         (sale?.amount / 100).toString().includes(searchLower) ||
         typeText.includes(searchLower) ||
         formattedDate.includes(searchLower);
@@ -1231,11 +1235,11 @@ export default function OrganizerWallet() {
                         $
                         {accountBalance?.balance?.pending?.[0]?.amount
                           ? (
-                              accountBalance?.balance?.pending[0].amount / 100
-                            ).toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
+                            accountBalance?.balance?.pending[0].amount / 100
+                          ).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
                           : 0}
                       </>
                     )}
@@ -1267,11 +1271,10 @@ export default function OrganizerWallet() {
                     <button
                       disabled={!statusInstant}
                       onClick={() => setIsWithdrawOpen(true)}
-                      className={`text-sm ${
-                        statusInstant === false
+                      className={`text-sm ${statusInstant === false
                           ? "bg-[#ffffff] bg-opacity-30"
                           : "bg-white"
-                      } text-black px-3 py-2 cursor-pointer rounded-full flex items-center gap-2 font-semibold`}
+                        } text-black px-3 py-2 cursor-pointer rounded-full flex items-center gap-2 font-semibold`}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -1423,9 +1426,9 @@ export default function OrganizerWallet() {
                         $
                         {filteredTotal
                           ? filteredTotal.toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
                           : "0.00"}
                       </>
                     )}
@@ -2299,7 +2302,7 @@ export default function OrganizerWallet() {
                           accountBalance?.balance?.instant_available?.[0]
                             ?.amount
                             ? accountBalance?.balance?.instant_available[0]
-                                .amount / 100
+                              .amount / 100
                             : 0,
                           { shouldValidate: true }
                         )
@@ -2317,12 +2320,12 @@ export default function OrganizerWallet() {
                       $
                       {accountBalance?.balance?.instant_available?.[0]?.amount
                         ? (
-                            accountBalance?.balance?.instant_available[0]
-                              .amount / 100
-                          ).toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })
+                          accountBalance?.balance?.instant_available[0]
+                            .amount / 100
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })
                         : 0}
                     </span>
                   </div>
@@ -2519,8 +2522,8 @@ export default function OrganizerWallet() {
                         {(payout.status === "in_transit"
                           ? "processing"
                           : payout.status === "paid"
-                          ? "completed"
-                          : payout.status
+                            ? "completed"
+                            : payout.status
                         ).replace(/^./, (char) => char.toUpperCase())}
                       </span>
                     </td>
@@ -2687,9 +2690,9 @@ export default function OrganizerWallet() {
                       <span className="text-sm">
                         {selectedTicket?.date
                           ? formatDate(
-                              new Date(selectedTicket.date),
-                              "EEEE, dd MMM, HH:mm (z)"
-                            )
+                            new Date(selectedTicket.date),
+                            "EEEE, dd MMM, HH:mm (z)"
+                          )
                           : "Date not provided"}
                       </span>
                     </div>
@@ -2743,9 +2746,8 @@ export default function OrganizerWallet() {
                       </svg>
                       <span className="text-sm">
                         {selectedTicket?.tickets?.ticket_name
-                          ? `${selectedTicket.tickets.ticket_name} x ${
-                              selectedTicket?.count || 1
-                            }`
+                          ? `${selectedTicket.tickets.ticket_name} x ${selectedTicket?.count || 1
+                          }`
                           : `Ticket x ${selectedTicket?.count || 1}`}
                       </span>
                     </div>
@@ -2763,14 +2765,12 @@ export default function OrganizerWallet() {
                 {/* Right Content */}
                 <div className="w-[200px] p-4">
                   <div className="aspect-[3/4] rounded-lg mb-4">
-                  <img
-  ref={flyerImgRef}
-  src={selectedTicket?.party?.flyer || ""}
-  alt="Event"
-  className="w-full h-full object-cover rounded-lg"
-/>
-
-
+                    <img
+                      ref={flyerImgRef}
+                      src={selectedTicket?.party?.flyer || ""}
+                      alt="Event"
+                      className="w-full h-full object-cover rounded-lg"
+                    />
                   </div>
                   <div className="aspect-square relative">
                     <img
@@ -2778,8 +2778,8 @@ export default function OrganizerWallet() {
                       alt="QR Code"
                       className="w-full h-full"
                       onError={(e) =>
-                        (e.target.src =
-                          "https://via.placeholder.com/150?text=QR+Code+Not+Available")
+                      (e.target.src =
+                        "https://via.placeholder.com/150?text=QR+Code+Not+Available")
                       }
                     />
                   </div>
@@ -2801,9 +2801,9 @@ export default function OrganizerWallet() {
                       Order Date:{" "}
                       {selectedTicket?.date
                         ? formatDate(
-                            new Date(selectedTicket.date),
-                            "dd MMM, HH:mm"
-                          )
+                          new Date(selectedTicket.date),
+                          "dd MMM, HH:mm"
+                        )
                         : ""}
                     </p>
                   </div>
@@ -2834,7 +2834,7 @@ export default function OrganizerWallet() {
                               <img
                                 src={paymentIcons[wallet]}
                                 alt={wallet}
-                                className="w-8 h-6 object-contain"
+                                className="w-7 h-5 object-contain"
                               />
                             )}
 
@@ -2884,7 +2884,7 @@ export default function OrganizerWallet() {
                     $
                     {formatAmount(
                       (selectedTicket?.count || 1) *
-                        (selectedTicket?.amount || 0)
+                      (selectedTicket?.amount || 0)
                     )}
                   </div>
                 </div>
@@ -2976,7 +2976,12 @@ export default function OrganizerWallet() {
       {/* View Ticket Dialog */}
       <Dialog
         open={isViewTicketOpen}
-        onOpenChange={setIsViewTicketOpen}
+        onOpenChange={(open) => {
+          setIsViewTicketOpen(open);
+          if (!open) {
+            setCardDetails(null); // Clear card details when dialog closes
+          }
+        }}
         className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
       >
         <DialogContent className="max-h-[90vh] !gap-0 text-white overflow-y-auto">
@@ -3016,15 +3021,17 @@ export default function OrganizerWallet() {
                 Transaction Details
               </h4>
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-white/50">Amount</span>
-                  <span className="font-medium">
-                    $
-                    {selectedTicket?.amount
-                      ? formatAmount(selectedTicket.amount)
-                      : "0.00"}
-                  </span>
-                </div>
+                {selectedTicket?.transaction_id && selectedTicket?.amount > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-white/50">Amount</span>
+                    <span className="font-medium">
+                      $
+                      {selectedTicket?.amount
+                        ? formatAmount(selectedTicket.amount)
+                        : "0.00"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-white/50">Date</span>
                   <span className="font-medium">
@@ -3034,53 +3041,55 @@ export default function OrganizerWallet() {
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="flex flex-col gap-1">
-                    <span className="text-sm text-white/50">
-                      Payment Method
-                    </span>
+                  {selectedTicket?.transaction_id && selectedTicket?.amount > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-white/50">
+                        Payment Method
+                      </span>
 
-                    {cardDetails?.paymentMethod?.card ? (
-                      <div className="flex items-center gap-2">
-                        {(() => {
-                          const brand = cardDetails.paymentMethod.card.brand;
-                          const last4 =
-                            cardDetails.paymentMethod.card.last4 ||
-                            cardDetails.paymentMethod.card.dynamic_last4 ||
-                            "0000";
-                          const wallet =
-                            cardDetails.paymentMethod.card.wallet?.type;
+                      {cardDetails?.paymentMethod?.card ? (
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const brand = cardDetails.paymentMethod.card.brand;
+                            const last4 =
+                              cardDetails.paymentMethod.card.last4 ||
+                              cardDetails.paymentMethod.card.dynamic_last4 ||
+                              "0000";
+                            const wallet =
+                              cardDetails.paymentMethod.card.wallet?.type;
 
-                          return (
-                            <>
-                              {wallet && paymentIcons[wallet] && (
-                                <img
-                                  src={paymentIcons[wallet]}
-                                  alt={wallet}
-                                  className="w-7 h-5 object-contain"
-                                />
-                              )}
+                            return (
+                              <>
+                                {wallet && paymentIcons[wallet] && (
+                                  <img
+                                    src={paymentIcons[wallet]}
+                                    alt={wallet}
+                                    className="w-7 h-5 object-contain"
+                                  />
+                                )}
 
-                              {brand && paymentIcons[brand] && (
-                                <img
-                                  src={paymentIcons[brand]}
-                                  alt={brand}
-                                  className="w-8 h-6 object-contain"
-                                />
-                              )}
+                                {brand && paymentIcons[brand] && (
+                                  <img
+                                    src={paymentIcons[brand]}
+                                    alt={brand}
+                                    className="w-8 h-6 object-contain"
+                                  />
+                                )}
 
-                              <span className="font-medium text-white">
-                                {brand?.charAt(0).toUpperCase() +
-                                  brand?.slice(1)}{" "}
-                                * {last4}
-                              </span>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    ) : (
-                      <span className="text-sm text-white/40">Loading...</span>
-                    )}
-                  </div>
+                                <span className="font-medium text-white">
+                                  {brand?.charAt(0).toUpperCase() +
+                                    brand?.slice(1)}{" "}
+                                  * {last4}
+                                </span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-white/40">Loading...</span>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-white/50">Type</span>
