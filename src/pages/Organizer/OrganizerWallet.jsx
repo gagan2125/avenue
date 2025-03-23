@@ -3056,7 +3056,7 @@ export default function OrganizerWallet() {
                                 <img
                                   src={paymentIcons[wallet]}
                                   alt={wallet}
-                                  className="w-6 h-4 object-contain"
+                                  className="w-7 h-5 object-contain"
                                 />
                               )}
 
@@ -3064,7 +3064,7 @@ export default function OrganizerWallet() {
                                 <img
                                   src={paymentIcons[brand]}
                                   alt={brand}
-                                  className="w-6 h-4 object-contain"
+                                  className="w-8 h-6 object-contain"
                                 />
                               )}
 
