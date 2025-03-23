@@ -14,6 +14,15 @@ export default {
     transparent: "transparent",
     current: "currentColor",
     extend: {
+      animation: {
+        'spin': 'spin 1s linear infinite',
+      },
+      keyframes: {
+        spin: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+      },
       fontFamily: {
         manrope: ["Manrope", "sans-serif"],
         geist: ["Geist", "sans-serif"],
@@ -138,6 +147,12 @@ export default {
     {
       pattern:
         /^(fill-(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)-(?:50|100|200|300|400|500|600|700|800|900|950))$/,
+    },
+    {
+      pattern: /^animate-spin$/,
+    },
+    {
+      pattern: /^border-t-transparent$/,
     },
   ],
   plugins: [containerQueriesPlugin],
