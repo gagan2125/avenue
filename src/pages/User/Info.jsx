@@ -357,7 +357,7 @@ const Info = () => {
                 : (
                     <>
                     
-                        <div className="min-h-screen bg-[0F0F0F] text-white py-5 rounded-t-[24px]">
+                        <div className="min-h-screen bg-primary text-white py-5 rounded-t-[24px]">
                             <div className="max-w-5xl mx-auto px-7">
                                 <p className='font-inter text-sm'><span className='text-[#898989] text-sm font-inter'>Home /</span> {eventName}</p>
                             </div>
