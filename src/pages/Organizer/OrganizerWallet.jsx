@@ -34,7 +34,8 @@ import "jspdf-autotable"; // Only if you want to use autoTable
 import { CalendarIcon, MapPinIcon, TicketIcon } from "lucide-react";
 import html2pdf from "html2pdf.js";
 import paymentIcons from "../../lib/paymentIcons";
-import { BeatLoader } from "react-spinners";
+import ReceiptDownload from "../../lib/receipt";
+import { PDFDownloadLink } from '@react-pdf/renderer';
 
 const salesHistory = [
   {
@@ -645,49 +646,16 @@ export default function OrganizerWallet() {
           })
       );
 
-  const handleDownloadReceipt = async () => {
+  const handleDownloadReceipt = () => {
     if (!selectedTicket) return;
-
     setIsDownloadingReceipt(true);
-    const element = receiptRef.current;
 
-    // Show the element
-    element.style.display = "block";
-
-    // Convert flyer image to base64
-    const flyerImgEl = flyerImgRef.current;
-    if (flyerImgEl && selectedTicket?.party?.flyer) {
-      try {
-        const base64 = await toDataURL(selectedTicket.party.flyer);
-        flyerImgEl.src = base64;
-      } catch (error) {
-        console.warn("Failed to convert flyer to base64", error);
-      }
-    }
-
-    // Proceed to generate the PDF
-    const opt = {
-      margin: 10,
-      filename: `receipt-${selectedTicket?.transaction_id?.slice(-6)}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
-    };
-
-    try {
-      await html2pdf().set(opt).from(element).save();
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-    } finally {
-      element.style.display = "none";
+    // Reset the loading state after a short delay
+    setTimeout(() => {
       setIsDownloadingReceipt(false);
-
-      // Revert to original image if needed (optional)
-      if (flyerImgEl && selectedTicket?.party?.flyer) {
-        flyerImgEl.src = selectedTicket.party.flyer;
-      }
-    }
+    }, 1000); // Adjust the timeout duration as needed
   };
+
   const handleViewQR = (sale) => {
     setSelectedTicket(sale);
     setIsQROpen(true);
@@ -3119,17 +3087,22 @@ export default function OrganizerWallet() {
 
             {/* Actions */}
             <div className="flex gap-3 mt-2 p-6 border-t border-white/10">
-              <button
-                onClick={handleDownloadReceipt}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
-                disabled={isDownloadingReceipt}
+              <PDFDownloadLink
+                document={<ReceiptDownload data={selectedTicket} />}
+                fileName={`receipt-${selectedTicket?.transaction_id}.pdf`}
+                onClick={handleDownloadReceipt} // Trigger download on click
               >
-                {isDownloadingReceipt ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  "Download Receipt"
-                )}
-              </button>
+                <button
+                  className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
+                  disabled={isDownloadingReceipt}
+                >
+                  {isDownloadingReceipt ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    "Download Receipt"
+                  )}
+                </button>
+              </PDFDownloadLink>
               <button
                 onClick={() =>
                   (window.location.href = "mailto:support@avenue.tickets")
