@@ -33,10 +33,16 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsCondition from "./pages/TermsCondition";
 import StripeSuccess from "./pages/StripeSuccess";
 import OrganizerAnalytics from "./pages/Organizer/OrganizerAnalytics";
+import { useEffect } from "react";
+import { initGA } from "./lib/analytics";
 
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+      initGA()
+  }, [])
 
   const hideHeader = [
     "/login",
