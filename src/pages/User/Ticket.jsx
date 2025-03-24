@@ -465,221 +465,220 @@ const Ticket = () => {
                         <Spin size="large" />
                     </div>
                 ) : (
-                    <div className="bg-primary px-4 mt-10 mb-10">
-                        <div className="flex flex-col lg:flex-row justify-center gap-6">
-                            <div className="max-w-md flex-1">
-                                <div className="border border-[#292929] rounded-xl">
-                                    <div className="rounded-    xl bg-primary border border-[#787878] border-opacity-10">
-                                        <div className="p-3.5 border-b border-zinc-800 bg-[#111111] bg-opacity-65 flex items-center gap-2">
-                                            <span className="text-lg font-medium font-inter text-white">Checkout</span>
+                    <div className="bg-primary mb-10">
+                        <div className="flex flex-col lg:flex-row justify-center items-start lg:gap-6 max-w-[1000px] mx-auto">
+                            <div className="w-full max-w-[448px] mx-auto px-5 lg:px-0 lg:mx-0"> {/* Added lg:px-0 and lg:mx-0 for desktop */}                                <div className="border border-[#292929] rounded-xl mt-10 lg:mb-10"> {/* Responsive margin */}
+                                <div className="rounded-xl bg-primary border border-[#787878] border-opacity-10">
+                                    <div className="p-3.5 border-b border-zinc-800 bg-[#111111] bg-opacity-65 flex items-center gap-2">
+                                        <span className="text-lg font-medium font-inter text-white">Checkout</span>
+                                    </div>
+                                </div>
+                                <div className="w-full p-4 px-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div className="flex flex-col items-center">
+                                            {step > 1 ? (
+                                                <FaCheckCircle onClick={handlePrev} color="#34B2DA" />
+                                            ) : (
+                                                <FaRegDotCircle onClick={handlePrev} color={step === 1 ? "#34B2DA" : "#787878"} />
+                                            )}
+                                            <p className={`mt-2 font-inter ${step >= 1 ? 'text-white' : 'text-gray-500'} text-xs`}>Basics</p>
+                                        </div>
+                                        <div className={`flex-1 -mt-7 h-px ${step >= 2 ? 'bg-[#34B2DA]' : 'bg-gray-300'}`}></div>
+                                        <div className="flex flex-col items-center">
+                                            {step > 2 ? (
+                                                <FaCheckCircle color="#34B2DA" />
+                                            ) : (
+                                                <FaRegDotCircle color={step === 2 ? "#34B2DA" : "#787878"} />
+                                            )}
+                                            <p className={`mt-2 font-inter ${step >= 2 ? 'text-white' : 'text-gray-500'} text-xs`}>Payment info</p>
+                                        </div>
+                                        <div className={`flex-1 -mt-7 h-px ${step >= 3 ? 'bg-[#34B2DA]' : 'bg-gray-300'}`}></div>
+                                        <div className="flex flex-col items-center">
+                                            {step === 3 ? (
+                                                <FaCheckCircle color="#34B2DA" />
+                                            ) : (
+                                                <FaRegDotCircle color={step === 3 ? "#34B2DA" : "#787878"} />
+                                            )}
+                                            <p className={`mt-2 font-inter ${step >= 3 ? 'text-white' : 'text-gray-500'} text-xs`}>Success</p>
                                         </div>
                                     </div>
-                                    <div className="w-full max-w-md mx-auto p-4">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <div className="flex flex-col items-center">
-                                                {step > 1 ? (
-                                                    <FaCheckCircle onClick={handlePrev} color="#34B2DA" />
-                                                ) : (
-                                                    <FaRegDotCircle onClick={handlePrev} color={step === 1 ? "#34B2DA" : "#787878"} />
-                                                )}
-                                                <p className={`mt-2 font-inter ${step >= 1 ? 'text-white' : 'text-gray-500'} text-xs`}>Basics</p>
-                                            </div>
-                                            <div className={`flex-1 -mt-7 h-px ${step >= 2 ? 'bg-[#34B2DA]' : 'bg-gray-300'}`}></div>
-                                            <div className="flex flex-col items-center">
-                                                {step > 2 ? (
-                                                    <FaCheckCircle color="#34B2DA" />
-                                                ) : (
-                                                    <FaRegDotCircle color={step === 2 ? "#34B2DA" : "#787878"} />
-                                                )}
-                                                <p className={`mt-2 font-inter ${step >= 2 ? 'text-white' : 'text-gray-500'} text-xs`}>Payment info</p>
-                                            </div>
-                                            <div className={`flex-1 -mt-7 h-px ${step >= 3 ? 'bg-[#34B2DA]' : 'bg-gray-300'}`}></div>
-                                            <div className="flex flex-col items-center">
-                                                {step === 3 ? (
-                                                    <FaCheckCircle color="#34B2DA" />
-                                                ) : (
-                                                    <FaRegDotCircle color={step === 3 ? "#34B2DA" : "#787878"} />
-                                                )}
-                                                <p className={`mt-2 font-inter ${step >= 3 ? 'text-white' : 'text-gray-500'} text-xs`}>Success</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-center">
-                                            <div className="text-sm">
-                                                {step === 1 && (
-                                                    <div className="mt-8">
-                                                        {
-                                                            error && (
-                                                                <>
-                                                                    <p className='text-red-500 mb-3 font-inter'>Please enter full name & email to proceed!</p>
-                                                                </>
-                                                            )
-                                                        }
-                                                        {userIds ? (
+                                    <div className="text-center">
+                                        <div className="text-sm">
+                                            {step === 1 && (
+                                                <div className="mt-8">
+                                                    {
+                                                        error && (
+                                                            <>
+                                                                <p className='text-red-500 mb-3 font-inter'>Please enter full name & email to proceed!</p>
+                                                            </>
+                                                        )
+                                                    }
+                                                    {userIds ? (
+                                                        <div className="mb-5 mx-3">
+                                                            <label className="block text-white text-sm mb-2 text-start font-inter">Full name</label>
+                                                            <input
+                                                                type="text"
+                                                                name="firstName"
+                                                                value={formData.firstName === 'undefined' || formData.firstName === 'undefined undefined' ? "" : formData.firstName}
+                                                                onChange={handleChange}
+                                                                className="w-full font-inter bg-primary border border-[#1c1c1c] rounded-full px-4 py-3 text-white placeholder-zinc-400 focus:outline-none"
+                                                                placeholder="John Doe"
+                                                                required
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <>
+                                                            <div className="mx-3">
+                                                                <button onClick={() => setIsModalOpen(true)} className="font-inter w-full bg-white text-black font-medium py-3 px-4 rounded-full hover:bg-gray-100 transition-colors">
+                                                                    Login
+                                                                </button>
+                                                            </div>
+                                                            <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+                                                            {/* <p className='font-inter text-white'>Please login to continue booking</p> */}
+                                                        </>
+                                                    )}
+
+                                                    {userIds && (
+                                                        <>
                                                             <div className="mb-5 mx-3">
-                                                                <label className="block text-white text-sm mb-2 text-start font-inter">Full name</label>
+                                                                <label className="block text-white text-sm mb-2 text-start font-inter">Email address</label>
                                                                 <input
-                                                                    type="text"
-                                                                    name="firstName"
-                                                                    value={formData.firstName === 'undefined' || formData.firstName === 'undefined undefined' ? "" : formData.firstName}
+                                                                    type="email"
+                                                                    name="email"
+                                                                    value={formData.email}
                                                                     onChange={handleChange}
                                                                     className="w-full font-inter bg-primary border border-[#1c1c1c] rounded-full px-4 py-3 text-white placeholder-zinc-400 focus:outline-none"
-                                                                    placeholder="John Doe"
+                                                                    placeholder="johndoe@gmail.com"
                                                                     required
                                                                 />
                                                             </div>
+                                                            <div className="mx-3">
+                                                                <button onClick={handleNext} className="font-inter w-full bg-white text-black font-medium py-3 px-4 rounded-full hover:bg-gray-100 transition-colors">
+                                                                    Continue to payment
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                            {step === 2 && (
+                                                <div className="mt-8">
+                                                    <div className="mx-3">
+                                                        <div className="text-start mb-4">
+                                                            <p className="text-xs font-inter text-gray-400">TOTAL AMOUNT</p>
+                                                            <p className="text-2xl font-medium font-inter text-gray-50 mt-2">
+                                                                {event.event_type === 'rsvp' ? (
+                                                                    "Free"
+                                                                ) : ticket.price === 0 ? (
+                                                                    "$0.00"
+                                                                ) : (
+                                                                    <>
+                                                                        <span className="text-[#606060]">$</span>
+                                                                        {calculateTotal()}
+                                                                    </>
+                                                                )}
+                                                            </p>
+                                                        </div>
+                                                        {event.event_type === 'rsvp' ? (
+                                                            <button
+                                                                onClick={handleRSVPAdd}
+                                                                className={`w-full mt-4 font-inter py-3 rounded-full font-medium bg-white`}
+                                                            >
+                                                                Book now
+                                                            </button>
                                                         ) : (
                                                             <>
-                                                                <div className="mx-3">
-                                                                    <button onClick={() => setIsModalOpen(true)} className="font-inter w-full bg-white text-black font-medium py-3 px-4 rounded-full hover:bg-gray-100 transition-colors">
-                                                                        Login
-                                                                    </button>
-                                                                </div>
-                                                                <LoginModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-                                                                {/* <p className='font-inter text-white'>Please login to continue booking</p> */}
-                                                            </>
-                                                        )}
-
-                                                        {userIds && (
-                                                            <>
-                                                                <div className="mb-5 mx-3">
-                                                                    <label className="block text-white text-sm mb-2 text-start font-inter">Email address</label>
-                                                                    <input
-                                                                        type="email"
-                                                                        name="email"
-                                                                        value={formData.email}
-                                                                        onChange={handleChange}
-                                                                        className="w-full font-inter bg-primary border border-[#1c1c1c] rounded-full px-4 py-3 text-white placeholder-zinc-400 focus:outline-none"
-                                                                        placeholder="johndoe@gmail.com"
-                                                                        required
-                                                                    />
-                                                                </div>
-                                                                <div className="mx-3">
-                                                                    <button onClick={handleNext} className="font-inter w-full bg-white text-black font-medium py-3 px-4 rounded-full hover:bg-gray-100 transition-colors">
-                                                                        Continue to payment
-                                                                    </button>
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                )}
-                                                {step === 2 && (
-                                                    <div className="mt-8">
-                                                        <div className="mx-3">
-                                                            <div className="text-start mb-4">
-                                                                <p className="text-xs font-inter text-gray-400">TOTAL AMOUNT</p>
-                                                                <p className="text-2xl font-medium font-inter text-gray-50 mt-2">
-                                                                    {event.event_type === 'rsvp' ? (
-                                                                        "Free"
-                                                                    ) : ticket.price === 0 ? (
-                                                                        "$0.00"
+                                                                {
+                                                                    ticket.price === 0 ? (
+                                                                        <button
+                                                                            disabled={zeroLoading}
+                                                                            onClick={handleZeroPay}
+                                                                            className={`w-full mt-4 font-inter py-3 ${zeroLoading ? "bg-gray-400 cursor-not-allowed" : "bg-white"} rounded-full font-medium `}>
+                                                                            {zeroLoading ? "Processing..." : "Pay"}
+                                                                        </button>
                                                                     ) : (
-                                                                        <>
-                                                                            <span className="text-[#606060]">$</span>
-                                                                            {calculateTotal()}
-                                                                        </>
-                                                                    )}
-                                                                </p>
-                                                            </div>
-                                                            {event.event_type === 'rsvp' ? (
-                                                                <button
-                                                                    onClick={handleRSVPAdd}
-                                                                    className={`w-full mt-4 font-inter py-3 rounded-full font-medium bg-white`}
-                                                                >
-                                                                    Book now
-                                                                </button>
-                                                            ) : (
-                                                                <>
-                                                                    {
-                                                                        ticket.price === 0 ? (
-                                                                            <button
-                                                                                disabled={zeroLoading}
-                                                                                onClick={handleZeroPay}
-                                                                                className={`w-full mt-4 font-inter py-3 ${zeroLoading ? "bg-gray-400 cursor-not-allowed" : "bg-white"} rounded-full font-medium `}>
-                                                                                {zeroLoading ? "Processing..." : "Pay"}
-                                                                            </button>
-                                                                        ) : (
-                                                                            <Checkout
-                                                                                clientSecret={clientSecret}
-                                                                                setStep={setStep}
-                                                                                amount={Math.round(parseFloat(calculateTotal()) * 100)}
-                                                                                organizerId={organizerId}
-                                                                                userId={userId}
-                                                                                eventId={eventId}
-                                                                                date={currentDateTime}
-                                                                                status={"pending"}
-                                                                                count={counts}
-                                                                                ticketId={selectedTicketId}
-                                                                                tickets={ticket}
-                                                                                firstName={formData.firstName}
-                                                                                lastName={formData.lastName}
-                                                                                email={formData.email}
-                                                                                tax={Number(event.tax) !== 0}
-                                                                            />
-                                                                        )
-                                                                    }
-                                                                </>
-                                                            )}
-                                                            <div className="flex justify-center items-center mt-2">
-                                                                <FiLock className="text-[#606060] mr-2 h-4 w-4" />
-                                                                <p className="font-inter text-[#606060] text-xs">Your data is encrypted</p>
-                                                            </div>
+                                                                        <Checkout
+                                                                            clientSecret={clientSecret}
+                                                                            setStep={setStep}
+                                                                            amount={Math.round(parseFloat(calculateTotal()) * 100)}
+                                                                            organizerId={organizerId}
+                                                                            userId={userId}
+                                                                            eventId={eventId}
+                                                                            date={currentDateTime}
+                                                                            status={"pending"}
+                                                                            count={counts}
+                                                                            ticketId={selectedTicketId}
+                                                                            tickets={ticket}
+                                                                            firstName={formData.firstName}
+                                                                            lastName={formData.lastName}
+                                                                            email={formData.email}
+                                                                            tax={Number(event.tax) !== 0}
+                                                                        />
+                                                                    )
+                                                                }
+                                                            </>
+                                                        )}
+                                                        <div className="flex justify-center items-center mt-2">
+                                                            <FiLock className="text-[#606060] mr-2 h-4 w-4" />
+                                                            <p className="font-inter text-[#606060] text-xs">Your data is encrypted</p>
                                                         </div>
                                                     </div>
-                                                )}
-                                                {step === 3 && (
-                                                    <>
-                                                        <div className="flex justify-center items-center mt-4">
-                                                            <img
-                                                                src={success}
-                                                                alt="Image"
-                                                                className="w-20 h-20 rounded-lg object-cover"
-                                                            />
-                                                        </div>
-                                                        <h1 className='font-inter text-xl text-white mt-5'>Payment successful!</h1>
-                                                        <p className='text-xs text-gray-400 mt-2'>Scan the below QR Ticket</p>
-                                                        <div className="flex justify-center items-center mt-4">
-                                                            <img
-                                                                src={book.qrcode}
-                                                                alt="QR Code"
-                                                                className="w-1/2 h-1/2 rounded-lg object-cover"
-                                                            />
-                                                        </div>
+                                                </div>
+                                            )}
+                                            {step === 3 && (
+                                                <>
+                                                    <div className="flex justify-center items-center mt-4">
+                                                        <img
+                                                            src={success}
+                                                            alt="Image"
+                                                            className="w-20 h-20 rounded-lg object-cover"
+                                                        />
+                                                    </div>
+                                                    <h1 className='font-inter text-xl text-white mt-5'>Payment successful!</h1>
+                                                    <p className='text-xs text-gray-400 mt-2'>Scan the below QR Ticket</p>
+                                                    <div className="flex justify-center items-center mt-4">
+                                                        <img
+                                                            src={book.qrcode}
+                                                            alt="QR Code"
+                                                            className="w-1/2 h-1/2 rounded-lg object-cover"
+                                                        />
+                                                    </div>
 
-                                                    </>
-                                                )}
-                                            </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            </div>
 
                             {step === 2 && (
-                                <div className="w-full max-w-xs mx-auto md:mx-0 flex-1 space-y-2 justify-center items-center">
-                                    <div className="bg-[#292929] bg-opacity-25 rounded-xl p-4">
-                                        <div className='flex justify-between mb-4'>
-                                            <h2 className="text-xs font-medium font-inter text-gray-400 uppercase">{event.category}</h2>
-                                            <h2 className="text-xs font-medium font-inter text-gray-400">{formatDate(event.start_date)}</h2>
-                                        </div>
-                                        <div className="border-t border-[#292929] mt-4 pt-4 mx-[-16px] px-4">
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <span className="text-md font-inter text-white font-medium">{event.event_name}</span>
-                                                    <div className="flex items-center mt-2">
-                                                        <FaMapMarkerAlt className="text-gray-400 mr-1" size={12} />
-                                                        <p className="text-xs text-gray-400 font-medium font-inter">
-                                                            {event.venue_name}
-                                                        </p>
-                                                    </div>
+                                <div className="w-full max-w-[448px] lg:max-w-[320px] mx-auto px-5 lg:px-0 lg:mx-0"> {/* Added lg:px-0 and lg:mx-0 for desktop */}                                    
+                                <div className="bg-[#292929] bg-opacity-25 rounded-xl p-4 mt-2 lg:mt-10">
+                                    <div className='flex justify-between mb-4'>
+                                        <h2 className="text-xs font-medium font-inter text-gray-400 uppercase">{event.category}</h2>
+                                        <h2 className="text-xs font-medium font-inter text-gray-400">{formatDate(event.start_date)}</h2>
+                                    </div>
+                                    <div className="border-t border-[#292929] mt-4 pt-4 mx-[-16px] px-4">
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <span className="text-md font-inter text-white font-medium">{event.event_name}</span>
+                                                <div className="flex items-center mt-2">
+                                                    <FaMapMarkerAlt className="text-gray-400 mr-1" size={12} />
+                                                    <p className="text-xs text-gray-400 font-medium font-inter">
+                                                        {event.venue_name}
+                                                    </p>
                                                 </div>
-                                                <img
-                                                    src={event.flyer}
-                                                    alt="Image"
-                                                    className="w-12 h-12 rounded-lg object-cover"
-                                                />
                                             </div>
+                                            <img
+                                                src={event.flyer}
+                                                alt="Image"
+                                                className="w-12 h-12 rounded-lg object-cover"
+                                            />
                                         </div>
                                     </div>
-                                    <div className="border border-[#292929] rounded-xl p-4">
+                                </div>
+                                    <div className="border border-[#292929] rounded-xl p-4 mt-2 mb-10">
                                         <h2 className="text-xs font-medium font-inter text-gray-400 mb-4">ORDER SUMMARY</h2>
                                         <div className="border-t border-[#292929] mt-4 pt-4 mx-[-16px] px-4">
                                             <div className="flex justify-between items-center">

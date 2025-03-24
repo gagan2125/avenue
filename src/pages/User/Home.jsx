@@ -177,9 +177,9 @@ const Home = () => {
     const maxPrice = sliderValue ? sliderValue[1] : null;
 
     const yesterday = new Date();
-yesterday.setDate(yesterday.getDate() - 1);
-const allowedDate = getDateOnly(yesterday);
-const isAllowedEvent = eventDate >= allowedDate;
+    yesterday.setDate(yesterday.getDate() - 1);
+    const allowedDate = getDateOnly(yesterday);
+    const isAllowedEvent = eventDate >= allowedDate;
 
 
     // const isWithinPriceRange =
@@ -317,10 +317,8 @@ const isAllowedEvent = eventDate >= allowedDate;
       <h1 className="text-5xl sm:text-5xl md:text-6xl lg:text-[76px] font-medium text-white mb-4 tracking-tighter -mt-4 sm:-mt-6 lg:-mt-8">
         in <span className="text-[#8a8686] underline decoration-[#2e2e2e] decoration-4">your</span> area
       </h1>
-      <p className="text-xs sm:text-sm md:text-base font-geist text-[#fff] text-opacity-50 max-w-lg mx-auto mt-4">
-        Avenue streamlines event discovery,
-      </p>
-      <p className="text-xs sm:text-sm md:text-base font-geist text-[#fff] text-opacity-50 max-w-lg mx-auto">
+      <p className="text-[clamp(16px,1.8vw,18px)] font-geist text-[#fff] text-opacity-50 max-w-lg mx-auto">
+        Avenue streamlines event discovery,<br />
         creation, ticketing, and management.
       </p>
 
