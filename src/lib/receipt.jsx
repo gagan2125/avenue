@@ -3,8 +3,28 @@ import { Svg, G, Path, Defs, ClipPath, Rect } from '@react-pdf/renderer';
 
 const formatDate = (dateString) => {
     const date = new Date(dateString);
-    const options = { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true };
-    return date.toLocaleString('en-US', options).replace(',', ' at');
+    const options = { weekday: 'long', day: 'numeric', month: 'long' };
+    const formattedDate = date.toLocaleString('en-US', options);
+
+    // Add the suffix for the day
+    const day = date.getDate();
+    const suffix = (day) => {
+        if (day > 3 && day < 21) return 'th'; // Catch 11th-13th
+        switch (day % 10) {
+            case 1: return 'st';
+            case 2: return 'nd';
+            case 3: return 'rd';
+            default: return 'th';
+        }
+    };
+
+    return formattedDate.replace(/(\d+)/, `$&${suffix(day)}`);
+};
+
+const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const options = { hour: 'numeric', minute: 'numeric', hour12: true };
+    return date.toLocaleString('en-US', options);
 };
 
 const Logo = () => (
@@ -114,9 +134,19 @@ const styles = StyleSheet.create({
         borderBottom: '1pt solid black',
         marginVertical: 15,
     },
+    dividerSolidBody: {
+        borderBottom: '1pt solid black',
+        marginVertical: 15,
+        marginRight: -120
+    },
     dividerDashed: {
         borderBottom: '1pt dashed #000',
         marginVertical: 10,
+    },
+    dividerDashedBody: {
+        borderBottom: '1pt dashed #000',
+        marginVertical: 10,
+        marginRight: -120
     },
     orderSummaryTitle: {
         fontSize: 11,
@@ -174,6 +204,10 @@ const styles = StyleSheet.create({
         height: 100,
         marginLeft: 10,
     },
+    orderSummaryContainer: {
+        marginLeft: 'auto',  // This will push the content to the right
+        width: '90%',       // This will make it take up 90% of the space
+    },
 });
 
 const ReceiptDownload = ({ data }) => (
@@ -184,9 +218,6 @@ const ReceiptDownload = ({ data }) => (
                 <View style={styles.headerLeft}>
                     <Logo />
                 </View>
-                <View style={styles.headerRight}>
-                    <Text>INOX</Text>
-                </View>
             </View>
 
             <View style={styles.mainContent}>
@@ -194,53 +225,53 @@ const ReceiptDownload = ({ data }) => (
                     {/* Booking Info */}
                     <View style={styles.bookingInfo}>
                         <View>
-                            <Text style={styles.bookingId}>Booking ID: 81297</Text>
-                            <Text style={styles.bookingId}>Paytm Order ID: 1993523877</Text>
+                            <Text style={styles.bookingId}>Order # {data.transaction_id?.slice(-6)}</Text>
                         </View>
                         <View>
-                            <Text style={styles.dateTime}>Friday,26th August</Text>
-                            <Text style={styles.dateTime}>10:15 AM</Text>
+                            <Text style={styles.dateTime}>{formatDate(data.party?.start_date)}</Text>
+                            <Text style={styles.dateTime}>{formatTime(data.party?.start_date)}</Text>
                         </View>
                     </View>
 
                     {/* Movie & Theater Info */}
-                    <Text style={styles.movieTitle}>A Flying Jatt</Text>
-                    <Text style={styles.movieInfo}>Hindi, (U/A)</Text>
+                    <Text style={styles.movieTitle}>{data.party?.event_name}</Text>
+                    <Text style={styles.movieInfo}>A</Text>
                     <Text style={styles.theaterInfo}>INOX Swabhumi,Maulana Abdul Kalam Azad Sarani</Text>
                     <Text style={styles.theaterInfo}>INOX Leisure Ltd.,89C, Moulana Abul Kalam Azad Sarani,Kolkata - 700 054Ph : 033 2320 8900 Fax : 033 2320 5551</Text>
 
                     <Text style={styles.screenInfo}>Screen 1</Text>
                     <Text style={styles.seatInfo}>CL-M11</Text>
 
-                    <View style={styles.dividerSolid} />
+                    <View style={styles.dividerSolidBody} />
 
                     {/* Order Summary */}
                     <Text style={styles.orderSummaryTitle}>Order Summary</Text>
-                    <View style={styles.dividerDashed} />
+                    <View style={styles.dividerDashedBody} />
+                    <View style={styles.orderSummaryContainer}>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Ticket Cost</Text>
+                            <Text style={styles.summaryValue}>1X Rs. 90</Text>
+                        </View>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Convenience Fee</Text>
+                            <Text style={styles.summaryValue}>Rs. 20</Text>
+                        </View>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Service Tax</Text>
+                            <Text style={styles.summaryValue}>Rs. 2.8</Text>
+                        </View>
+                        <View style={styles.summaryRow}>
+                            <Text style={styles.summaryLabel}>Swachh Bharat Cess</Text>
+                            <Text style={styles.summaryValue}>Rs. 0.1</Text>
+                        </View>
 
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Ticket Cost</Text>
-                        <Text style={styles.summaryValue}>1X Rs. 90</Text>
+                        <View style={styles.dividerDashed} />
+                        <View style={styles.totalRow}>
+                            <Text>Total</Text>
+                            <Text>Rs. 112.9</Text>
+                        </View>
+                        <View style={styles.dividerDashed} />
                     </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Convenience Fee</Text>
-                        <Text style={styles.summaryValue}>Rs. 20</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Service Tax</Text>
-                        <Text style={styles.summaryValue}>Rs. 2.8</Text>
-                    </View>
-                    <View style={styles.summaryRow}>
-                        <Text style={styles.summaryLabel}>Swachh Bharat Cess</Text>
-                        <Text style={styles.summaryValue}>Rs. 0.1</Text>
-                    </View>
-
-                    <View style={styles.dividerDashed} />
-                    <View style={styles.totalRow}>
-                        <Text>Total</Text>
-                        <Text>Rs. 112.9</Text>
-                    </View>
-                    <View style={styles.dividerDashed} />
 
                     {/* Booking Details */}
                     <Text style={styles.bookingDetails}>Booking Date: Friday,August 26,2016</Text>
@@ -264,7 +295,7 @@ const ReceiptDownload = ({ data }) => (
                 <Text style={styles.noteText}>• The 3D glasses will be available at the cinema for 3D films and must be returned before you exit the premises. 3D Glasses are chargeable (refundable/non-refundable) as per individual cinema policies.</Text>
                 <Text style={styles.noteText}>• Items like laptop, cameras,knifes, lighter,match box, cigarettes, firearms and all types of inflammable objects are strictly prohibited.</Text>
                 <Text style={styles.noteText}>• Items like carrybags eatables, helmets, handbags are not allowed inside the theaters are strictly prohibited. Kindly deposit at the baggage counter of mall/cinema.</Text>
-                
+
                 <Text style={styles.noteText}>Please check the suitability of the movie as per the Censor Board rating. Cinema management holds Rights of Admission and can deny admission for compliance of cinema policies.</Text>
                 <Text style={styles.noteText}>• U : Unrestricted Public Exhibition throughout India, suitable for all age groups</Text>
                 <Text style={styles.noteText}>• A : Viewing restricted to adults above 18 years only</Text>
