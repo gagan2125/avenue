@@ -1,64 +1,6 @@
 import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 import { Svg, G, Path, Defs, ClipPath, Rect } from '@react-pdf/renderer';
 
-// Create styles
-const styles = StyleSheet.create({
-    page: {
-        padding: 30,
-        backgroundColor: '#ffffff',
-    },
-    header: {
-        marginBottom: 20,
-        textAlign: 'center',
-    },
-    title: {
-        fontSize: 24,
-        marginBottom: 10,
-        color: '#000000',
-    },
-    subtitle: {
-        fontSize: 18,
-        marginBottom: 5,
-        color: '#666666',
-    },
-    section: {
-        marginTop: 40,
-        marginBottom: 20,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        marginBottom: 10,
-        color: '#000000',
-    },
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 5,
-    },
-    label: {
-        fontSize: 12,
-        color: '#666666',
-    },
-    value: {
-        fontSize: 12,
-        color: '#000000',
-    },
-    total: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginTop: 10,
-        borderTop: 1,
-        borderColor: '#cccccc',
-        paddingTop: 10,
-    },
-    footer: {
-        marginTop: 30,
-        textAlign: 'center',
-        fontSize: 10,
-        color: '#666666',
-    },
-});
-
 const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true };
@@ -101,78 +43,236 @@ const Logo = () => (
     </Svg>
 );
 
-const ReceiptDownload = ({ data }) => {
-    console.log(data.selectedTicket);
-    return (
-        <Document>
-            <Page size="Letter" style={styles.page}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%' }}>
+// ... existing Logo component code ...
+
+// Add QR Code component
+const QRCode = () => (
+    <Svg width="100" height="100" viewBox="0 0 100 100">
+        {/* This is a placeholder - you'll need to use an actual QR code generator library 
+            like 'qrcode' to generate the real SVG path data for your QR codes */}
+        <Rect x="0" y="0" width="100" height="100" fill="black" />
+    </Svg>
+);
+
+const styles = StyleSheet.create({
+    page: {
+        padding: '40 30',
+        backgroundColor: '#ffffff',
+        fontFamily: 'Helvetica',
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        borderBottom: '1pt solid black',
+        paddingBottom: 10,
+        marginBottom: 15,
+    },
+    headerLeft: {
+        width: 100,
+    },
+    headerRight: {
+        width: 50,
+    },
+    bookingInfo: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 15,
+    },
+    bookingId: {
+        fontSize: 11,
+        fontWeight: 'normal',
+    },
+    dateTime: {
+        fontSize: 11,
+        textAlign: 'right',
+        fontWeight: 'bold',
+    },
+    movieTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    movieInfo: {
+        fontSize: 11,
+        marginBottom: 2,
+    },
+    theaterInfo: {
+        fontSize: 11,
+        marginBottom: 2,
+        lineHeight: 1.3,
+    },
+    screenInfo: {
+        fontSize: 11,
+        marginTop: 10,
+        marginBottom: 2,
+    },
+    seatInfo: {
+        fontSize: 11,
+        marginBottom: 15,
+    },
+    dividerSolid: {
+        borderBottom: '1pt solid black',
+        marginVertical: 15,
+    },
+    dividerDashed: {
+        borderBottom: '1pt dashed #000',
+        marginVertical: 10,
+    },
+    orderSummaryTitle: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    summaryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        fontSize: 11,
+        marginBottom: 3,
+    },
+    summaryLabel: {
+        flex: 1,
+    },
+    summaryValue: {
+        textAlign: 'right',
+        width: 100,
+    },
+    totalRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        fontSize: 11,
+        fontWeight: 'bold',
+        marginTop: 5,
+    },
+    bookingDetails: {
+        fontSize: 11,
+        marginTop: 10,
+        marginBottom: 3,
+    },
+    importantNotes: {
+        marginTop: 15,
+    },
+    notesTitle: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        marginBottom: 8,
+    },
+    noteText: {
+        fontSize: 9,
+        marginBottom: 4,
+        lineHeight: 1.3,
+    },
+    mainContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    contentLeft: {
+        flex: 1,
+        paddingRight: 20,
+    },
+    qrCode: {
+        width: 100,
+        height: 100,
+        marginLeft: 10,
+    },
+});
+
+const ReceiptDownload = ({ data }) => (
+    <Document>
+        <Page size="A4" style={styles.page}>
+            {/* Header with logos */}
+            <View style={styles.header}>
+                <View style={styles.headerLeft}>
                     <Logo />
-                    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 1 }}>
-                        <Text style={{ fontSize: 10, color: 'black' }}>Order #</Text>
-                        <Text style={{ fontSize: 10, color: 'rgba(0, 0, 0, 0.6)' }}>{data.transaction_id?.slice(-6)}</Text>
+                </View>
+                <View style={styles.headerRight}>
+                    <Text>INOX</Text>
+                </View>
+            </View>
+
+            <View style={styles.mainContent}>
+                <View style={styles.contentLeft}>
+                    {/* Booking Info */}
+                    <View style={styles.bookingInfo}>
+                        <View>
+                            <Text style={styles.bookingId}>Booking ID: 81297</Text>
+                            <Text style={styles.bookingId}>Paytm Order ID: 1993523877</Text>
+                        </View>
+                        <View>
+                            <Text style={styles.dateTime}>Friday,26th August</Text>
+                            <Text style={styles.dateTime}>10:15 AM</Text>
+                        </View>
                     </View>
+
+                    {/* Movie & Theater Info */}
+                    <Text style={styles.movieTitle}>A Flying Jatt</Text>
+                    <Text style={styles.movieInfo}>Hindi, (U/A)</Text>
+                    <Text style={styles.theaterInfo}>INOX Swabhumi,Maulana Abdul Kalam Azad Sarani</Text>
+                    <Text style={styles.theaterInfo}>INOX Leisure Ltd.,89C, Moulana Abul Kalam Azad Sarani,Kolkata - 700 054Ph : 033 2320 8900 Fax : 033 2320 5551</Text>
+
+                    <Text style={styles.screenInfo}>Screen 1</Text>
+                    <Text style={styles.seatInfo}>CL-M11</Text>
+
+                    <View style={styles.dividerSolid} />
+
+                    {/* Order Summary */}
+                    <Text style={styles.orderSummaryTitle}>Order Summary</Text>
+                    <View style={styles.dividerDashed} />
+
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Ticket Cost</Text>
+                        <Text style={styles.summaryValue}>1X Rs. 90</Text>
+                    </View>
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Convenience Fee</Text>
+                        <Text style={styles.summaryValue}>Rs. 20</Text>
+                    </View>
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Service Tax</Text>
+                        <Text style={styles.summaryValue}>Rs. 2.8</Text>
+                    </View>
+                    <View style={styles.summaryRow}>
+                        <Text style={styles.summaryLabel}>Swachh Bharat Cess</Text>
+                        <Text style={styles.summaryValue}>Rs. 0.1</Text>
+                    </View>
+
+                    <View style={styles.dividerDashed} />
+                    <View style={styles.totalRow}>
+                        <Text>Total</Text>
+                        <Text>Rs. 112.9</Text>
+                    </View>
+                    <View style={styles.dividerDashed} />
+
+                    {/* Booking Details */}
+                    <Text style={styles.bookingDetails}>Booking Date: Friday,August 26,2016</Text>
+                    <Text style={styles.bookingDetails}>Kiosk ID: 1572</Text>
+                    <Text style={styles.bookingDetails}>Paytm Transaction ID: 2173745742</Text>
                 </View>
 
-                <View style={[styles.section, {
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: 'rgba(0, 0, 0, 0.07)', // 7.5% opacity black
-                    paddingVertical: 20, // 20 padding on top and bottom
-                    paddingHorizontal: 10 // 10 padding on right and left
-                }]}>
-                    <Text style={{ fontSize: 24, fontWeight: '500' }}>{data.party?.event_name}</Text>
-                    <View style={styles.row}>
-                        <Text style={styles.value}>{formatDate(data.start_date)}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Receipt ID:</Text>
-                        <Text style={styles.value}>{data.ticketId}</Text>
-                    </View>
+                {/* QR Code */}
+                <View style={styles.qrCode}>
+                    <QRCode />
                 </View>
+            </View>
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Event Details</Text>
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Event:</Text>
-                        <Text style={styles.value}>{data.eventName}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Venue:</Text>
-                        <Text style={styles.value}>{data.venue}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Organizer:</Text>
-                        <Text style={styles.value}>{data.organizerName}</Text>
-                    </View>
-                </View>
+            <View style={styles.dividerSolid} />
 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Ticket Details</Text>
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Ticket Type:</Text>
-                        <Text style={styles.value}>{data.ticketName}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Price:</Text>
-                        <Text style={styles.value}>${data.ticketPrice}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={styles.label}>Quantity:</Text>
-                        <Text style={styles.value}>{data.quantity}</Text>
-                    </View>
-                </View>
-
-                <View style={styles.row}>
-                    <Text style={styles.total}>Total Amount: ${data.totalAmount}</Text>
-                </View>
-
-                <View style={styles.footer}>
-                    <Text>Thank you for your purchase!</Text>
-                </View>
-            </Page>
-        </Document>
-    );
-};
+            {/* Important Notes */}
+            <View style={styles.importantNotes}>
+                <Text style={styles.notesTitle}>Important Notes:</Text>
+                <Text style={styles.noteText}>• Tickets & food once ordered cannot be exchanged, cancelled or refunded.</Text>
+                <Text style={styles.noteText}>• Children aged 3 years and above will require a separate ticket.</Text>
+                <Text style={styles.noteText}>• The 3D glasses will be available at the cinema for 3D films and must be returned before you exit the premises. 3D Glasses are chargeable (refundable/non-refundable) as per individual cinema policies.</Text>
+                <Text style={styles.noteText}>• Items like laptop, cameras,knifes, lighter,match box, cigarettes, firearms and all types of inflammable objects are strictly prohibited.</Text>
+                <Text style={styles.noteText}>• Items like carrybags eatables, helmets, handbags are not allowed inside the theaters are strictly prohibited. Kindly deposit at the baggage counter of mall/cinema.</Text>
+                
+                <Text style={styles.noteText}>Please check the suitability of the movie as per the Censor Board rating. Cinema management holds Rights of Admission and can deny admission for compliance of cinema policies.</Text>
+                <Text style={styles.noteText}>• U : Unrestricted Public Exhibition throughout India, suitable for all age groups</Text>
+                <Text style={styles.noteText}>• A : Viewing restricted to adults above 18 years only</Text>
+                <Text style={styles.noteText}>• U/A : Unrestricted public exhibition with parental guidance for children below age 12</Text>
+                <Text style={styles.noteText}>• S : Film is meant for specialized audience such as doctors</Text>
+            </View>
+        </Page>
+    </Document>
+);
 
 export default ReceiptDownload;
