@@ -154,6 +154,10 @@ export default {
     {
       pattern: /^border-t-transparent$/,
     },
+    {
+      pattern: /^animate-spin$/,
+      variants: ['hover', 'focus', 'active'],
+    },
   ],
   plugins: [containerQueriesPlugin],
 };

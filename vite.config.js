@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+{
+  pattern: /^animate-spin$/,
+  variants; ['hover', 'focus','active']
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
