@@ -228,11 +228,10 @@ const SidebarLayout = ({ children }) => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`menu-item group flex items-center text-sm hover:text-white font-medium gap-2 p-2 px-2.5 rounded-[10px] transition-colors ${
-                    location.pathname === item.path
-                      ? "selected bg-white/5 text-white"
-                      : "text-white/50"
-                  }`}
+                  className={`menu-item group flex items-center text-sm hover:text-white font-medium gap-2 p-2 px-2.5 rounded-[10px] transition-colors ${location.pathname === item.path
+                    ? "selected bg-white/5 text-white"
+                    : "text-white/50"
+                    }`}
                   onClick={() => setIsSidebarOpen(false)}
                 >
                   {item.icon}
@@ -241,11 +240,17 @@ const SidebarLayout = ({ children }) => {
               ))}
               <Link
                 to="/organizer/create-event"
-                className="w-full px-4 py-2 text-sm bg-white rounded-full text-black font-semibold h-10 flex items-center justify-center"
+                className="w-full px-4 py-2 text-sm bg-white rounded-full text-black font-semibold h-10 flex items-center justify-center gap-1"
               >
+                <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M9.25 3.75C9.25 3.55109 9.17098 3.36032 9.03033 3.21967C8.88968 3.07902 8.69891 3 8.5 3C8.30109 3 8.11032 3.07902 7.96967 3.21967C7.82902 3.36032 7.75 3.55109 7.75 3.75V7.25H4.25C4.05109 7.25 3.86032 7.32902 3.71967 7.46967C3.57902 7.61032 3.5 7.80109 3.5 8C3.5 8.19891 3.57902 8.38968 3.71967 8.53033C3.86032 8.67098 4.05109 8.75 4.25 8.75H7.75V12.25C7.75 12.4489 7.82902 12.6397 7.96967 12.7803C8.11032 12.921 8.30109 13 8.5 13C8.69891 13 8.88968 12.921 9.03033 12.7803C9.17098 12.6397 9.25 12.4489 9.25 12.25V8.75H12.75C12.9489 8.75 13.1397 8.67098 13.2803 8.53033C13.421 8.38968 13.5 8.19891 13.5 8C13.5 7.80109 13.421 7.61032 13.2803 7.46967C13.1397 7.32902 12.9489 7.25 12.75 7.25H9.25V3.75Z" fill="#0A0A0A" />
+                </svg>
                 Create Event
               </Link>
-              <button className="w-full px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors mb-6">
+              <button className="w-full px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors mb-6 flex items-center justify-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" clip-rule="evenodd" d="M15 8C15 9.85652 14.2625 11.637 12.9497 12.9497C11.637 14.2625 9.85652 15 8 15C6.14348 15 4.36301 14.2625 3.05025 12.9497C1.7375 11.637 1 9.85652 1 8C1 6.14348 1.7375 4.36301 3.05025 3.05025C4.36301 1.7375 6.14348 1 8 1C9.85652 1 11.637 1.7375 12.9497 3.05025C14.2625 4.36301 15 6.14348 15 8ZM9 11.5C9 11.7652 8.89464 12.0196 8.70711 12.2071C8.51957 12.3946 8.26522 12.5 8 12.5C7.73478 12.5 7.48043 12.3946 7.29289 12.2071C7.10536 12.0196 7 11.7652 7 11.5C7 11.2348 7.10536 10.9804 7.29289 10.7929C7.48043 10.6054 7.73478 10.5 8 10.5C8.26522 10.5 8.51957 10.6054 8.70711 10.7929C8.89464 10.9804 9 11.2348 9 11.5ZM7.293 5.293C7.4008 5.18552 7.53171 5.10407 7.67576 5.05486C7.81981 5.00565 7.97319 4.98997 8.12421 5.00902C8.27524 5.02808 8.41992 5.08136 8.54723 5.1648C8.67455 5.24825 8.78113 5.35966 8.85886 5.49054C8.93659 5.62142 8.98341 5.76832 8.99576 5.92004C9.0081 6.07176 8.98565 6.2243 8.93011 6.36603C8.87457 6.50776 8.78741 6.63493 8.67526 6.73787C8.56312 6.8408 8.42896 6.91678 8.283 6.96C7.824 7.094 7.25 7.526 7.25 8.25V8.5C7.25 8.69891 7.32902 8.88968 7.46967 9.03033C7.61032 9.17098 7.80109 9.25 8 9.25C8.19891 9.25 8.38968 9.17098 8.53033 9.03033C8.67098 8.88968 8.75 8.69891 8.75 8.5V8.385C9.11137 8.2712 9.44215 8.07676 9.71734 7.81637C9.99254 7.55598 10.205 7.23645 10.3385 6.88192C10.4721 6.52739 10.5234 6.14713 10.4884 5.76988C10.4535 5.39263 10.3333 5.02826 10.1369 4.70429C9.94043 4.38033 9.67295 4.10524 9.35461 3.89982C9.03627 3.6944 8.67541 3.56402 8.29929 3.51852C7.92316 3.47303 7.54162 3.51362 7.18349 3.63722C6.82536 3.76082 6.5 3.9642 6.232 4.232C6.1604 4.30122 6.1033 4.384 6.06404 4.47553C6.02478 4.56705 6.00414 4.66547 6.00332 4.76506C6.0025 4.86464 6.02152 4.96339 6.05928 5.05554C6.09703 5.1477 6.15276 5.23141 6.22321 5.3018C6.29366 5.37218 6.37743 5.42783 6.46962 5.4655C6.56181 5.50317 6.66058 5.5221 6.76016 5.52119C6.85974 5.52027 6.95815 5.49954 7.04963 5.46019C7.14112 5.42084 7.22385 5.36366 7.293 5.292V5.293Z" fill="white" fill-opacity="0.5" />
+                </svg>
                 Help
               </button>
             </nav>
@@ -254,13 +259,13 @@ const SidebarLayout = ({ children }) => {
 
         {/* Desktop Sidebar */}
         <div
-          className={`hidden md:flex fixed top-0 left-0 h-screen w-64 bg-[#1A1A1A] text-white flex-col z-40 transition-transform duration-300 ease-in-out 
+          className={`hidden md:flex fixed top-0 left-0 h-screen w-64 bg-[#1A1A1A] text-white flex-col z-40 transition-transform duration-300 ease-in-out rounded-r-xl 
             ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
         >
           <div className="p-4">
             <Link
               to="/"
-              className="text-base font-bold flex items-center gap-2.5 mb-5"
+              className="text-base font-bold flex items-center gap-2.5 mb-5 p-2.5"
             >
               <svg
                 width="1200"
@@ -304,8 +309,11 @@ const SidebarLayout = ({ children }) => {
             </Link>
             <Link
               to="/organizer/create-event"
-              className="w-full px-4 py-2 text-sm bg-white rounded-full text-black font-semibold h-10 flex items-center justify-center"
+              className="w-full px-4 py-2 text-sm bg-white rounded-full text-black font-semibold h-10 flex items-center justify-center gap-1"
             >
+              <svg width="17" height="16" viewBox="0 0 17 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9.25 3.75C9.25 3.55109 9.17098 3.36032 9.03033 3.21967C8.88968 3.07902 8.69891 3 8.5 3C8.30109 3 8.11032 3.07902 7.96967 3.21967C7.82902 3.36032 7.75 3.55109 7.75 3.75V7.25H4.25C4.05109 7.25 3.86032 7.32902 3.71967 7.46967C3.57902 7.61032 3.5 7.80109 3.5 8C3.5 8.19891 3.57902 8.38968 3.71967 8.53033C3.86032 8.67098 4.05109 8.75 4.25 8.75H7.75V12.25C7.75 12.4489 7.82902 12.6397 7.96967 12.7803C8.11032 12.921 8.30109 13 8.5 13C8.69891 13 8.88968 12.921 9.03033 12.7803C9.17098 12.6397 9.25 12.4489 9.25 12.25V8.75H12.75C12.9489 8.75 13.1397 8.67098 13.2803 8.53033C13.421 8.38968 13.5 8.19891 13.5 8C13.5 7.80109 13.421 7.61032 13.2803 7.46967C13.1397 7.32902 12.9489 7.25 12.75 7.25H9.25V3.75Z" fill="#0A0A0A" />
+              </svg>
               Create Event
             </Link>
           </div>
@@ -318,11 +326,10 @@ const SidebarLayout = ({ children }) => {
                 data-selected={
                   location.pathname === item.path ? "true" : "false"
                 }
-                className={`menu-item group flex items-center text-sm hover:text-white font-medium gap-2 p-2 px-2.5 rounded-[10px] transition-colors ${
-                  location.pathname === item.path
-                    ? "selected bg-white/5 text-white"
-                    : "text-white/50"
-                }`}
+                className={`menu-item group flex items-center text-sm hover:text-white font-medium gap-2 p-2 px-2.5 rounded-[10px] transition-colors ${location.pathname === item.path
+                  ? "selected bg-white/5 text-white"
+                  : "text-white/50"
+                  }`}
               >
                 <div>{item.icon}</div>
                 <span>{item.label}</span>
@@ -330,8 +337,11 @@ const SidebarLayout = ({ children }) => {
             ))}
           </nav>
 
-          <div className="mt-auto pt-8">
-            <button className="w-full px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+          <div className="mt-auto px-3 py-3">
+            <button className="w-full px-2.5 py-2 text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M15 8C15 9.85652 14.2625 11.637 12.9497 12.9497C11.637 14.2625 9.85652 15 8 15C6.14348 15 4.36301 14.2625 3.05025 12.9497C1.7375 11.637 1 9.85652 1 8C1 6.14348 1.7375 4.36301 3.05025 3.05025C4.36301 1.7375 6.14348 1 8 1C9.85652 1 11.637 1.7375 12.9497 3.05025C14.2625 4.36301 15 6.14348 15 8ZM9 11.5C9 11.7652 8.89464 12.0196 8.70711 12.2071C8.51957 12.3946 8.26522 12.5 8 12.5C7.73478 12.5 7.48043 12.3946 7.29289 12.2071C7.10536 12.0196 7 11.7652 7 11.5C7 11.2348 7.10536 10.9804 7.29289 10.7929C7.48043 10.6054 7.73478 10.5 8 10.5C8.26522 10.5 8.51957 10.6054 8.70711 10.7929C8.89464 10.9804 9 11.2348 9 11.5ZM7.293 5.293C7.4008 5.18552 7.53171 5.10407 7.67576 5.05486C7.81981 5.00565 7.97319 4.98997 8.12421 5.00902C8.27524 5.02808 8.41992 5.08136 8.54723 5.1648C8.67455 5.24825 8.78113 5.35966 8.85886 5.49054C8.93659 5.62142 8.98341 5.76832 8.99576 5.92004C9.0081 6.07176 8.98565 6.2243 8.93011 6.36603C8.87457 6.50776 8.78741 6.63493 8.67526 6.73787C8.56312 6.8408 8.42896 6.91678 8.283 6.96C7.824 7.094 7.25 7.526 7.25 8.25V8.5C7.25 8.69891 7.32902 8.88968 7.46967 9.03033C7.61032 9.17098 7.80109 9.25 8 9.25C8.19891 9.25 8.38968 9.17098 8.53033 9.03033C8.67098 8.88968 8.75 8.69891 8.75 8.5V8.385C9.11137 8.2712 9.44215 8.07676 9.71734 7.81637C9.99254 7.55598 10.205 7.23645 10.3385 6.88192C10.4721 6.52739 10.5234 6.14713 10.4884 5.76988C10.4535 5.39263 10.3333 5.02826 10.1369 4.70429C9.94043 4.38033 9.67295 4.10524 9.35461 3.89982C9.03627 3.6944 8.67541 3.56402 8.29929 3.51852C7.92316 3.47303 7.54162 3.51362 7.18349 3.63722C6.82536 3.76082 6.5 3.9642 6.232 4.232C6.1604 4.30122 6.1033 4.384 6.06404 4.47553C6.02478 4.56705 6.00414 4.66547 6.00332 4.76506C6.0025 4.86464 6.02152 4.96339 6.05928 5.05554C6.09703 5.1477 6.15276 5.23141 6.22321 5.3018C6.29366 5.37218 6.37743 5.42783 6.46962 5.4655C6.56181 5.50317 6.66058 5.5221 6.76016 5.52119C6.85974 5.52027 6.95815 5.49954 7.04963 5.46019C7.14112 5.42084 7.22385 5.36366 7.293 5.292V5.293Z" fill="white" fill-opacity="0.5" />
+              </svg>
               Help
             </button>
           </div>
@@ -339,9 +349,8 @@ const SidebarLayout = ({ children }) => {
 
         {/* Main Content */}
         <div
-          className={`flex-1 min-h-screen transition-all duration-300 ${
-            isSidebarOpen ? "md:pl-64" : ""
-          } pt-16 md:pt-0`}
+          className={`flex-1 min-h-screen transition-all duration-300 ${isSidebarOpen ? "md:pl-64" : ""
+            } pt-16 md:pt-0`}
         >
           {children}
         </div>
