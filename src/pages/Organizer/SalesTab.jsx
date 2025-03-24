@@ -1,5 +1,5 @@
 import { Ellipsis, MoreHorizontal } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dropdown,
   DropdownTrigger,
@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import url from "../../constants/url";
 import { Spin } from "antd";
+import "../../css/global.css";
 import {
   DirectionAwareMenu,
   MenuItem,
@@ -27,6 +28,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import paymentIcons from "../../lib/paymentIcons";
+import { BeatLoader } from "react-spinners";
 
 const ticketTypesIcons = {
   regular: (
@@ -319,6 +321,8 @@ export default function SalesTab({ eventId, event }) {
   const [isViewTicketOpen, setIsViewTicketOpen] = useState(false);
   const [cardDetails, setCardDetails] = useState(null);
   const [isLoadingTicket, setIsLoadingTicket] = useState(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
+  const [, setEvent] = useState([]);
 
   const handleViewTicket = async (sale) => {
     setIsLoadingTicket(true);
@@ -331,8 +335,111 @@ export default function SalesTab({ eventId, event }) {
     setIsViewTicketOpen(true);
     setIsLoadingTicket(false);
   };
+  const receiptRef = useRef(null);
 
+  useEffect(() => {
+    const fetchEvent = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${url}/event/get-event-by-id/${eventId}`
+        );
+        setEvent(response.data);
+      } catch (error) {
+        console.error("Error fetching event:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    if (eventId) {
+      fetchEvent();
+    }
+  }, [eventId]);
+  function extractPaymentId(fullString) {
+    return fullString?.split("_secret")[0];
+  }
+  useEffect(() => {
+    const fetchCardDetails = async () => {
+      if (!selectedTicket?.transaction_id || selectedTicket?.amount === 0) {
+        return; // Don't fetch for comp tickets
+      }
+
+      const paymentId = extractPaymentId(selectedTicket.transaction_id);
+
+      try {
+        const res = await fetch(`${url}/payment-detail/${paymentId}`);
+        const data = await res.json();
+
+        console.log("✅ Payment details:", data);
+        setCardDetails(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("❌ Failed to fetch payment info:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchCardDetails();
+  }, [selectedTicket?.transaction_id]);
+
+  const flyerImgRef = useRef(null);
+  const toDataURL = (url) =>
+    fetch(url)
+      .then((response) => response.blob())
+      .then(
+        (blob) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          })
+      );
+
+  const handleDownloadReceipt = async () => {
+    if (!selectedTicket) return;
+
+    setIsDownloadingReceipt(true);
+    const element = receiptRef.current;
+
+    // Show the element
+    element.style.display = "block";
+
+    // Convert flyer image to base64
+    const flyerImgEl = flyerImgRef.current;
+    if (flyerImgEl && selectedTicket?.party?.flyer) {
+      try {
+        const base64 = await toDataURL(selectedTicket.party.flyer);
+        flyerImgEl.src = base64;
+      } catch (error) {
+        console.warn("Failed to convert flyer to base64", error);
+      }
+    }
+
+    // Proceed to generate the PDF
+    const opt = {
+      margin: 10,
+      filename: `receipt-${selectedTicket?.transaction_id?.slice(-6)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
+    };
+
+    try {
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      element.style.display = "none";
+      setIsDownloadingReceipt(false);
+
+      // Revert to original image if needed (optional)
+      if (flyerImgEl && selectedTicket?.party?.flyer) {
+        flyerImgEl.src = selectedTicket.party.flyer;
+      }
+    }
+  };
   useEffect(() => {
     const fetchCardDetails = async () => {
       if (!selectedTicket?.transaction_id || selectedTicket?.amount === 0) {
@@ -1208,10 +1315,15 @@ export default function SalesTab({ eventId, event }) {
       {/* View Details Dialog */}
       <Dialog
         open={isViewTicketOpen}
-        onOpenChange={setIsViewTicketOpen}
+        onOpenChange={(open) => {
+          setIsViewTicketOpen(open);
+          if (!open) {
+            setCardDetails(null); // Clear card details when dialog closes
+          }
+        }}
         className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
       >
-        <DialogContent className="max-h-[90vh] !gap-0 text-white overflow-y-auto">
+        <DialogContent className="max-h-[90vh] !gap-0 text-white overflow-y-auto hide-scrollbar">
           <div className="flex flex-col gap-y-3 bg-white/[0.03] rounded-t-xl border-b border-white/10 p-6">
             <DialogTitle>Ticket Details</DialogTitle>
             <DialogDescription>
@@ -1222,18 +1334,18 @@ export default function SalesTab({ eventId, event }) {
             {/* Ticket Image and Basic Info */}
             <div className="flex gap-4 p-6">
               <div className="w-16 h-16 rounded-lg bg-white/10">
-                <img src={selectedTicket?.party?.flyer || ""} alt="" />
+                <img src={event?.flyer || ""} alt="" />
               </div>
               <div className="flex flex-col gap-1">
                 <h3 className="font-medium">
-                  {selectedTicket?.party?.event_name || "Event Name"}
+                  {event?.event_name || "Event Name"}
                 </h3>
                 <p className="text-sm text-white/70">
                   Reference: #
                   {selectedTicket?.transaction_id?.slice(-6) || "000000"}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  {statusIcons["paid"]}
+                  {statusIcons["completed"]}
                   <span className="text-sm">Completed</span>
                 </div>
               </div>
@@ -1332,9 +1444,14 @@ export default function SalesTab({ eventId, event }) {
             <div className="flex gap-3 mt-2 p-6 border-t border-white/10">
               <button
                 // onClick={handleDownloadReceipt}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
+                disabled={isDownloadingReceipt}
               >
-                Download Receipt
+                {isDownloadingReceipt ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  "Download Receipt"
+                )}
               </button>
               <button
                 onClick={() =>
