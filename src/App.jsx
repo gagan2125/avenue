@@ -53,6 +53,7 @@ function App() {
     "/privacy-policy",
     "/terms-and-conditions",
     "/stripe-success",
+    "/organizer/create-ticket/rsvp",
   ];
   const hideFooter = [
     "/login",
@@ -76,6 +77,7 @@ function App() {
     "/privacy-policy",
     "/terms-and-conditions",
     "/stripe-success",
+    "/organizer/create-ticket/rsvp",
   ];
 
   const shouldHideNavbarAndFooter = hideHeader.some((path) =>
