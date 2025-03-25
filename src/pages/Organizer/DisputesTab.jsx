@@ -428,7 +428,7 @@ const DisputesTab = () => {
         <SidebarToggle />
       </div>
       <div className="min-h-screen text-white p-6 max-w-7xl mx-auto @container">
-        <h1 className="text-2xl md:text-3xl font-bold mb-9">Analytics</h1>
+        <h1 className="text-2xl md:text-3xl font-bold mb-9">Disputes</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-transparent border border-white/10 rounded-xl p-4 flex justify-between items-center">
@@ -676,28 +676,34 @@ const DisputesTab = () => {
                       All
                     </DropdownItem>
                     <DropdownItem
-                      onClick={() => setTimeFilter("Last 7 days")}
+                      onClick={() => setTimeFilter("Needs Response")}
                       className="px-4 py-2 hover:bg-white/5 text-white"
                     >
-                      Last 7 days
+                      Needs Response
                     </DropdownItem>
                     <DropdownItem
-                      onClick={() => setTimeFilter("Last 30 days")}
+                      onClick={() => setTimeFilter("In Review")}
                       className="px-4 py-2 hover:bg-white/5 text-white"
                     >
-                      Last 30 days
+                      In Review
                     </DropdownItem>
                     <DropdownItem
-                      onClick={() => setTimeFilter("Last 90 days")}
+                      onClick={() => setTimeFilter("Won")}
                       className="px-4 py-2 hover:bg-white/5 text-white"
                     >
-                      Last 90 days
+                      Won
+                    </DropdownItem>
+                    <DropdownItem
+                      onClick={() => setTimeFilter("Lost")}
+                      className="px-4 py-2 hover:bg-white/5 text-white"
+                    >
+                      Lost
                     </DropdownItem>
                   </DropdownContent>
                 </Dropdown>
 
                 {/* All types filter */}
-                <Dropdown>
+                {/* <Dropdown>
                   <DropdownTrigger>
                     <button className="flex items-center gap-2 text-sm border border-white/10 px-3 py-2 rounded-full">
                       <svg
@@ -753,10 +759,10 @@ const DisputesTab = () => {
                       Refund
                     </DropdownItem>
                   </DropdownContent>
-                </Dropdown>
+                </Dropdown> */}
 
                 {/* Ticket filter */}
-                <Dropdown>
+                {/* <Dropdown>
                   <DropdownTrigger>
                     <button className="flex items-center gap-2 text-sm border border-white/10 px-3 py-2 rounded-full">
                       <svg
@@ -811,9 +817,9 @@ const DisputesTab = () => {
                         </DropdownItem>
                       ))}
                   </DropdownContent>
-                </Dropdown>
+                </Dropdown> */}
 
-                <Dropdown>
+                {/* <Dropdown>
                   <DropdownTrigger>
                     <button className="flex items-center gap-2 text-sm border border-white/10 px-3 py-2 rounded-full">
                       <svg
@@ -868,9 +874,9 @@ const DisputesTab = () => {
                         </DropdownItem>
                       ))}
                   </DropdownContent>
-                </Dropdown>
+                </Dropdown> */}
 
-                <Dropdown>
+                {/* <Dropdown>
                   <DropdownTrigger>
                     <button className="flex items-center gap-2 text-sm border border-white/10 px-3 py-2 rounded-full">
                       <svg
@@ -925,7 +931,7 @@ const DisputesTab = () => {
                         </DropdownItem>
                       ))}
                   </DropdownContent>
-                </Dropdown>
+                </Dropdown> */}
               </div>
 
               <div className="relative w-full @4xl:w-fit flex justify-end h-fit">
