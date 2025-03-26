@@ -16,11 +16,11 @@ import { Spin } from "antd";
 import url from "../../constants/url";
 
 const OrganizerAnalytics = () => {
-  const [analyticsData] = useState({
-    revenue: 5450,
-    ticketsSold: 36,
-    currentlyLive: 24,
-    ticketsViews: 24,
+  const [analyticsData, setAnalyticsData] = useState({
+    revenue: 0,
+    ticketsSold: 0,
+    currentlyLive: 0,
+    ticketsViews: 0,
     revenueChange: "+8%",
     ticketsSoldChange: "-8%",
     currentlyLiveChange: "+8%",
@@ -197,6 +197,23 @@ const OrganizerAnalytics = () => {
     }
   }
 
+  useEffect(() => {
+      const fetchTransactions = async () => {
+          const response = await axios.get(
+            `${url}/organizer-transactions/${oragnizerId}`
+          );
+          const totalAmount = response.data?.data
+            .filter((payment) => payment.refund !== true)
+            .reduce((sum, sale) => {
+              if (!sale.amount) return sum;
+              const amountAfterFee = (Number(sale.amount / 100) - 0.89) / 1.09;
+              return sum + amountAfterFee;
+            }, 0);
+          setAnalyticsData((prev) => ({...prev, revenue: totalAmount }))
+      }
+      fetchTransactions()
+  }, [oragnizerId])
+
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       return (
@@ -279,6 +296,15 @@ const OrganizerAnalytics = () => {
       );
       setEventsData(filteredEvents);
 
+      const currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0);
+      const pastEvents = events.filter((event) => {
+        const eventDate = new Date(event.start_date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= currentDate && event.explore === "YES";
+      });
+      setAnalyticsData((prev) => ({ ...prev, currentlyLive: pastEvents.length }))
+
       fetchTrafficData(oragnizerId)
 
       filteredEvents.forEach((event) => {
@@ -313,7 +339,6 @@ const OrganizerAnalytics = () => {
       }, 0);
 
       setEarnings((prev) => ({ ...prev, [id]: totalEarnings.toFixed(2) }));
-      setSoldTickets((prev) => ({ ...prev, [id]: ticketCount }));
     } catch (error) {
       console.error("Error fetching earnings:", error);
     }
@@ -339,6 +364,13 @@ const OrganizerAnalytics = () => {
     }
   };
 
+  useEffect(() => {
+      setAnalyticsData((prev) => ({
+          ...prev,
+          ticketsViews: Object.values(viewsCount).reduce((sum, count) => sum + parseInt(count), 0)
+      }))
+  }, [viewsCount])
+
   const fetchTicketSales = async (id) => {
     try {
       const { data } = await axios.get(`${url}/remain-tickets/${id}`);
@@ -351,6 +383,14 @@ const OrganizerAnalytics = () => {
       console.error("Error fetching ticket sales:", error);
     }
   };
+
+  useEffect(() => {
+      setAnalyticsData((prev) => ({
+          ...prev,
+          ticketsSold: Object.values(ticketSalesData)
+              .reduce((sum, count) => sum + count, 0)
+      }))
+  }, [ticketSalesData])
 
   const fetchRevenue = async (eventId) => {
     try {
@@ -411,7 +451,7 @@ const OrganizerAnalytics = () => {
                 <p className="text-2xl font-bold">
                   ${analyticsData.revenue.toLocaleString()}
                 </p>
-                <span
+                {/* <span
                   className={`text-xs px-2 rounded ${
                     analyticsData.revenueChange.startsWith("+")
                       ? "text-green-500"
@@ -419,7 +459,7 @@ const OrganizerAnalytics = () => {
                   }`}
                 >
                   {analyticsData.revenueChange}
-                </span>
+                </span> */}
               </div>
             </div>
             <div className="p-2 rounded-full">
@@ -461,7 +501,7 @@ const OrganizerAnalytics = () => {
                 <p className="text-2xl font-bold">
                   {analyticsData.ticketsSold}
                 </p>
-                <span
+                {/* <span
                   className={`text-xs px-2 rounded ${
                     analyticsData.ticketsSoldChange.startsWith("+")
                       ? "text-green-500"
@@ -469,7 +509,7 @@ const OrganizerAnalytics = () => {
                   }`}
                 >
                   {analyticsData.ticketsSoldChange}
-                </span>
+                </span> */}
               </div>
             </div>
             <div className="p-2 rounded-full">
@@ -506,7 +546,7 @@ const OrganizerAnalytics = () => {
                 <p className="text-2xl font-bold">
                   {analyticsData.currentlyLive}
                 </p>
-                <span
+                {/* <span
                   className={`text-xs px-2 rounded ${
                     analyticsData.currentlyLiveChange.startsWith("+")
                       ? "text-green-500"
@@ -514,7 +554,7 @@ const OrganizerAnalytics = () => {
                   }`}
                 >
                   {analyticsData.currentlyLiveChange}
-                </span>
+                </span> */}
               </div>
             </div>
             <div className="p-2 rounded-full">
@@ -551,7 +591,7 @@ const OrganizerAnalytics = () => {
                 <p className="text-2xl font-bold">
                   {analyticsData.ticketsViews}
                 </p>
-                <span
+                {/* <span
                   className={`text-xs px-2 rounded ${
                     analyticsData.ticketsViewsChange.startsWith("+")
                       ? "text-green-500"
@@ -559,7 +599,7 @@ const OrganizerAnalytics = () => {
                   }`}
                 >
                   {analyticsData.ticketsViewsChange}
-                </span>
+                </span> */}
               </div>
             </div>
             <div className="p-2 rounded-full">
