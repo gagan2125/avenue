@@ -1521,6 +1521,7 @@ export default function SalesTab({ eventId, event }) {
                     <img
                       src={selectedTicket?.qrcode}
                       alt="QR Code"
+                      style={{ imageRendering: 'pixelated' }}
                       className="w-full max-w-xs rounded-lg"
                     />
                   </div>

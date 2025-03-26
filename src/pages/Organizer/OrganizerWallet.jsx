@@ -2761,6 +2761,7 @@ export default function OrganizerWallet() {
                       src={selectedTicket?.qrcode || ""}
                       alt="QR Code"
                       className="w-full h-full"
+                      style={{ imageRendering: 'pixelated' }}
                       onError={(e) =>
                       (e.target.src =
                         "https://via.placeholder.com/150?text=QR+Code+Not+Available")
@@ -3183,6 +3184,7 @@ export default function OrganizerWallet() {
                     <img
                       src={selectedTicket?.qrcode}
                       alt="QR Code"
+                      style={{ imageRendering: 'pixelated' }}
                       className="w-full max-w-xs rounded-lg"
                     />
                   </div>
