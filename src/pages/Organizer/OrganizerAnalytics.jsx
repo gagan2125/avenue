@@ -37,6 +37,20 @@ const OrganizerAnalytics = () => {
   const [viewsCount, setViewsCount] = useState({});
   const [ticketSalesData, setTicketSalesData] = useState({});
   const [revenueDataByEvent, setRevenueDataByEvent] = useState({});
+  const [trafficData, setTrafficData] = useState([]);
+  const [isTrafficLoading, setIsTrafficLoading] = useState(true);
+  const [errorTraffic, setErrorTraffic] = useState(null);
+  const [totalVisits, setTotalVisits] = useState(0);
+
+  const colorMap = {
+    google: "#42bdf5",
+    direct: "#9442f5",
+    facebook: "#f54242",
+    instagram: "#42f5a4",
+    twitter: "#f59942",
+    referral: "#f542b7",
+    "(other)": "#8042f5",
+  };
 
   const revenueData = [
     { date: "Mon", Revenue: 2000 },
@@ -52,13 +66,6 @@ const OrganizerAnalytics = () => {
     { name: "Arts & Culture", value: 24, fill: "#b7f542" },
     { name: "Music", value: 8, fill: "#f54242" },
     { name: "Sports", value: 4, fill: "#f59942" },
-  ];
-
-  const trafficData = [
-    { name: "Direct", value: 3500, fill: "#42bdf5" },
-    { name: "Social Media", value: 1200, fill: "#9442f5" },
-    { name: "Search", value: 600, fill: "#f54242" },
-    { name: "Referrals", value: 258, fill: "#42f5a4" },
   ];
 
   const funnelData = [
@@ -95,9 +102,100 @@ const OrganizerAnalytics = () => {
     return categoriesData.reduce((sum, item) => sum + item.value, 0);
   }, [categoriesData]);
 
-  const totalVisits = useMemo(() => {
-    return trafficData.reduce((sum, item) => sum + item.value, 0);
-  }, [trafficData]);
+  const fetchTrafficData = async (organizerId) => {
+    setIsTrafficLoading(true);
+    try {
+      const [gaResponse, manualResponse] = await Promise.all([
+        axios.get(`${url}/analytics/traffic-sources?organizer_id=${organizerId}`),
+        axios.get(`${url}/visit/get-visit-count/${organizerId}`)
+      ]);
+
+      let sourcesData = [];
+      let totalGASessions = 0;
+
+      if (gaResponse.data && gaResponse.data.success) {
+        sourcesData = gaResponse.data.data || [];
+        totalGASessions = gaResponse.data.total || 0;
+      }
+
+      let manualCount = 0;
+      if (manualResponse.data) {
+        manualCount = parseInt(manualResponse.data.totalCount || 0);
+      }
+
+      const combinedTotal = totalGASessions + manualCount;
+
+      let combinedSources = [...sourcesData];
+
+      const directIndex = combinedSources.findIndex(
+        (source) => source.source.toLowerCase() === "direct"
+      );
+
+      if (directIndex >= 0) {
+        combinedSources[directIndex] = {
+          ...combinedSources[directIndex],
+          sessions: combinedSources[directIndex].sessions + manualCount
+        };
+      } else if (manualCount > 0) {
+        combinedSources.push({
+          source: "Direct",
+          sessions: manualCount,
+          newUsers: 0,
+          activeUsers: manualCount
+        });
+      }
+
+      combinedSources = combinedSources.map((source) => ({
+        ...source,
+        percentage: combinedTotal > 0
+          ? ((source.sessions / combinedTotal) * 100).toFixed(2) + "%"
+          : "0%"
+      }));
+
+      const formattedData = combinedSources.map((source, index) => {
+        const fill = colorMap[source.source.toLowerCase()] ||
+          `hsl(${(index * 50) % 360}, 70%, 60%)`;
+
+        return {
+          name: source.source,
+          value: source.sessions,
+          fill,
+          percentage: parseFloat(source.percentage),
+          isManual: source.source.toLowerCase() === "direct" && manualCount > 0
+        };
+      });
+
+      formattedData.sort((a, b) => b.value - a.value);
+
+      setTrafficData(formattedData);
+      setTotalVisits(combinedTotal);
+    } catch (error) {
+      console.error("Error fetching traffic sources:", error);
+      setErrorTraffic(error.message);
+
+      try {
+        const manualResponse = await axios.get(`${url}/visit/get-visit/${eventId}`);
+        if (manualResponse.data && manualResponse.data.data) {
+          const manualCount = parseInt(manualResponse.data.data.count || 0);
+          setTotalVisits(manualCount);
+
+          if (manualCount > 0) {
+            setTrafficData([{
+              name: "Direct",
+              value: manualCount,
+              fill: colorMap.direct,
+              percentage: 100,
+              isManual: true
+            }]);
+          }
+        }
+      } catch (manualError) {
+        console.error("Error fetching manual visit data:", manualError);
+      }
+    } finally {
+      setIsTrafficLoading(false);
+    }
+  }
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -126,7 +224,7 @@ const OrganizerAnalytics = () => {
     }
       A ${outerRadius} ${outerRadius} 0 ${
       adjustedEndAngle - startAngle > 180 * angleRad ? 1 : 0
-    } 1 
+    } 1
         ${cx + outerRadius * Math.cos(adjustedEndAngle * angleRad)} ${
       cy + outerRadius * Math.sin(adjustedEndAngle * angleRad)
     }
@@ -180,6 +278,8 @@ const OrganizerAnalytics = () => {
         (event) => event.explore === "YES" && event.status === "active"
       );
       setEventsData(filteredEvents);
+
+      fetchTrafficData(oragnizerId)
 
       filteredEvents.forEach((event) => {
         fetchEarnings(event._id);
