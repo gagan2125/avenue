@@ -31,7 +31,7 @@ const OrganizerAnalytics = () => {
   const [eventsData, setEventsData] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [oragnizerId, setOragnizerId] = useState(null);
-  const [earnings, setEarnings] = useState({});
+  const [earnings, setEarnings] = useState([]);
   const [soldTickets, setSoldTickets] = useState({});
   const [remainCount, setRemainCount] = useState({});
   const [viewsCount, setViewsCount] = useState({});
@@ -325,20 +325,51 @@ const OrganizerAnalytics = () => {
   const fetchEarnings = async (id) => {
     try {
       const response = await axios.get(`${url}/get-event-payment-list/${id}`);
-      const paymentsData = response.data?.data || [];
+      const paymentsData = response.data || [];
       const filteredPayments = paymentsData.filter(
-        (payment) => payment.refund !== true
+        (payment) => payment.refund !== true && payment.amount
       );
-      const totalEarnings = filteredPayments.reduce((sum, payment) => {
-        if (!payment.amount) return sum;
-        return sum + Number(payment.amount / 100);
-      }, 0);
 
-      const ticketCount = filteredPayments.reduce((sum, payment) => {
-        return sum + (payment.qty || 0);
-      }, 0);
+      const dailyRevenue = {
+        "Mon": 0,
+        "Tue": 0,
+        "Wed": 0,
+        "Thu": 0,
+        "Fri": 0,
+        "Sat": 0,
+        "Sun": 0
+      };
 
-      setEarnings((prev) => ({ ...prev, [id]: totalEarnings.toFixed(2) }));
+      paymentsData.forEach(payment => {
+        if (payment.status === 'pending' || payment.status === 'completed') {
+          const paymentDate = new Date(payment.date);
+          const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][paymentDate.getDay()];
+
+          // Convert amount from cents to dollars (assuming amount is in cents)
+          const revenueAmount = payment.amount / 100;
+
+          // Add to the appropriate day
+          dailyRevenue[dayOfWeek] += revenueAmount;
+        }
+      });
+
+      const formattedData = Object.keys(dailyRevenue).map(date => ({
+        date,
+        Revenue: Math.round(dailyRevenue[date]) // Rounding to nearest dollar
+      }));
+      setEarnings(prevEarnings => {
+        const merged = [...prevEarnings];
+        formattedData.forEach(newItem => {
+          const existingIndex = merged.findIndex(item => item.date === newItem.date);
+          if (existingIndex >= 0) {
+            merged[existingIndex].Revenue = newItem.Revenue;
+          } else {
+            merged.push(newItem);
+          }
+        });
+        return merged;
+      });
+
     } catch (error) {
       console.error("Error fetching earnings:", error);
     }
@@ -397,7 +428,7 @@ const OrganizerAnalytics = () => {
       const { data } = await axios.get(
         `${url}/get-event-payment-list/${eventId}`
       );
-      const payments = data?.data || [];
+      const payments = data || [];
       const validPayments = payments.filter(
         (p) => p.transaction_id && p.refund !== true
       );
@@ -661,7 +692,7 @@ const OrganizerAnalytics = () => {
           <div className="p-4">
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
-                data={revenueData}
+                data={earnings}
                 margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
               >
                 <CartesianGrid
@@ -711,6 +742,106 @@ const OrganizerAnalytics = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
+            <h3 className="text-white font-medium bg-white/[0.03] p-4 text-sm border-b border-white/10 flex items-center gap-2">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M2.25 0C1.65326 0 1.08097 0.237053 0.65901 0.65901C0.237053 1.08097 0 1.65326 0 2.25V4.75C0 5.34674 0.237053 5.91903 0.65901 6.34099C1.08097 6.76295 1.65326 7 2.25 7H4.75C5.34674 7 5.91903 6.76295 6.34099 6.34099C6.76295 5.91903 7 5.34674 7 4.75V2.25C7 1.65326 6.76295 1.08097 6.34099 0.65901C5.91903 0.237053 5.34674 0 4.75 0H2.25ZM2.25 9C1.65326 9 1.08097 9.23705 0.65901 9.65901C0.237053 10.081 0 10.6533 0 11.25V13.75C0 14.3467 0.237053 14.919 0.65901 15.341C1.08097 15.7629 1.65326 16 2.25 16H4.75C5.34674 16 5.91903 15.7629 6.34099 15.341C6.76295 14.919 7 14.3467 7 13.75V11.25C7 10.6533 6.76295 10.081 6.34099 9.65901C5.91903 9.23705 5.34674 9 4.75 9H2.25ZM11.25 0C10.6533 0 10.081 0.237053 9.65901 0.65901C9.23705 1.08097 9 1.65326 9 2.25V4.75C9 5.34674 9.23705 5.91903 9.65901 6.34099C10.081 6.76295 10.6533 7 11.25 7H13.75C14.3467 7 14.919 6.76295 15.341 6.34099C15.7629 5.91903 16 5.34674 16 4.75V2.25C16 1.65326 15.7629 1.08097 15.341 0.65901C14.919 0.237053 14.3467 0 13.75 0H11.25ZM11.25 9C10.6533 9 10.081 9.23705 9.65901 9.65901C9.23705 10.081 9 10.6533 9 11.25V13.75C9 14.3467 9.23705 14.919 9.65901 15.341C10.081 15.7629 10.6533 16 11.25 16H13.75C14.3467 16 14.919 15.7629 15.341 15.341C15.7629 14.919 16 14.3467 16 13.75V11.25C16 10.6533 15.7629 10.081 15.341 9.65901C14.919 9.23705 14.3467 9 13.75 9H11.25Z"
+                  fill="white"
+                  fill-opacity="0.5"
+                />
+              </svg>
+              Traffic Sources
+            </h3>
+            <div className="p-4">
+              <div className="flex flex-wrap gap-4 mb-6">
+                {trafficData.map((item) => (
+                  <div
+                    key={item.name}
+                    className="flex items-center gap-2 px-3 py-1 border border-white/20 rounded-full"
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: item.fill }}
+                      aria-hidden="true"
+                    />
+                    <span className="text-white text-sm">{item.name}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Pie
+                      data={trafficData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={105}
+                      outerRadius={115}
+                      strokeWidth={0}
+                      paddingAngle={3}
+                      activeShape={CustomizedShape}
+                      shape={<CustomizedShape />}
+                      activeIndex={[]}
+                      startAngle={90}
+                      endAngle={-270}
+                    >
+                      {trafficData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.fill}
+                          stroke={entry.fill}
+                          strokeLinecap="round"
+                        />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          const { cx, cy } = viewBox;
+                          return (
+                            <g>
+                              <text
+                                x={cx}
+                                y={cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={cx}
+                                  y={cy}
+                                  className="fill-white text-3xl font-bold"
+                                >
+                                  {numberFormatter(totalVisits)}
+                                </tspan>
+                                <tspan
+                                  x={cx}
+                                  y={cy + 25}
+                                  className="fill-gray-400 text-sm"
+                                >
+                                  Total visits
+                                </tspan>
+                              </text>
+                            </g>
+                          );
+                        }}
+                      />
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
           <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
             <h3 className="text-white font-medium bg-white/[0.03] p-4 text-sm border-b border-white/10 flex items-center gap-2">
               <svg
@@ -800,107 +931,6 @@ const OrganizerAnalytics = () => {
                                   className="fill-gray-400 text-sm"
                                 >
                                   Total sells
-                                </tspan>
-                              </text>
-                            </g>
-                          );
-                        }}
-                      />
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
-            <h3 className="text-white font-medium bg-white/[0.03] p-4 text-sm border-b border-white/10 flex items-center gap-2">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M2.25 0C1.65326 0 1.08097 0.237053 0.65901 0.65901C0.237053 1.08097 0 1.65326 0 2.25V4.75C0 5.34674 0.237053 5.91903 0.65901 6.34099C1.08097 6.76295 1.65326 7 2.25 7H4.75C5.34674 7 5.91903 6.76295 6.34099 6.34099C6.76295 5.91903 7 5.34674 7 4.75V2.25C7 1.65326 6.76295 1.08097 6.34099 0.65901C5.91903 0.237053 5.34674 0 4.75 0H2.25ZM2.25 9C1.65326 9 1.08097 9.23705 0.65901 9.65901C0.237053 10.081 0 10.6533 0 11.25V13.75C0 14.3467 0.237053 14.919 0.65901 15.341C1.08097 15.7629 1.65326 16 2.25 16H4.75C5.34674 16 5.91903 15.7629 6.34099 15.341C6.76295 14.919 7 14.3467 7 13.75V11.25C7 10.6533 6.76295 10.081 6.34099 9.65901C5.91903 9.23705 5.34674 9 4.75 9H2.25ZM11.25 0C10.6533 0 10.081 0.237053 9.65901 0.65901C9.23705 1.08097 9 1.65326 9 2.25V4.75C9 5.34674 9.23705 5.91903 9.65901 6.34099C10.081 6.76295 10.6533 7 11.25 7H13.75C14.3467 7 14.919 6.76295 15.341 6.34099C15.7629 5.91903 16 5.34674 16 4.75V2.25C16 1.65326 15.7629 1.08097 15.341 0.65901C14.919 0.237053 14.3467 0 13.75 0H11.25ZM11.25 9C10.6533 9 10.081 9.23705 9.65901 9.65901C9.23705 10.081 9 10.6533 9 11.25V13.75C9 14.3467 9.23705 14.919 9.65901 15.341C10.081 15.7629 10.6533 16 11.25 16H13.75C14.3467 16 14.919 15.7629 15.341 15.341C15.7629 14.919 16 14.3467 16 13.75V11.25C16 10.6533 15.7629 10.081 15.341 9.65901C14.919 9.23705 14.3467 9 13.75 9H11.25Z"
-                  fill="white"
-                  fill-opacity="0.5"
-                />
-              </svg>
-              Traffic Sources
-            </h3>
-            <div className="p-4">
-              <div className="flex flex-wrap gap-4 mb-6">
-                {trafficData.map((item) => (
-                  <div
-                    key={item.name}
-                    className="flex items-center gap-2 px-3 py-1 border border-white/20 rounded-full"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: item.fill }}
-                      aria-hidden="true"
-                    />
-                    <span className="text-white text-sm">{item.name}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Pie
-                      data={trafficData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={105}
-                      outerRadius={115}
-                      strokeWidth={0}
-                      paddingAngle={3}
-                      activeShape={CustomizedShape}
-                      shape={<CustomizedShape />}
-                      activeIndex={[]}
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      {trafficData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.fill}
-                          stroke={entry.fill}
-                          strokeLinecap="round"
-                        />
-                      ))}
-                      <Label
-                        content={({ viewBox }) => {
-                          const { cx, cy } = viewBox;
-                          return (
-                            <g>
-                              <text
-                                x={cx}
-                                y={cy}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                              >
-                                <tspan
-                                  x={cx}
-                                  y={cy}
-                                  className="fill-white text-3xl font-bold"
-                                >
-                                  {numberFormatter(totalVisits)}
-                                </tspan>
-                                <tspan
-                                  x={cx}
-                                  y={cy + 25}
-                                  className="fill-gray-400 text-sm"
-                                >
-                                  Total visits
                                 </tspan>
                               </text>
                             </g>
