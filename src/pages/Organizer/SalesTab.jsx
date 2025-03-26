@@ -495,11 +495,15 @@ export default function SalesTab({ eventId, event }) {
       return false;
     }
 
+    const rawDate = sale?.date;
+    if (!rawDate) return false;
+
     const saleDate = new Date(
-      sale.date
+      rawDate
         .replace("Today", new Date().toDateString())
         .replace("Yesterday", new Date(Date.now() - 86400000).toDateString())
     );
+
     const last7Days = new Date(Date.now() - 7 * 86400000);
     const last30Days = new Date(Date.now() - 30 * 86400000);
     const last90Days = new Date(Date.now() - 90 * 86400000);
@@ -514,7 +518,7 @@ export default function SalesTab({ eventId, event }) {
       return false;
     }
 
-    const formattedDate = new Date(sale.date)
+    const formattedDate = new Date(sale?.date)
       .toLocaleString("en-US", {
         month: "short",
         day: "numeric",
@@ -875,7 +879,7 @@ export default function SalesTab({ eventId, event }) {
                     <p className="text-gray-400 flex items-center">
                       <span>{stat.title}</span>
                       {stat.title === "Revenue" ||
-                      stat.title === "Currently Live" ? (
+                        stat.title === "Currently Live" ? (
                         <span className="ml-1">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1264,7 +1268,7 @@ export default function SalesTab({ eventId, event }) {
                               <MenuTrigger>
                                 <Ellipsis />
                               </MenuTrigger>
-                             
+
                               <MenuItem
                                 onClick={() => {
                                   setSelectedTicketUpdate(payout);
@@ -1713,12 +1717,12 @@ export default function SalesTab({ eventId, event }) {
             <div className="flex flex-col gap-y-3 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
               <DialogTitle>Edit ticket details</DialogTitle>
               <DialogDescription>
-                Change your personal details below. 
+                Change your personal details below.
               </DialogDescription>
             </div>
             <div className="flex flex-col gap-4 p-6">
               <div className="flex flex-col items-start justify-between gap-4">
-              <div className="flex flex-col gap-3 w-full">
+                <div className="flex flex-col gap-3 w-full">
                   <span className="text-sm font-medium text-white">
                     Name
                   </span>
@@ -1764,23 +1768,23 @@ export default function SalesTab({ eventId, event }) {
               </button> */}
             {/* </div> */}
             <div className="flex gap-3 mt-2 p-6 border-t border-white/10">
-  <button
-    className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
-  >
-    {isDownloadingReceipt ? (
-      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-    ) : (
-      "Cancel"
-    )}
-  </button>
-  <button
-    type="submit"
-    disabled={() => {}}
-    className="flex-1 bg-white hover:bg-white/90 text-black border border-white/10 rounded-lg h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
-  >
-    Save
-  </button>
-</div>
+              <button
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
+              >
+                {isDownloadingReceipt ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  "Cancel"
+                )}
+              </button>
+              <button
+                type="submit"
+                disabled={() => { }}
+                className="flex-1 bg-white hover:bg-white/90 text-black border border-white/10 rounded-lg h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
+              >
+                Save
+              </button>
+            </div>
 
           </form>
         </DialogContent>
@@ -1823,7 +1827,7 @@ export default function SalesTab({ eventId, event }) {
             <div className="flex flex-col gap-3 p-6 pt-0">
               <button
                 type="submit"
-                disabled={() => {}}
+                disabled={() => { }}
                 className="w-full bg-white hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed text-black border-white/10 border text-center rounded-full h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
               >
                 Resend Ticket

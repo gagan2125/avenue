@@ -15,8 +15,11 @@ import image1 from "../../assets/home-explore.png"
 import DateModal from '../../components/modals/DateModal';
 import { FiCheck } from 'react-icons/fi';
 import { GoBookmarkSlash, GoBookmark } from "react-icons/go"
+import { Search } from 'lucide-react';
+import SearchModal from '../../components/modals/SearchModal';
 
 const Home = () => {
+  const [isModalSearchOpen, setIsModalSearchOpen] = useState(false);
   const [isModalPriceOpen, setIsModalPriceOpen] = useState(false);
   const [isModalPlaceOpen, setIsModalPlaceOpen] = useState(false);
   const [isModalDate, setIsModalDate] = useState(false);
@@ -29,9 +32,17 @@ const Home = () => {
   const [userId, setUserId] = useState(null);
   const [savedEvents, setSavedEvents] = useState([]);
   const [savedEventIds, setSavedEventIds] = useState(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+
 
   const cards = [
-    // { id: 1, icon: <MdWindow size={20} color='#898989' />, text: 'Type' },
+    {
+      id: 1,
+      icon: <Search size={20} color='#898989' />,
+      text: 'Search',
+      onClick: () => { setIsModalSearchOpen(true); },
+      isActive: searchTerm,
+    },
     // {
     //   id: 2,
     //   icon: <FaLocationDot size={20} color='#898989' />,
@@ -181,6 +192,9 @@ const Home = () => {
     const allowedDate = getDateOnly(yesterday);
     const isAllowedEvent = eventDate >= allowedDate;
 
+    const matchesSearch = event.event_name.toLowerCase().includes(searchTerm.toLowerCase()) || event.venue_name?.toLowerCase().includes(searchTerm.toLowerCase());
+
+
 
     // const isWithinPriceRange =
     //   (minPrice === null || (event.ticket_start_price || 0) >= minPrice) &&
@@ -226,7 +240,8 @@ const Home = () => {
       isWithinPriceRange &&
       isWithinDateRange &&
       isFreeEvent &&
-      isAllowedEvent
+      isAllowedEvent &&
+      matchesSearch
     );
   });
 
@@ -237,6 +252,7 @@ const Home = () => {
     setStartDate(null);
     setEndDate(null);
     setShowFreeOnly(false)
+    setSearchTerm('')
   };
 
   useEffect(() => {
@@ -302,6 +318,12 @@ const Home = () => {
     fetchSavedEvents()
   }, [userId])
 
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+  };
+
+
+
   return (
     <div className="font-manrope flex flex-col items-center justify-center text-center mt-14 bg-primary px-4">
       <h1 className="text-5xl sm:text-5xl md:text-6xl lg:text-[76px] font-semibold text-white tracking-tighter">
@@ -343,7 +365,7 @@ const Home = () => {
           </button>
 
         ))}
-        {sliderValue[0] !== 0 || sliderValue[1] !== 100 || startDate || endDate || showFreeOnly ? (
+        {sliderValue[0] !== 0 || sliderValue[1] !== 100 || startDate || endDate || showFreeOnly || searchTerm ? (
           <button
             onClick={handleReset}
             className="bg-primary px-6 py-4 rounded-3xl shadow-lg text-center flex items-center justify-center border-2 border-dashed border-[#2a2a2a] transition-transform duration-300 hover:scale-90"
@@ -353,6 +375,18 @@ const Home = () => {
         ) : null}
       </div>
 
+      <SearchModal
+        sortedEvents={sortedEvents}
+        filteredEvents={filteredEvents.length}
+        sliderValue={sliderValue}
+        setSliderValue={setSliderValue}
+        setShowFreeOnly={setShowFreeOnly}
+        showFreeOnly={showFreeOnly}
+        isOpen={isModalSearchOpen}
+        onClose={() => setIsModalSearchOpen(false)}
+        onSearch={handleSearch}
+        searchTerm={searchTerm}
+      />
 
       <PriceModal
         filteredEvents={filteredEvents.length}
@@ -378,84 +412,63 @@ const Home = () => {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-16 sm:mt-8 px-4 sm:px-8 md:px-16 lg:px-10 bg-primary mb-10">
-        {sortedEvents.map((card) => {
-          const isEventSaved = savedEventIds.has(card._id);
+        {sortedEvents.length === 0 ? (
+          <div className="col-span-full text-center text-white text-5xl font-medium py-20 font-inter">
+            No events found!
+          </div>
+        ) : (
+          sortedEvents.map((card) => {
+            const isEventSaved = savedEventIds.has(card._id);
 
-          return (
-            <button
-              onClick={() => handleDetail(card._id, card.event_slug)}
-              key={card.id}
-              className="bg-neutral-800 bg-opacity-15 px-4 py-3 rounded-2xl shadow-lg text-left flex flex-col transition-transform duration-300 transform hover:scale-105"
-            >
-              {/* <div className="flex items-center justify-between w-full mb-2 gap-2">
-                <div className="flex items-center min-w-0">
-                  <div className="w-8 h-8 rounded-full flex justify-center items-center flex-shrink-0">
-                    <FaArtstation className="text-purple-800" size={15} />
+            return (
+              <button
+                onClick={() => handleDetail(card._id, card.event_slug)}
+                key={card._id}
+                className="bg-neutral-800 bg-opacity-15 px-4 py-3 rounded-2xl shadow-lg text-left flex flex-col transition-transform duration-300 transform hover:scale-105"
+              >
+                <div className="relative mb-4">
+                  <div className="aspect-w-2 aspect-h-3 w-full">
+                    <img
+                      src={card.flyer}
+                      alt="event"
+                      className="w-72 h-72 object-cover rounded-xl"
+                    />
                   </div>
-                  <h2 className="text-white/50 text-xs uppercase font-inter ml-2 truncate">
-                    {card.category}
-                  </h2>
-                </div>
-                <p className="text-white/50 text-xs font-inter flex-shrink-0">
-                  {formatDate(card.start_date)}
-                </p>
-              </div> */}
-              <div className="relative mb-4">
-                <div className="aspect-w-2 aspect-h-3 w-full">
-                  <img
-                    src={card.flyer}
-                    alt="event"
-                    className="w-72 h-72 object-cover rounded-xl"
-                  />
-                </div>
-                <div
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleBookmark(card._id);
-                  }}
-                  className="absolute top-2 right-2 bg-gray-500/50 p-2 rounded-full text-white border border-opacity-10 border-gray-50"
-                >
-                  {savedEventIds.has(card._id) ? (
-                    <GoBookmarkSlash className="text-[#9b9b9b]" />
-                  ) : (
-                    <GoBookmark className="text-[#9b9b9b]" />
-                  )}
-                </div>
-
-              </div>
-
-              {/* <div className="flex items-center justify-between w-full mb-2 gap-2">
-                <div className="flex items-center min-w-0">
-                  <h2 className="text-white/50 text-xs uppercase font-inter truncate">
-                    {card.category}
-                  </h2>
-                </div>
-                <p className="text-white/50 text-xs font-inter flex-shrink-0">
-                  {formatDate(card.start_date)}
-                </p>
-              </div> */}
-
-              <div className="flex items-center justify-between w-full mb-2 gap-2">
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-white text-sm font-semibold font-inter mb-2 truncate">
-                    {card.event_name}
-                  </h2>
-                  <div className="flex items-center mt-1">
-                    <FaLocationDot className="text-neutral-400 mr-1 flex-shrink-0" size={12} />
-                    <span className="text-white/50 text-sm font-inter truncate">
-                      {card.venue_name}
-                    </span>
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleBookmark(card._id);
+                    }}
+                    className="absolute top-2 right-2 bg-gray-500/50 p-2 rounded-full text-white border border-opacity-10 border-gray-50"
+                  >
+                    {isEventSaved ? (
+                      <GoBookmarkSlash className="text-[#9b9b9b]" />
+                    ) : (
+                      <GoBookmark className="text-[#9b9b9b]" />
+                    )}
                   </div>
                 </div>
-                <div className="flex-shrink-0">
-                  {
-                    card.event_type === 'ticket' ? (
+
+                <div className="flex items-center justify-between w-full mb-2 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-white text-sm font-semibold font-inter mb-2 truncate">
+                      {card.event_name}
+                    </h2>
+                    <div className="flex items-center mt-1">
+                      <FaLocationDot className="text-neutral-400 mr-1 flex-shrink-0" size={12} />
+                      <span className="text-white/50 text-sm font-inter truncate">
+                        {card.venue_name}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {card.event_type === 'ticket' ? (
                       <p className="text-white font-medium whitespace-nowrap text-center">
                         <span className="text-gray-500 text-sm font-inter block">
-                          {formatDate(card.start_date).split(" ")[0]} {/* Month */}
+                          {formatDate(card.start_date).split(" ")[0]}
                         </span>
                         <span className="text-xl font-semibold font-inter block">
-                          {formatDate(card.start_date).split(" ")[1]} {/* Date */}
+                          {formatDate(card.start_date).split(" ")[1]}
                         </span>
                       </p>
                     ) : (
@@ -464,14 +477,15 @@ const Home = () => {
                           Free
                         </span>
                       </p>
-                    )
-                  }
+                    )}
+                  </div>
                 </div>
-              </div>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })
+        )}
       </div>
+
 
       {/* <div className="mt-5">
         <div className="bg-primary py-20">
