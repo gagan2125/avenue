@@ -492,17 +492,21 @@ function TicketSales({ eventId }) {
 }
 
 // ConversionFunnel Component
-function ConversionFunnel() {
-    const funnelData = [
-        { stage: "Page views", value: 2489, percentage: 100, color: "#34B2DA" },
-        {
-            stage: "Added to cart",
-            value: 1344,
-            percentage: 54,
-            color: "#E74C3C",
-        },
-        { stage: "Purchased", value: 36, percentage: 4.2, color: "#9B59B6" },
-    ];
+function ConversionFunnel({ eventId }) {
+    const [funnelData, setFunnelData] = useState([]);
+
+    useEffect(() => {
+        const fetchFunnelData = async () => {
+            if (!eventId) return;
+            const response = await axios.get(
+                `${url}/analytics/conversion-funnel?event_id=${eventId}`
+            )
+            if (response.data) {
+                setFunnelData(response.data?.funnelData || []);
+            }
+        }
+        fetchFunnelData();
+    }, [eventId])
 
     return (
         <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
@@ -826,18 +830,22 @@ function BalanceChart({ eventId }) {
 }
 
 // PopularDays Component
-function PopularDays() {
+function PopularDays({ eventId }) {
+    const [popularDaysData, setPopularDaysData] = useState([]);
     const [hoveredDay, setHoveredDay] = useState(null);
 
-    const popularDaysData = [
-        { day: "Mon", visitors: 100 },
-        { day: "Tue", visitors: 410 },
-        { day: "Wed", visitors: 470 },
-        { day: "Thu", visitors: 420 },
-        { day: "Fri", visitors: 350 },
-        { day: "Sat", visitors: 420 },
-        { day: "Sun", visitors: 370 },
-    ];
+    useEffect(() => {
+        const fetchPopularDaysData = async () => {
+            if (!eventId) return;
+            const response = await axios.get(
+                `${url}/analytics/popular-days?event_id=${eventId}`
+            )
+            if (response.data) {
+                setPopularDaysData(response.data?.data || []);
+            }
+        }
+        fetchPopularDaysData();
+    }, [eventId])
 
     const numberFormatter = (number) => {
         return new Intl.NumberFormat("en-US").format(number).toString();
@@ -942,8 +950,8 @@ export default function AnalyticsTab({ eventId }) {
                 <TicketSales eventId={eventId} />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <ConversionFunnel />
-                <PopularDays />
+                <ConversionFunnel eventId={eventId} />
+                <PopularDays eventId={eventId} />
             </div>
         </div>
     );

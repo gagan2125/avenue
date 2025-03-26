@@ -41,6 +41,8 @@ const OrganizerAnalytics = () => {
   const [isTrafficLoading, setIsTrafficLoading] = useState(true);
   const [errorTraffic, setErrorTraffic] = useState(null);
   const [totalVisits, setTotalVisits] = useState(0);
+  const [funnelData, setFunnelData] = useState([]);
+  const [popularDaysData, setPopularDaysData] = useState([]);
 
   const colorMap = {
     google: "#42bdf5",
@@ -66,22 +68,6 @@ const OrganizerAnalytics = () => {
     { name: "Arts & Culture", value: 24, fill: "#b7f542" },
     { name: "Music", value: 8, fill: "#f54242" },
     { name: "Sports", value: 4, fill: "#f59942" },
-  ];
-
-  const funnelData = [
-    { stage: "Page views", value: 2489, percentage: 100, color: "#34B2DA" },
-    { stage: "Added to cart", value: 1344, percentage: 54, color: "#E74C3C" },
-    { stage: "Purchased", value: 36, percentage: 4.2, color: "#9B59B6" },
-  ];
-
-  const popularDaysData = [
-    { day: "Mon", visitors: 100 },
-    { day: "Tue", visitors: 410 },
-    { day: "Wed", visitors: 470 },
-    { day: "Thu", visitors: 420 },
-    { day: "Fri", visitors: 350 },
-    { day: "Sat", visitors: 420 },
-    { day: "Sun", visitors: 370 },
   ];
 
   const valueFormatter = (number) => {
@@ -197,6 +183,24 @@ const OrganizerAnalytics = () => {
     }
   }
 
+  const fetchFunnelData = async (organizerId) => {
+      const response = await axios.get(
+          `${url}/analytics/conversion-funnel?organizer_id=${organizerId}`
+      )
+      if (response.data) {
+          setFunnelData(response.data?.funnelData || []);
+      }
+  }
+
+  const fetchPopularDaysData = async (organizerId) => {
+      const response = await axios.get(
+          `${url}/analytics/popular-days?organizer_id=${organizerId}`
+      )
+      if (response.data) {
+          setPopularDaysData(response.data?.data || []);
+      }
+  }
+
   useEffect(() => {
       const fetchTransactions = async () => {
           const response = await axios.get(
@@ -306,6 +310,8 @@ const OrganizerAnalytics = () => {
       setAnalyticsData((prev) => ({ ...prev, currentlyLive: pastEvents.length }))
 
       fetchTrafficData(oragnizerId)
+      fetchFunnelData(oragnizerId)
+      fetchPopularDaysData(oragnizerId)
 
       filteredEvents.forEach((event) => {
         fetchEarnings(event._id);
