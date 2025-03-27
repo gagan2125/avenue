@@ -38,6 +38,7 @@ const CheckoutForm = ({
   firstName,
   lastName,
   tickets,
+  storeId
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -61,7 +62,7 @@ const CheckoutForm = ({
     try {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        confirmParams:{
+        confirmParams: {
           return_url: 'https://avenue.tickets/ticket#step3',
         },
         redirect: "if_required",
@@ -99,7 +100,8 @@ const CheckoutForm = ({
             lastName: lastName,
             email: email,
             clientSecret: clientSecret,
-            paymentMethod: paymentMethodType
+            paymentMethod: paymentMethodType,
+            storeId: storeId
           }),
         });
         const data = await response.json();

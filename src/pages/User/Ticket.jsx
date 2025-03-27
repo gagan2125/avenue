@@ -97,6 +97,7 @@ const Ticket = () => {
 
     const [loading, setLoading] = useState(false);
     const [clientSecret, setClientSecret] = useState(null);
+    const [storeId, setStoreId] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
     const [currentDateTime, setCurrentDateTime] = useState("");
     const [zeroLoading, setZeroLoading] = useState(false);
@@ -400,6 +401,7 @@ const Ticket = () => {
             .then((data) => {
                 if (data.clientSecret) {
                     setClientSecret(data.clientSecret);
+                    setStoreId(data.payment_id)
                 } else if (data.error) {
                     setErrorMsg(data.error);
                 }
@@ -613,6 +615,7 @@ const Ticket = () => {
                                                                             lastName={formData.lastName}
                                                                             email={formData.email}
                                                                             tax={Number(event.tax) !== 0}
+                                                                            storeId={storeId}
                                                                         />
                                                                     )
                                                                 }
@@ -653,31 +656,31 @@ const Ticket = () => {
                             </div>
 
                             {step === 2 && (
-                                <div className="w-full max-w-[448px] lg:max-w-[320px] mx-auto px-5 lg:px-0 lg:mx-0"> {/* Added lg:px-0 and lg:mx-0 for desktop */}                                    
-                                <div className="bg-[#292929] bg-opacity-25 rounded-xl p-4 mt-2 lg:mt-10">
-                                    <div className='flex justify-between mb-4'>
-                                        <h2 className="text-xs font-medium font-inter text-gray-400 uppercase">{event.category}</h2>
-                                        <h2 className="text-xs font-medium font-inter text-gray-400">{formatDate(event.start_date)}</h2>
-                                    </div>
-                                    <div className="border-t border-[#292929] mt-4 pt-4 mx-[-16px] px-4">
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <span className="text-md font-inter text-white font-medium">{event.event_name}</span>
-                                                <div className="flex items-center mt-2">
-                                                    <FaMapMarkerAlt className="text-gray-400 mr-1" size={12} />
-                                                    <p className="text-xs text-gray-400 font-medium font-inter">
-                                                        {event.venue_name}
-                                                    </p>
+                                <div className="w-full max-w-[448px] lg:max-w-[320px] mx-auto px-5 lg:px-0 lg:mx-0"> {/* Added lg:px-0 and lg:mx-0 for desktop */}
+                                    <div className="bg-[#292929] bg-opacity-25 rounded-xl p-4 mt-2 lg:mt-10">
+                                        <div className='flex justify-between mb-4'>
+                                            <h2 className="text-xs font-medium font-inter text-gray-400 uppercase">{event.category}</h2>
+                                            <h2 className="text-xs font-medium font-inter text-gray-400">{formatDate(event.start_date)}</h2>
+                                        </div>
+                                        <div className="border-t border-[#292929] mt-4 pt-4 mx-[-16px] px-4">
+                                            <div className="flex justify-between items-center">
+                                                <div>
+                                                    <span className="text-md font-inter text-white font-medium">{event.event_name}</span>
+                                                    <div className="flex items-center mt-2">
+                                                        <FaMapMarkerAlt className="text-gray-400 mr-1" size={12} />
+                                                        <p className="text-xs text-gray-400 font-medium font-inter">
+                                                            {event.venue_name}
+                                                        </p>
+                                                    </div>
                                                 </div>
+                                                <img
+                                                    src={event.flyer}
+                                                    alt="Image"
+                                                    className="w-12 h-12 rounded-lg object-cover"
+                                                />
                                             </div>
-                                            <img
-                                                src={event.flyer}
-                                                alt="Image"
-                                                className="w-12 h-12 rounded-lg object-cover"
-                                            />
                                         </div>
                                     </div>
-                                </div>
                                     <div className="border border-[#292929] rounded-xl p-4 mt-2 mb-10">
                                         <h2 className="text-xs font-medium font-inter text-gray-400 mb-4">ORDER SUMMARY</h2>
                                         <div className="border-t border-[#292929] mt-4 pt-4 mx-[-16px] px-4">
