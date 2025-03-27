@@ -1271,7 +1271,10 @@ export default function SalesTab({ eventId, event }) {
 
                               <MenuItem
                                 onClick={() => {
-                                  setSelectedTicketUpdate(payout);
+                                  setSelectedTicketUpdate({
+                                    ...payout,
+                                    name: payout.firstName, // add a name property
+                                  });
                                   setSendTicketUpdateOpen(true);
                                 }}
                               >
@@ -1729,16 +1732,17 @@ export default function SalesTab({ eventId, event }) {
                   </span>
                   <input
                     type="text"
-                    value={selectedTicketUpdate?.name || ""}
+                    value={selectedTicketUpdate?.firstName || ""}
                     onChange={(e) =>
                       setSelectedTicketUpdate((prev) => ({
                         ...prev,
-                        name: e.target.value,
+                        firstName: e.target.value,
                       }))
                     }
                     placeholder="john doe"
                     className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
                   />
+
                 </div>
                 <div className="flex flex-col gap-3 w-full">
                   <span className="text-sm font-medium text-white">
@@ -1746,9 +1750,9 @@ export default function SalesTab({ eventId, event }) {
                   </span>
                   <input
                     type="email"
-                    value={selectedPay?.email || ""}
+                    value={selectedTicketUpdate?.email || ""}
                     onChange={(e) =>
-                      setSelectedPay((prev) => ({
+                      setSelectedTicketUpdate((prev) => ({
                         ...prev,
                         email: e.target.value,
                       }))
