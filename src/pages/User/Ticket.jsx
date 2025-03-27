@@ -318,7 +318,7 @@ const Ticket = () => {
     const fetchBook = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`${url}/get-qr-ticket-details/${payId}`);
+            const response = await axios.get(`${url}/get-qr-ticket-details/${storeId}`);
             setBook(response.data);
         } catch (error) {
             console.error('Error fetching events:', error);
@@ -329,7 +329,7 @@ const Ticket = () => {
 
     useEffect(() => {
         fetchBook();
-    }, [payId]);
+    }, [storeId]);
 
     // useEffect(() => {
     //     if (stripe) {
