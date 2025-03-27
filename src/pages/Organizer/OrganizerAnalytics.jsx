@@ -26,12 +26,15 @@ const OrganizerAnalytics = () => {
     currentlyLiveChange: "+8%",
     ticketsViewsChange: "-8%",
   });
+  const [activeTab, setActiveTab] = useState("Daily")
 
   const [hoveredDay, setHoveredDay] = useState(null);
   const [eventsData, setEventsData] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [oragnizerId, setOragnizerId] = useState(null);
-  const [earnings, setEarnings] = useState([]);
+  const [dailyEarnings, setDailyEarnings] = useState([]);
+  const [weeklyEarnings, setWeeklyEarnings] = useState([]);
+  const [monthlyEarnings, setMonthlyEarnings] = useState([]);
   const [soldTickets, setSoldTickets] = useState({});
   const [remainCount, setRemainCount] = useState({});
   const [viewsCount, setViewsCount] = useState({});
@@ -332,48 +335,150 @@ const OrganizerAnalytics = () => {
     try {
       const response = await axios.get(`${url}/get-event-payment-list/${id}`);
       const paymentsData = response.data || [];
-      const filteredPayments = paymentsData.filter(
-        (payment) => payment.refund !== true && payment.amount
-      );
 
-      const dailyRevenue = {
-        "Mon": 0,
-        "Tue": 0,
-        "Wed": 0,
-        "Thu": 0,
-        "Fri": 0,
-        "Sat": 0,
-        "Sun": 0
-      };
+      // Objects to store earnings by different time periods
+      const dailyRevenueMap = {};
+      const weeklyRevenueMap = {};
+      const monthlyRevenueMap = {};
 
       paymentsData.forEach(payment => {
-        if (payment.status === 'pending' || payment.status === 'completed') {
+        if ((payment.status === 'pending' || payment.status === 'completed') && payment.amount) {
           const paymentDate = new Date(payment.date);
-          const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][paymentDate.getDay()];
 
-          // Convert amount from cents to dollars (assuming amount is in cents)
+          // Format for daily (DD MMM YYYY)
+          const dayFormat = paymentDate.toLocaleString('en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          });
+
+          // Format for weekly (date range)
+          // Get the start of the week (Sunday)
+          const startOfWeek = new Date(paymentDate);
+          startOfWeek.setDate(paymentDate.getDate() - paymentDate.getDay());
+
+          // Get the end of the week (Saturday)
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+          // Format as "MMM DD - MMM DD, YYYY" (e.g., "Mar 01 - Mar 07, 2025")
+          // If start and end months are the same, use "MMM DD - DD, YYYY"
+          let weekFormat;
+          if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+            weekFormat = `${startOfWeek.toLocaleString('en-US', { month: 'short' })} ${startOfWeek.getDate()} - ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+          } else {
+            weekFormat = `${startOfWeek.toLocaleString('en-US', { month: 'short' })} ${startOfWeek.getDate()} - ${endOfWeek.toLocaleString('en-US', { month: 'short' })} ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+          }
+
+          // Format for monthly (MMM YYYY)
+          const monthFormat = paymentDate.toLocaleString('en-US', {
+            month: 'short',
+            year: 'numeric'
+          });
+
+          // Convert amount from cents to dollars
           const revenueAmount = payment.amount / 100;
 
-          // Add to the appropriate day
-          dailyRevenue[dayOfWeek] += revenueAmount;
+          // Update daily revenue
+          if (!dailyRevenueMap[dayFormat]) {
+            dailyRevenueMap[dayFormat] = 0;
+          }
+          dailyRevenueMap[dayFormat] += revenueAmount;
+
+          // Update weekly revenue
+          if (!weeklyRevenueMap[weekFormat]) {
+            weeklyRevenueMap[weekFormat] = 0;
+          }
+          weeklyRevenueMap[weekFormat] += revenueAmount;
+
+          // Update monthly revenue
+          if (!monthlyRevenueMap[monthFormat]) {
+            monthlyRevenueMap[monthFormat] = 0;
+          }
+          monthlyRevenueMap[monthFormat] += revenueAmount;
         }
       });
 
-      const formattedData = Object.keys(dailyRevenue).map(date => ({
-        date,
-        Revenue: Math.round(dailyRevenue[date]) // Rounding to nearest dollar
-      }));
-      setEarnings(prevEarnings => {
-        const merged = [...prevEarnings];
-        formattedData.forEach(newItem => {
-          const existingIndex = merged.findIndex(item => item.date === newItem.date);
-          if (existingIndex >= 0) {
-            merged[existingIndex].Revenue = newItem.Revenue;
-          } else {
-            merged.push(newItem);
+      // Helper function to create formatted data from a revenue map
+      const formatRevenueData = (revenueMap, dateType) => {
+        return Object.keys(revenueMap).map(key => ({
+          date: key,
+          Revenue: Math.round(revenueMap[key]) // Rounding to nearest dollar
+        }));
+      };
+
+      // Create formatted data for each time period
+      const dailyData = formatRevenueData(dailyRevenueMap);
+      const weeklyData = formatRevenueData(weeklyRevenueMap);
+      const monthlyData = formatRevenueData(monthlyRevenueMap);
+
+      // Sort daily data
+      dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Sort weekly data - we need custom sorting for date ranges
+      weeklyData.sort((a, b) => {
+        // Extract first date from each range (e.g., "Mar 01" from "Mar 01 - Mar 07, 2025")
+        const getStartDate = (dateRange) => {
+          const parts = dateRange.split(' - ')[0];
+          const year = dateRange.split(', ')[1];
+          return new Date(`${parts} ${year}`);
+        };
+
+        return getStartDate(a.date) - getStartDate(b.date);
+      });
+
+      // Sort monthly data
+      monthlyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Update state while preserving previous data
+      setDailyEarnings(prevEarnings => {
+        const mergedData = [...dailyData];
+
+        // Add any existing dates that aren't in the new data
+        prevEarnings.forEach(item => {
+          if (!dailyRevenueMap[item.date]) {
+            mergedData.push(item);
           }
         });
-        return merged;
+
+        // Re-sort after merging
+        return mergedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+      });
+
+      setWeeklyEarnings(prevEarnings => {
+        const mergedData = [...weeklyData];
+
+        // Add any existing weeks that aren't in the new data
+        prevEarnings.forEach(item => {
+          if (!weeklyRevenueMap[item.date]) {
+            mergedData.push(item);
+          }
+        });
+
+        // Re-sort after merging using date extraction
+        return mergedData.sort((a, b) => {
+          const getStartDate = (dateRange) => {
+            const parts = dateRange.split(' - ')[0];
+            const year = dateRange.split(', ')[1];
+            return new Date(`${parts} ${year}`);
+          };
+
+          return getStartDate(a.date) - getStartDate(b.date);
+        });
+      });
+
+      setMonthlyEarnings(prevEarnings => {
+        const mergedData = [...monthlyData];
+
+        // Add any existing months that aren't in the new data
+        prevEarnings.forEach(item => {
+          if (!monthlyRevenueMap[item.date]) {
+            mergedData.push(item);
+          }
+        });
+
+        // Re-sort after merging
+        return mergedData.sort((a, b) => new Date(a.date) - new Date(b.date));
       });
 
     } catch (error) {
@@ -471,6 +576,10 @@ const OrganizerAnalytics = () => {
       console.error("Error fetching conversion rate:", err);
     }
   };
+
+  const activeEarningsData = activeTab === 'Daily' ? dailyEarnings :
+        activeTab === 'Weekly' ? weeklyEarnings :
+        monthlyEarnings;
 
   return (
     <SidebarLayout>
@@ -696,9 +805,43 @@ const OrganizerAnalytics = () => {
             Revenue overview
           </h3>
           <div className="p-4">
+              <div className="flex justify-end items-center mb-6">
+                  <div className="flex space-x-2 bg-[#0F0F0F] rounded-full border border-white/10 p-2">
+                      <button
+                          onClick={() => setActiveTab("Daily")}
+                          className={`px-4 py-2 h-8 flex text-sm items-center border justify-center rounded-full ${
+                              activeTab === "Daily"
+                                  ? "bg-white/[0.03] text-white border-white/[0.03]"
+                                  : "border-transparent text-white/70"
+                          }`}
+                      >
+                          Daily
+                      </button>
+                      <button
+                          onClick={() => setActiveTab("Weekly")}
+                          className={`px-4 py-2 h-8 flex text-sm items-center border justify-center rounded-full ${
+                              activeTab === "Weekly"
+                                  ? "bg-white/[0.03] text-white border-white/[0.03]"
+                                  : "border-transparent text-white/70"
+                          }`}
+                      >
+                          Weekly
+                      </button>
+                      <button
+                          onClick={() => setActiveTab("Monthly")}
+                          className={`px-4 py-2 h-8 flex text-sm items-center border justify-center rounded-full ${
+                              activeTab === "Monthly"
+                                  ? "bg-white/[0.03] text-white border-white/[0.03]"
+                                  : "border-transparent text-white/70"
+                          }`}
+                      >
+                          Monthly
+                      </button>
+                  </div>
+              </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
-                data={earnings}
+                data={activeEarningsData}
                 margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
               >
                 <CartesianGrid
@@ -716,7 +859,16 @@ const OrganizerAnalytics = () => {
                   tick={{ fill: "rgba(255,255,255,0.5)" }}
                   tickLine={{ stroke: "rgba(255,255,255,0.1)" }}
                   axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
-                  tickFormatter={(value) => `$${value / 1000}K`}
+                  tickFormatter={(value) => {
+                    // Format based on the value's magnitude
+                    if (value >= 1000000) {
+                      return `$${(value / 1000000).toFixed(1)}M`;
+                    } else if (value >= 1000) {
+                      return `$${(value / 1000).toFixed(1)}K`;
+                    } else {
+                      return `$${value}`;
+                    }
+                  }}
                   dx={-10}
                 />
                 <Tooltip

@@ -678,40 +678,108 @@ function BalanceChart({ eventId }) {
     const processData = (bookings) => {
         let dailyMap = {};
         let weeklyMap = {};
+        let monthlyMap = {};
         let total = 0;
 
         bookings.forEach((payout) => {
             if (!payout.transaction_id) return;
 
             const date = new Date(payout.date);
-            const day = date.toLocaleDateString("en-US", { weekday: "short" });
-            const week = `Week ${Math.ceil(date.getDate() / 7)}`;
 
+            // Format for daily view - use full date to ensure uniqueness across all time
+            // Format: "MMM DD, YYYY (ddd)" e.g. "Mar 15, 2025 (Sat)"
+            const dayKey = date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "2-digit",
+                year: "numeric",
+                weekday: "short"
+            });
+
+            // Format for weekly view - use date range
+            // Get start of week (Sunday)
+            const startOfWeek = new Date(date);
+            startOfWeek.setDate(date.getDate() - date.getDay());
+
+            // Get end of week (Saturday)
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+            // Format: "MMM DD - MMM DD, YYYY" or if same month "MMM DD - DD, YYYY"
+            let weekKey;
+            if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+                weekKey = `${startOfWeek.toLocaleDateString("en-US", { month: "short" })} ${startOfWeek.getDate()} - ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+            } else {
+                weekKey = `${startOfWeek.toLocaleDateString("en-US", { month: "short" })} ${startOfWeek.getDate()} - ${endOfWeek.toLocaleDateString("en-US", { month: "short" })} ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+            }
+
+            // Format for monthly view
+            // Format: "MMM YYYY"
+            const monthKey = date.toLocaleDateString("en-US", {
+                month: "short",
+                year: "numeric"
+            });
+
+            // Calculate payout amount
             const payoutAmount =
-                payout.tickets?.price * payout.count +
+                (payout.tickets?.price || 0) * (payout.count || 1) +
                 (payout.tax ? parseFloat(payout.tax || 0) / 100 : 0);
 
             total += payoutAmount;
-            dailyMap[day] = (dailyMap[day] || 0) + payoutAmount;
-            weeklyMap[week] = (weeklyMap[week] || 0) + payoutAmount;
+
+            // Add to appropriate maps
+            dailyMap[dayKey] = (dailyMap[dayKey] || 0) + payoutAmount;
+            weeklyMap[weekKey] = (weeklyMap[weekKey] || 0) + payoutAmount;
+            monthlyMap[monthKey] = (monthlyMap[monthKey] || 0) + payoutAmount;
         });
 
+        // Helper function to sort data entries by date
+        const sortDataByDate = (dataEntries, dateType) => {
+            return dataEntries.sort((a, b) => {
+                if (dateType === 'daily') {
+                    // Extract date from format "MMM DD, YYYY (ddd)"
+                    const getDate = (str) => {
+                        return new Date(str.split(' (')[0]);
+                    };
+                    return getDate(a[0]) - getDate(b[0]);
+                }
+                else if (dateType === 'weekly') {
+                    // Extract start date from weekly format
+                    const getStartDate = (str) => {
+                        const datePart = str.split(' - ')[0];
+                        const year = str.split(', ')[1];
+                        return new Date(`${datePart} ${year}`);
+                    };
+                    return getStartDate(a[0]) - getStartDate(b[0]);
+                }
+                else { // monthly
+                    return new Date(a[0]) - new Date(b[0]);
+                }
+            });
+        };
+
+        // Convert maps to arrays, sort chronologically, and set state
+        const sortedDailyEntries = sortDataByDate(Object.entries(dailyMap), 'daily');
+        const sortedWeeklyEntries = sortDataByDate(Object.entries(weeklyMap), 'weekly');
+
         setDailyData(
-            Object.entries(dailyMap).map(([date, Revenue]) => ({
+            sortedDailyEntries.map(([date, Revenue]) => ({
                 date,
                 Revenue,
-            })),
+            }))
         );
+
         setWeeklyData(
-            Object.entries(weeklyMap).map(([date, Revenue]) => ({
+            sortedWeeklyEntries.map(([date, Revenue]) => ({
                 date,
                 Revenue,
-            })),
+            }))
         );
+
         setTotalAmount(total);
     };
 
-    const data = activeTab === "Daily" ? dailyData : weeklyData;
+    const data = activeTab === "Daily" ? dailyData :
+                activeTab === "Weekly" ? weeklyData : dailyData;
 
     return (
         <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
@@ -794,7 +862,16 @@ function BalanceChart({ eventId }) {
                             tick={{ fill: "rgba(255,255,255,0.5)" }}
                             tickLine={{ stroke: "rgba(255,255,255,0.1)" }}
                             axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
-                            tickFormatter={(value) => `$${value / 1000}K`}
+                            tickFormatter={(value) => {
+                              // Format based on the value's magnitude
+                              if (value >= 1000000) {
+                                return `$${(value / 1000000).toFixed(1)}M`;
+                              } else if (value >= 1000) {
+                                return `$${(value / 1000).toFixed(1)}K`;
+                              } else {
+                                return `$${value}`;
+                              }
+                            }}
                             dx={-10}
                         />
                         <Tooltip
