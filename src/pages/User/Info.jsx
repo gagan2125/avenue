@@ -373,7 +373,7 @@ const Info = () => {
                 </>
                 : (
                     <>
-                    
+
                         <div className="min-h-screen bg-primary text-white py-5 rounded-t-[24px]">
                             <div className="max-w-5xl mx-auto px-7">
                                 <p className='font-inter text-sm'><span className='text-[#898989] text-sm font-inter'>Home /</span> {eventName}</p>
@@ -548,36 +548,36 @@ const Info = () => {
                                         >
                                             Contact host
                                         </button>
-                                        {(event?.organizer_id?.email || event?.organizer_id?.phone) && (
-                                            <>
-                                                {isDropdownOpen && (
-                                                    <div className="mt-2 w-full border border-[#212121] rounded-lg shadow-lg p-4 space-y-3">
-                                                        {event?.organizer_id?.email && (
-                                                            <div className="flex items-center gap-3">
-                                                                <FaEnvelope className="text-[#ffffff]" />
-                                                                <a
-                                                                    href={`mailto:${event.organizer_id.email}`}
-                                                                    className="text-sm font-inter text-[#ffffff] hover:underline"
-                                                                >
-                                                                    {event.organizer_id.email}
-                                                                </a>
-                                                            </div>
-                                                        )}
-                                                        {event?.organizer_id?.phone && (
-                                                            <div className="flex items-center gap-3">
-                                                                <FaPhone className="text-[#ffffff]" />
-                                                                <a
-                                                                    href={`tel:${event.organizer_id.phone}`}
-                                                                    className="text-sm font-inter text-[#ffffff] hover:underline"
-                                                                >
-                                                                    {event.organizer_id.phone}
-                                                                </a>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
+                                        {(event?.organizer_id?.email && event.organizer_id.email !== 'undefined') ||
+                                            (event?.organizer_id?.phone && event.organizer_id.phone !== 'undefined') ? (
+                                            isDropdownOpen && (
+                                                <div className="mt-2 w-full border border-[#212121] rounded-lg shadow-lg p-4 space-y-3">
+                                                    {event?.organizer_id?.email && event.organizer_id.email !== 'undefined' && (
+                                                        <div className="flex items-center gap-3">
+                                                            <FaEnvelope className="text-[#ffffff]" />
+                                                            <a
+                                                                href={`mailto:${event.organizer_id.email}`}
+                                                                className="text-sm font-inter text-[#ffffff] hover:underline"
+                                                            >
+                                                                {event.organizer_id.email}
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                    {event?.organizer_id?.phone && event.organizer_id.phone !== 'undefined' && (
+                                                        <div className="flex items-center gap-3">
+                                                            <FaPhone className="text-[#ffffff]" />
+                                                            <a
+                                                                href={`tel:${event.organizer_id.phone}`}
+                                                                className="text-sm font-inter text-[#ffffff] hover:underline"
+                                                            >
+                                                                {event.organizer_id.phone}
+                                                            </a>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        ) : null}
+
 
                                     </div>
                                     <div className='flex justify-center items-center mt-2'>
