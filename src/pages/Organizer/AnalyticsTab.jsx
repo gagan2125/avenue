@@ -499,14 +499,14 @@ function ConversionFunnel({ eventId }) {
         const fetchFunnelData = async () => {
             if (!eventId) return;
             const response = await axios.get(
-                `${url}/analytics/conversion-funnel?event_id=${eventId}`
-            )
+                `${url}/analytics/conversion-funnel?event_id=${eventId}`,
+            );
             if (response.data) {
                 setFunnelData(response.data?.funnelData || []);
             }
-        }
+        };
         fetchFunnelData();
-    }, [eventId])
+    }, [eventId]);
 
     return (
         <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
@@ -692,7 +692,7 @@ function BalanceChart({ eventId }) {
                 month: "short",
                 day: "2-digit",
                 year: "numeric",
-                weekday: "short"
+                weekday: "short",
             });
 
             // Format for weekly view - use date range
@@ -716,7 +716,7 @@ function BalanceChart({ eventId }) {
             // Format: "MMM YYYY"
             const monthKey = date.toLocaleDateString("en-US", {
                 month: "short",
-                year: "numeric"
+                year: "numeric",
             });
 
             // Calculate payout amount
@@ -735,51 +735,60 @@ function BalanceChart({ eventId }) {
         // Helper function to sort data entries by date
         const sortDataByDate = (dataEntries, dateType) => {
             return dataEntries.sort((a, b) => {
-                if (dateType === 'daily') {
+                if (dateType === "daily") {
                     // Extract date from format "MMM DD, YYYY (ddd)"
                     const getDate = (str) => {
-                        return new Date(str.split(' (')[0]);
+                        return new Date(str.split(" (")[0]);
                     };
                     return getDate(a[0]) - getDate(b[0]);
-                }
-                else if (dateType === 'weekly') {
+                } else if (dateType === "weekly") {
                     // Extract start date from weekly format
                     const getStartDate = (str) => {
-                        const datePart = str.split(' - ')[0];
-                        const year = str.split(', ')[1];
+                        const datePart = str.split(" - ")[0];
+                        const year = str.split(", ")[1];
                         return new Date(`${datePart} ${year}`);
                     };
                     return getStartDate(a[0]) - getStartDate(b[0]);
-                }
-                else { // monthly
+                } else {
+                    // monthly
                     return new Date(a[0]) - new Date(b[0]);
                 }
             });
         };
 
         // Convert maps to arrays, sort chronologically, and set state
-        const sortedDailyEntries = sortDataByDate(Object.entries(dailyMap), 'daily');
-        const sortedWeeklyEntries = sortDataByDate(Object.entries(weeklyMap), 'weekly');
+        const sortedDailyEntries = sortDataByDate(
+            Object.entries(dailyMap),
+            "daily",
+        );
+        const sortedWeeklyEntries = sortDataByDate(
+            Object.entries(weeklyMap),
+            "weekly",
+        );
 
         setDailyData(
             sortedDailyEntries.map(([date, Revenue]) => ({
                 date,
                 Revenue,
-            }))
+            })),
         );
 
         setWeeklyData(
             sortedWeeklyEntries.map(([date, Revenue]) => ({
                 date,
                 Revenue,
-            }))
+            })),
         );
 
         setTotalAmount(total);
     };
 
-    const data = activeTab === "Daily" ? dailyData :
-                activeTab === "Weekly" ? weeklyData : dailyData;
+    const data =
+        activeTab === "Daily"
+            ? dailyData
+            : activeTab === "Weekly"
+              ? weeklyData
+              : dailyData;
 
     return (
         <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
@@ -863,14 +872,14 @@ function BalanceChart({ eventId }) {
                             tickLine={{ stroke: "rgba(255,255,255,0.1)" }}
                             axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
                             tickFormatter={(value) => {
-                              // Format based on the value's magnitude
-                              if (value >= 1000000) {
-                                return `$${(value / 1000000).toFixed(1)}M`;
-                              } else if (value >= 1000) {
-                                return `$${(value / 1000).toFixed(1)}K`;
-                              } else {
-                                return `$${value}`;
-                              }
+                                // Format based on the value's magnitude
+                                if (value >= 1000000) {
+                                    return `$${(value / 1000000).toFixed(1)}M`;
+                                } else if (value >= 1000) {
+                                    return `$${(value / 1000).toFixed(1)}K`;
+                                } else {
+                                    return `$${value}`;
+                                }
                             }}
                             dx={-10}
                         />
@@ -915,14 +924,14 @@ function PopularDays({ eventId }) {
         const fetchPopularDaysData = async () => {
             if (!eventId) return;
             const response = await axios.get(
-                `${url}/analytics/popular-days?event_id=${eventId}`
-            )
+                `${url}/analytics/popular-days?event_id=${eventId}`,
+            );
             if (response.data) {
                 setPopularDaysData(response.data?.data || []);
             }
-        }
+        };
         fetchPopularDaysData();
-    }, [eventId])
+    }, [eventId]);
 
     const numberFormatter = (number) => {
         return new Intl.NumberFormat("en-US").format(number).toString();
@@ -930,89 +939,93 @@ function PopularDays({ eventId }) {
 
     return (
         <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
-            <h3 className="text-white font-medium bg-white/[0.03] p-4 text-sm border-b border-white/10 flex items-center gap-2">
-                <svg
-                    width="21"
-                    height="20"
-                    viewBox="0 0 21 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        fill-rule="evenodd"
-                        clip-rule="evenodd"
-                        d="M6.25 2C6.44891 2 6.63968 2.07902 6.78033 2.21967C6.92098 2.36032 7 2.55109 7 2.75V4H14V2.75C14 2.55109 14.079 2.36032 14.2197 2.21967C14.3603 2.07902 14.5511 2 14.75 2C14.9489 2 15.1397 2.07902 15.2803 2.21967C15.421 2.36032 15.5 2.55109 15.5 2.75V4H15.75C16.4793 4 17.1788 4.28973 17.6945 4.80546C18.2103 5.32118 18.5 6.02065 18.5 6.75V15.25C18.5 15.9793 18.2103 16.6788 17.6945 17.1945C17.1788 17.7103 16.4793 18 15.75 18H5.25C4.52065 18 3.82118 17.7103 3.30546 17.1945C2.78973 16.6788 2.5 15.9793 2.5 15.25V6.75C2.5 6.02065 2.78973 5.32118 3.30546 4.80546C3.82118 4.28973 4.52065 4 5.25 4H5.5V2.75C5.5 2.55109 5.57902 2.36032 5.71967 2.21967C5.86032 2.07902 6.05109 2 6.25 2ZM5.25 7.5C4.56 7.5 4 8.06 4 8.75V15.25C4 15.94 4.56 16.5 5.25 16.5H15.75C16.44 16.5 17 15.94 17 15.25V8.75C17 8.06 16.44 7.5 15.75 7.5H5.25Z"
-                        fill="white"
-                        fill-opacity="0.5"
-                    />
-                </svg>
-                Popular days
-            </h3>
-            <div className="p-4">
-                <div className="relative w-full h-[300px] flex flex-col">
-                    <div className="absolute top-0 left-0 h-[calc(100%-28px)] w-12 flex flex-col justify-between text-white/70 text-sm">
-                        <div>500</div>
-                        <div>400</div>
-                        <div>300</div>
-                        <div>200</div>
-                        <div>100</div>
-                        <div>0</div>
-                    </div>
+          <h3 className="text-white font-medium bg-white/[0.03] p-4 text-sm border-b border-white/10 flex items-center gap-2">
+            <svg
+              width="21"
+              height="20"
+              viewBox="0 0 21 20"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                fill-rule="evenodd"
+                clip-rule="evenodd"
+                d="M6.25 2C6.44891 2 6.63968 2.07902 6.78033 2.21967C6.92098 2.36032 7 2.55109 7 2.75V4H14V2.75C14 2.55109 14.079 2.36032 14.2197 2.21967C14.3603 2.07902 14.5511 2 14.75 2C14.9489 2 15.1397 2.07902 15.2803 2.21967C15.421 2.36032 15.5 2.55109 15.5 2.75V4H15.75C16.4793 4 17.1788 4.28973 17.6945 4.80546C18.2103 5.32118 18.5 6.02065 18.5 6.75V15.25C18.5 15.9793 18.2103 16.6788 17.6945 17.1945C17.1788 17.7103 16.4793 18 15.75 18H5.25C4.52065 18 3.82118 17.7103 3.30546 17.1945C2.78973 16.6788 2.5 15.9793 2.5 15.25V6.75C2.5 6.02065 2.78973 5.32118 3.30546 4.80546C3.82118 4.28973 4.52065 4 5.25 4H5.5V2.75C5.5 2.55109 5.57902 2.36032 5.71967 2.21967C5.86032 2.07902 6.05109 2 6.25 2ZM5.25 7.5C4.56 7.5 4 8.06 4 8.75V15.25C4 15.94 4.56 16.5 5.25 16.5H15.75C16.44 16.5 17 15.94 17 15.25V8.75C17 8.06 16.44 7.5 15.75 7.5H5.25Z"
+                fill="white"
+                fill-opacity="0.5"
+              />
+            </svg>
+            Popular days
+          </h3>
+          <div className="p-4">
+            <div className="relative w-full h-[300px] flex flex-col">
+              {(() => {
+                // Calculate the max value from the data and add 10
+                const maxTickets = Math.max(...popularDaysData.map(item => item.ticketSold)) + 10;
+                // Calculate evenly spaced y-axis values
+                const yAxisValues = Array.from({length: 6}, (_, i) => Math.round(maxTickets / 5 * (5 - i)));
 
-                    <div className="absolute left-12 right-0 top-0 h-[calc(100%-28px)] flex flex-col justify-between">
-                        {[0, 1, 2, 3, 4, 5].map((_, i) => (
-                            <div
-                                key={i}
-                                className="border-t border-white/10 w-full h-0"
-                            ></div>
-                        ))}
-                    </div>
+                return (
+                  <div className="absolute top-0 left-0 h-[calc(100%-28px)] w-12 flex flex-col justify-between text-white/70 text-sm">
+                    {yAxisValues.map((value, index) => (
+                      <div key={index}>{value}</div>
+                    ))}
+                  </div>
+                );
+              })()}
 
+              <div className="absolute left-12 right-0 top-0 h-[calc(100%-28px)] flex flex-col justify-between">
+                {[0, 1, 2, 3, 4, 5].map((_, i) => (
+                  <div
+                    key={i}
+                    className="border-t border-white/10 w-full h-0"
+                  ></div>
+                ))}
+              </div>
+
+              <div
+                className="absolute left-12 right-0 bottom-0 top-0 flex"
+                style={{
+                  zIndex: 10,
+                  height: "calc(100% - 28px)",
+                  paddingTop: "25px",
+                }}
+              >
+                {popularDaysData.map((item, index) => {
+                  // Use max value + 10 for height calculation
+                  const maxValue = Math.max(...popularDaysData.map(item => item.ticketSold)) + 10;
+                  const height = (item.ticketSold / maxValue) * 100;
+
+                  return (
                     <div
-                        className="absolute left-12 right-0 bottom-0 top-0 flex"
-                        style={{
-                            zIndex: 10,
-                            height: "calc(100% - 28px)",
-                            paddingTop: "25px",
-                        }}
+                      key={index}
+                      className="flex-1 flex flex-col justify-end relative"
                     >
-                        {popularDaysData.map((item, index) => {
-                            const maxValue = 500;
-                            const height = (item.visitors / maxValue) * 100;
-
-                            return (
-                                <div
-                                    key={index}
-                                    className="flex-1 flex flex-col justify-end relative"
-                                >
-                                    <div
-                                        className="w-full rounded-t-sm relative"
-                                        style={{
-                                            height: `${height}%`,
-                                            background:
-                                                "rgba(140, 217, 255, 0.08)",
-                                            borderTop: "3px solid #42bdf5",
-                                        }}
-                                        onMouseEnter={() =>
-                                            setHoveredDay(index)
-                                        }
-                                        onMouseLeave={() => setHoveredDay(null)}
-                                    >
-                                        {hoveredDay === index && (
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#111] p-2 rounded border border-white/10 text-white text-xs whitespace-nowrap z-20">
-                                                {numberFormatter(item.visitors)}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="mt-2 text-center text-white/70 text-sm">
-                                        {item.day}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                      <div
+                        className="w-full rounded-t-sm relative"
+                        style={{
+                          height: `${height}%`,
+                          background: "rgba(140, 217, 255, 0.08)",
+                          borderTop: "3px solid #42bdf5",
+                        }}
+                        onMouseEnter={() => setHoveredDay(index)}
+                        onMouseLeave={() => setHoveredDay(null)}
+                      >
+                        {hoveredDay === index && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#111] p-2 rounded border border-white/10 text-white text-xs whitespace-nowrap z-20">
+                            {item.ticketSold} tickets sold
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-2 text-center text-white/70 text-sm">
+                        {item.day}
+                      </div>
                     </div>
-                </div>
+                  );
+                })}
+              </div>
             </div>
+          </div>
         </div>
     );
 }

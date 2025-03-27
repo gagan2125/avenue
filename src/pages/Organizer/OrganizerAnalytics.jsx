@@ -1258,14 +1258,22 @@ const OrganizerAnalytics = () => {
             </h3>
             <div className="p-4">
               <div className="relative w-full h-[300px] flex flex-col">
-                <div className="absolute top-0 left-0 h-[calc(100%-28px)] w-12 flex flex-col justify-between text-white/70 text-sm">
-                  <div>500</div>
-                  <div>400</div>
-                  <div>300</div>
-                  <div>200</div>
-                  <div>100</div>
-                  <div>0</div>
-                </div>
+                {(() => {
+                  // Calculate the max value from the data for dynamic y-axis
+                  const maxTickets = Math.max(...popularDaysData.map(item => item.ticketSold));
+                  // Round up to the nearest 100 for a cleaner axis
+                  const yAxisMax = Math.ceil(maxTickets / 100) * 100;
+                  // Create array of y-axis values
+                  const yAxisValues = Array.from({length: 6}, (_, i) => Math.round(yAxisMax / 5 * (5 - i)));
+
+                  return (
+                    <div className="absolute top-0 left-0 h-[calc(100%-28px)] w-12 flex flex-col justify-between text-white/70 text-sm">
+                      {yAxisValues.map((value, index) => (
+                        <div key={index}>{value}</div>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 <div className="absolute left-12 right-0 top-0 h-[calc(100%-28px)] flex flex-col justify-between">
                   {[0, 1, 2, 3, 4, 5].map((_, i) => (
@@ -1285,8 +1293,9 @@ const OrganizerAnalytics = () => {
                   }}
                 >
                   {popularDaysData.map((item, index) => {
-                    const maxValue = 500;
-                    const height = (item.visitors / maxValue) * 100;
+                    const maxValue = Math.max(...popularDaysData.map(item => item.ticketSold));
+                    const yAxisMax = Math.ceil(maxValue / 100) * 100;
+                    const height = (item.ticketSold / yAxisMax) * 100;
 
                     return (
                       <div
@@ -1305,7 +1314,7 @@ const OrganizerAnalytics = () => {
                         >
                           {hoveredDay === index && (
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#111] p-2 rounded border border-white/10 text-white text-xs whitespace-nowrap z-20">
-                              {numberFormatter(item.visitors)}
+                              {item.ticketSold} tickets sold
                             </div>
                           )}
                         </div>
@@ -1319,6 +1328,7 @@ const OrganizerAnalytics = () => {
               </div>
             </div>
           </div>
+
         </div>
 
         <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden mb-6">
