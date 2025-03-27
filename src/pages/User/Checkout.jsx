@@ -47,6 +47,8 @@ const CheckoutForm = ({
   const [success, setSuccess] = useState(false);
   const [disabled, setDisabled] = useState(true);
 
+  console.log(storeId)
+
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -182,7 +184,7 @@ const CheckoutForm = ({
   );
 };
 
-const Checkout = ({ clientSecret, setStep, amount, organizerId, userId, eventId, date, count, ticketId, email, firstName, lastName, tickets }) => {
+const Checkout = ({ clientSecret, setStep, amount, organizerId, userId, eventId, date, count, ticketId, email, firstName, lastName, tickets, storeId }) => {
   if (!clientSecret)
     return (
       <div className="text-white text-center min-h-screen flex items-center justify-center">
@@ -206,6 +208,7 @@ const Checkout = ({ clientSecret, setStep, amount, organizerId, userId, eventId,
         firstName={firstName}
         lastName={lastName}
         email={email}
+        storeId={storeId}
       />
     </Elements>
   );
