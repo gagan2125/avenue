@@ -16,27 +16,46 @@ import { Spin } from "antd";
 import url from "../../constants/url";
 
 const OrganizerAnalytics = () => {
-  const [analyticsData] = useState({
-    revenue: 5450,
-    ticketsSold: 36,
-    currentlyLive: 24,
-    ticketsViews: 24,
+  const [analyticsData, setAnalyticsData] = useState({
+    revenue: 0,
+    ticketsSold: 0,
+    currentlyLive: 0,
+    ticketsViews: 0,
     revenueChange: "+8%",
     ticketsSoldChange: "-8%",
     currentlyLiveChange: "+8%",
     ticketsViewsChange: "-8%",
   });
+  const [activeTab, setActiveTab] = useState("Daily")
 
   const [hoveredDay, setHoveredDay] = useState(null);
   const [eventsData, setEventsData] = useState([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [oragnizerId, setOragnizerId] = useState(null);
-  const [earnings, setEarnings] = useState({});
+  const [dailyEarnings, setDailyEarnings] = useState([]);
+  const [weeklyEarnings, setWeeklyEarnings] = useState([]);
+  const [monthlyEarnings, setMonthlyEarnings] = useState([]);
   const [soldTickets, setSoldTickets] = useState({});
   const [remainCount, setRemainCount] = useState({});
   const [viewsCount, setViewsCount] = useState({});
   const [ticketSalesData, setTicketSalesData] = useState({});
   const [revenueDataByEvent, setRevenueDataByEvent] = useState({});
+  const [trafficData, setTrafficData] = useState([]);
+  const [isTrafficLoading, setIsTrafficLoading] = useState(true);
+  const [errorTraffic, setErrorTraffic] = useState(null);
+  const [totalVisits, setTotalVisits] = useState(0);
+  const [funnelData, setFunnelData] = useState([]);
+  const [popularDaysData, setPopularDaysData] = useState([]);
+
+  const colorMap = {
+    google: "#42bdf5",
+    direct: "#9442f5",
+    facebook: "#f54242",
+    instagram: "#42f5a4",
+    twitter: "#f59942",
+    referral: "#f542b7",
+    "(other)": "#8042f5",
+  };
 
   const revenueData = [
     { date: "Mon", Revenue: 2000 },
@@ -52,29 +71,6 @@ const OrganizerAnalytics = () => {
     { name: "Arts & Culture", value: 24, fill: "#b7f542" },
     { name: "Music", value: 8, fill: "#f54242" },
     { name: "Sports", value: 4, fill: "#f59942" },
-  ];
-
-  const trafficData = [
-    { name: "Direct", value: 3500, fill: "#42bdf5" },
-    { name: "Social Media", value: 1200, fill: "#9442f5" },
-    { name: "Search", value: 600, fill: "#f54242" },
-    { name: "Referrals", value: 258, fill: "#42f5a4" },
-  ];
-
-  const funnelData = [
-    { stage: "Page views", value: 2489, percentage: 100, color: "#34B2DA" },
-    { stage: "Added to cart", value: 1344, percentage: 54, color: "#E74C3C" },
-    { stage: "Purchased", value: 36, percentage: 4.2, color: "#9B59B6" },
-  ];
-
-  const popularDaysData = [
-    { day: "Mon", visitors: 100 },
-    { day: "Tue", visitors: 410 },
-    { day: "Wed", visitors: 470 },
-    { day: "Thu", visitors: 420 },
-    { day: "Fri", visitors: 350 },
-    { day: "Sat", visitors: 420 },
-    { day: "Sun", visitors: 370 },
   ];
 
   const valueFormatter = (number) => {
@@ -95,9 +91,135 @@ const OrganizerAnalytics = () => {
     return categoriesData.reduce((sum, item) => sum + item.value, 0);
   }, [categoriesData]);
 
-  const totalVisits = useMemo(() => {
-    return trafficData.reduce((sum, item) => sum + item.value, 0);
-  }, [trafficData]);
+  const fetchTrafficData = async (organizerId) => {
+    setIsTrafficLoading(true);
+    try {
+      const [gaResponse, manualResponse] = await Promise.all([
+        axios.get(`${url}/analytics/traffic-sources?organizer_id=${organizerId}`),
+        axios.get(`${url}/visit/get-visit-count/${organizerId}`)
+      ]);
+
+      let sourcesData = [];
+      let totalGASessions = 0;
+
+      if (gaResponse.data && gaResponse.data.success) {
+        sourcesData = gaResponse.data.data || [];
+        totalGASessions = gaResponse.data.total || 0;
+      }
+
+      let manualCount = 0;
+      if (manualResponse.data) {
+        manualCount = parseInt(manualResponse.data.totalCount || 0);
+      }
+
+      const combinedTotal = totalGASessions + manualCount;
+
+      let combinedSources = [...sourcesData];
+
+      const directIndex = combinedSources.findIndex(
+        (source) => source.source.toLowerCase() === "direct"
+      );
+
+      if (directIndex >= 0) {
+        combinedSources[directIndex] = {
+          ...combinedSources[directIndex],
+          sessions: combinedSources[directIndex].sessions + manualCount
+        };
+      } else if (manualCount > 0) {
+        combinedSources.push({
+          source: "Direct",
+          sessions: manualCount,
+          newUsers: 0,
+          activeUsers: manualCount
+        });
+      }
+
+      combinedSources = combinedSources.map((source) => ({
+        ...source,
+        percentage: combinedTotal > 0
+          ? ((source.sessions / combinedTotal) * 100).toFixed(2) + "%"
+          : "0%"
+      }));
+
+      const formattedData = combinedSources.map((source, index) => {
+        const fill = colorMap[source.source.toLowerCase()] ||
+          `hsl(${(index * 50) % 360}, 70%, 60%)`;
+
+        return {
+          name: source.source,
+          value: source.sessions,
+          fill,
+          percentage: parseFloat(source.percentage),
+          isManual: source.source.toLowerCase() === "direct" && manualCount > 0
+        };
+      });
+
+      formattedData.sort((a, b) => b.value - a.value);
+
+      setTrafficData(formattedData);
+      setTotalVisits(combinedTotal);
+    } catch (error) {
+      console.error("Error fetching traffic sources:", error);
+      setErrorTraffic(error.message);
+
+      try {
+        const manualResponse = await axios.get(`${url}/visit/get-visit/${eventId}`);
+        if (manualResponse.data && manualResponse.data.data) {
+          const manualCount = parseInt(manualResponse.data.data.count || 0);
+          setTotalVisits(manualCount);
+
+          if (manualCount > 0) {
+            setTrafficData([{
+              name: "Direct",
+              value: manualCount,
+              fill: colorMap.direct,
+              percentage: 100,
+              isManual: true
+            }]);
+          }
+        }
+      } catch (manualError) {
+        console.error("Error fetching manual visit data:", manualError);
+      }
+    } finally {
+      setIsTrafficLoading(false);
+    }
+  }
+
+  const fetchFunnelData = async (organizerId) => {
+      const response = await axios.get(
+          `${url}/analytics/conversion-funnel?organizer_id=${organizerId}`
+      )
+      if (response.data) {
+          setFunnelData(response.data?.funnelData || []);
+      }
+  }
+
+  const fetchPopularDaysData = async (organizerId) => {
+      const response = await axios.get(
+          `${url}/analytics/popular-days?organizer_id=${organizerId}`
+      )
+      if (response.data) {
+          setPopularDaysData(response.data?.data || []);
+      }
+  }
+
+  useEffect(() => {
+      const fetchTransactions = async () => {
+          const response = await axios.get(
+            `${url}/organizer-transactions/${oragnizerId}`
+          );
+          const totalAmount = response.data?.data
+            .filter((payment) => payment.refund !== true)
+            .reduce((sum, sale) => {
+              if (!sale.amount) return sum;
+              const amountAfterFee = (Number(sale.amount / 100) - 0.89) / 1.09;
+              return sum + amountAfterFee;
+            }, 0);
+          setAnalyticsData((prev) => ({...prev, revenue: totalAmount }))
+      }
+      fetchTransactions()
+  }, [oragnizerId])
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -126,7 +248,7 @@ const OrganizerAnalytics = () => {
     }
       A ${outerRadius} ${outerRadius} 0 ${
       adjustedEndAngle - startAngle > 180 * angleRad ? 1 : 0
-    } 1 
+    } 1
         ${cx + outerRadius * Math.cos(adjustedEndAngle * angleRad)} ${
       cy + outerRadius * Math.sin(adjustedEndAngle * angleRad)
     }
@@ -181,6 +303,19 @@ const OrganizerAnalytics = () => {
       );
       setEventsData(filteredEvents);
 
+      const currentDate = new Date();
+      currentDate.setHours(0, 0, 0, 0);
+      const pastEvents = events.filter((event) => {
+        const eventDate = new Date(event.start_date);
+        eventDate.setHours(0, 0, 0, 0);
+        return eventDate >= currentDate && event.explore === "YES";
+      });
+      setAnalyticsData((prev) => ({ ...prev, currentlyLive: pastEvents.length }))
+
+      fetchTrafficData(oragnizerId)
+      fetchFunnelData(oragnizerId)
+      fetchPopularDaysData(oragnizerId)
+
       filteredEvents.forEach((event) => {
         fetchEarnings(event._id);
         fetchRemainEvent(event._id);
@@ -199,21 +334,153 @@ const OrganizerAnalytics = () => {
   const fetchEarnings = async (id) => {
     try {
       const response = await axios.get(`${url}/get-event-payment-list/${id}`);
-      const paymentsData = response.data?.data || [];
-      const filteredPayments = paymentsData.filter(
-        (payment) => payment.refund !== true
-      );
-      const totalEarnings = filteredPayments.reduce((sum, payment) => {
-        if (!payment.amount) return sum;
-        return sum + Number(payment.amount / 100);
-      }, 0);
+      const paymentsData = response.data || [];
 
-      const ticketCount = filteredPayments.reduce((sum, payment) => {
-        return sum + (payment.qty || 0);
-      }, 0);
+      // Objects to store earnings by different time periods
+      const dailyRevenueMap = {};
+      const weeklyRevenueMap = {};
+      const monthlyRevenueMap = {};
 
-      setEarnings((prev) => ({ ...prev, [id]: totalEarnings.toFixed(2) }));
-      setSoldTickets((prev) => ({ ...prev, [id]: ticketCount }));
+      paymentsData.forEach(payment => {
+        if ((payment.status === 'pending' || payment.status === 'completed') && payment.amount) {
+          const paymentDate = new Date(payment.date);
+
+          // Format for daily (DD MMM YYYY)
+          const dayFormat = paymentDate.toLocaleString('en-US', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+          });
+
+          // Format for weekly (date range)
+          // Get the start of the week (Sunday)
+          const startOfWeek = new Date(paymentDate);
+          startOfWeek.setDate(paymentDate.getDate() - paymentDate.getDay());
+
+          // Get the end of the week (Saturday)
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+          // Format as "MMM DD - MMM DD, YYYY" (e.g., "Mar 01 - Mar 07, 2025")
+          // If start and end months are the same, use "MMM DD - DD, YYYY"
+          let weekFormat;
+          if (startOfWeek.getMonth() === endOfWeek.getMonth()) {
+            weekFormat = `${startOfWeek.toLocaleString('en-US', { month: 'short' })} ${startOfWeek.getDate()} - ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+          } else {
+            weekFormat = `${startOfWeek.toLocaleString('en-US', { month: 'short' })} ${startOfWeek.getDate()} - ${endOfWeek.toLocaleString('en-US', { month: 'short' })} ${endOfWeek.getDate()}, ${startOfWeek.getFullYear()}`;
+          }
+
+          // Format for monthly (MMM YYYY)
+          const monthFormat = paymentDate.toLocaleString('en-US', {
+            month: 'short',
+            year: 'numeric'
+          });
+
+          // Convert amount from cents to dollars
+          const revenueAmount = payment.amount / 100;
+
+          // Update daily revenue
+          if (!dailyRevenueMap[dayFormat]) {
+            dailyRevenueMap[dayFormat] = 0;
+          }
+          dailyRevenueMap[dayFormat] += revenueAmount;
+
+          // Update weekly revenue
+          if (!weeklyRevenueMap[weekFormat]) {
+            weeklyRevenueMap[weekFormat] = 0;
+          }
+          weeklyRevenueMap[weekFormat] += revenueAmount;
+
+          // Update monthly revenue
+          if (!monthlyRevenueMap[monthFormat]) {
+            monthlyRevenueMap[monthFormat] = 0;
+          }
+          monthlyRevenueMap[monthFormat] += revenueAmount;
+        }
+      });
+
+      // Helper function to create formatted data from a revenue map
+      const formatRevenueData = (revenueMap, dateType) => {
+        return Object.keys(revenueMap).map(key => ({
+          date: key,
+          Revenue: Math.round(revenueMap[key]) // Rounding to nearest dollar
+        }));
+      };
+
+      // Create formatted data for each time period
+      const dailyData = formatRevenueData(dailyRevenueMap);
+      const weeklyData = formatRevenueData(weeklyRevenueMap);
+      const monthlyData = formatRevenueData(monthlyRevenueMap);
+
+      // Sort daily data
+      dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Sort weekly data - we need custom sorting for date ranges
+      weeklyData.sort((a, b) => {
+        // Extract first date from each range (e.g., "Mar 01" from "Mar 01 - Mar 07, 2025")
+        const getStartDate = (dateRange) => {
+          const parts = dateRange.split(' - ')[0];
+          const year = dateRange.split(', ')[1];
+          return new Date(`${parts} ${year}`);
+        };
+
+        return getStartDate(a.date) - getStartDate(b.date);
+      });
+
+      // Sort monthly data
+      monthlyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      // Update state while preserving previous data
+      setDailyEarnings(prevEarnings => {
+        const mergedData = [...dailyData];
+
+        // Add any existing dates that aren't in the new data
+        prevEarnings.forEach(item => {
+          if (!dailyRevenueMap[item.date]) {
+            mergedData.push(item);
+          }
+        });
+
+        // Re-sort after merging
+        return mergedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+      });
+
+      setWeeklyEarnings(prevEarnings => {
+        const mergedData = [...weeklyData];
+
+        // Add any existing weeks that aren't in the new data
+        prevEarnings.forEach(item => {
+          if (!weeklyRevenueMap[item.date]) {
+            mergedData.push(item);
+          }
+        });
+
+        // Re-sort after merging using date extraction
+        return mergedData.sort((a, b) => {
+          const getStartDate = (dateRange) => {
+            const parts = dateRange.split(' - ')[0];
+            const year = dateRange.split(', ')[1];
+            return new Date(`${parts} ${year}`);
+          };
+
+          return getStartDate(a.date) - getStartDate(b.date);
+        });
+      });
+
+      setMonthlyEarnings(prevEarnings => {
+        const mergedData = [...monthlyData];
+
+        // Add any existing months that aren't in the new data
+        prevEarnings.forEach(item => {
+          if (!monthlyRevenueMap[item.date]) {
+            mergedData.push(item);
+          }
+        });
+
+        // Re-sort after merging
+        return mergedData.sort((a, b) => new Date(a.date) - new Date(b.date));
+      });
+
     } catch (error) {
       console.error("Error fetching earnings:", error);
     }
@@ -239,6 +506,13 @@ const OrganizerAnalytics = () => {
     }
   };
 
+  useEffect(() => {
+      setAnalyticsData((prev) => ({
+          ...prev,
+          ticketsViews: Object.values(viewsCount).reduce((sum, count) => sum + parseInt(count), 0)
+      }))
+  }, [viewsCount])
+
   const fetchTicketSales = async (id) => {
     try {
       const { data } = await axios.get(`${url}/remain-tickets/${id}`);
@@ -252,12 +526,20 @@ const OrganizerAnalytics = () => {
     }
   };
 
+  useEffect(() => {
+      setAnalyticsData((prev) => ({
+          ...prev,
+          ticketsSold: Object.values(ticketSalesData)
+              .reduce((sum, count) => sum + count, 0)
+      }))
+  }, [ticketSalesData])
+
   const fetchRevenue = async (eventId) => {
     try {
       const { data } = await axios.get(
         `${url}/get-event-payment-list/${eventId}`
       );
-      const payments = data?.data || [];
+      const payments = data || [];
       const validPayments = payments.filter(
         (p) => p.transaction_id && p.refund !== true
       );
@@ -295,6 +577,10 @@ const OrganizerAnalytics = () => {
     }
   };
 
+  const activeEarningsData = activeTab === 'Daily' ? dailyEarnings :
+        activeTab === 'Weekly' ? weeklyEarnings :
+        monthlyEarnings;
+
   return (
     <SidebarLayout>
       <div className="m-4 mb-2 z-20">
@@ -311,7 +597,7 @@ const OrganizerAnalytics = () => {
                 <p className="text-2xl font-bold">
                   ${analyticsData.revenue.toLocaleString()}
                 </p>
-                <span
+                {/* <span
                   className={`text-xs px-2 rounded ${
                     analyticsData.revenueChange.startsWith("+")
                       ? "text-green-500"
@@ -319,7 +605,7 @@ const OrganizerAnalytics = () => {
                   }`}
                 >
                   {analyticsData.revenueChange}
-                </span>
+                </span> */}
               </div>
             </div>
             <div className="p-2 rounded-full">
@@ -361,7 +647,7 @@ const OrganizerAnalytics = () => {
                 <p className="text-2xl font-bold">
                   {analyticsData.ticketsSold}
                 </p>
-                <span
+                {/* <span
                   className={`text-xs px-2 rounded ${
                     analyticsData.ticketsSoldChange.startsWith("+")
                       ? "text-green-500"
@@ -369,7 +655,7 @@ const OrganizerAnalytics = () => {
                   }`}
                 >
                   {analyticsData.ticketsSoldChange}
-                </span>
+                </span> */}
               </div>
             </div>
             <div className="p-2 rounded-full">
@@ -406,7 +692,7 @@ const OrganizerAnalytics = () => {
                 <p className="text-2xl font-bold">
                   {analyticsData.currentlyLive}
                 </p>
-                <span
+                {/* <span
                   className={`text-xs px-2 rounded ${
                     analyticsData.currentlyLiveChange.startsWith("+")
                       ? "text-green-500"
@@ -414,7 +700,7 @@ const OrganizerAnalytics = () => {
                   }`}
                 >
                   {analyticsData.currentlyLiveChange}
-                </span>
+                </span> */}
               </div>
             </div>
             <div className="p-2 rounded-full">
@@ -451,7 +737,7 @@ const OrganizerAnalytics = () => {
                 <p className="text-2xl font-bold">
                   {analyticsData.ticketsViews}
                 </p>
-                <span
+                {/* <span
                   className={`text-xs px-2 rounded ${
                     analyticsData.ticketsViewsChange.startsWith("+")
                       ? "text-green-500"
@@ -459,7 +745,7 @@ const OrganizerAnalytics = () => {
                   }`}
                 >
                   {analyticsData.ticketsViewsChange}
-                </span>
+                </span> */}
               </div>
             </div>
             <div className="p-2 rounded-full">
@@ -519,9 +805,43 @@ const OrganizerAnalytics = () => {
             Revenue overview
           </h3>
           <div className="p-4">
+              <div className="flex justify-end items-center mb-6">
+                  <div className="flex space-x-2 bg-[#0F0F0F] rounded-full border border-white/10 p-2">
+                      <button
+                          onClick={() => setActiveTab("Daily")}
+                          className={`px-4 py-2 h-8 flex text-sm items-center border justify-center rounded-full ${
+                              activeTab === "Daily"
+                                  ? "bg-white/[0.03] text-white border-white/[0.03]"
+                                  : "border-transparent text-white/70"
+                          }`}
+                      >
+                          Daily
+                      </button>
+                      <button
+                          onClick={() => setActiveTab("Weekly")}
+                          className={`px-4 py-2 h-8 flex text-sm items-center border justify-center rounded-full ${
+                              activeTab === "Weekly"
+                                  ? "bg-white/[0.03] text-white border-white/[0.03]"
+                                  : "border-transparent text-white/70"
+                          }`}
+                      >
+                          Weekly
+                      </button>
+                      <button
+                          onClick={() => setActiveTab("Monthly")}
+                          className={`px-4 py-2 h-8 flex text-sm items-center border justify-center rounded-full ${
+                              activeTab === "Monthly"
+                                  ? "bg-white/[0.03] text-white border-white/[0.03]"
+                                  : "border-transparent text-white/70"
+                          }`}
+                      >
+                          Monthly
+                      </button>
+                  </div>
+              </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
-                data={revenueData}
+                data={activeEarningsData}
                 margin={{ top: 20, right: 30, left: 40, bottom: 20 }}
               >
                 <CartesianGrid
@@ -539,7 +859,16 @@ const OrganizerAnalytics = () => {
                   tick={{ fill: "rgba(255,255,255,0.5)" }}
                   tickLine={{ stroke: "rgba(255,255,255,0.1)" }}
                   axisLine={{ stroke: "rgba(255,255,255,0.1)" }}
-                  tickFormatter={(value) => `$${value / 1000}K`}
+                  tickFormatter={(value) => {
+                    // Format based on the value's magnitude
+                    if (value >= 1000000) {
+                      return `$${(value / 1000000).toFixed(1)}M`;
+                    } else if (value >= 1000) {
+                      return `$${(value / 1000).toFixed(1)}K`;
+                    } else {
+                      return `$${value}`;
+                    }
+                  }}
                   dx={-10}
                 />
                 <Tooltip
@@ -571,6 +900,106 @@ const OrganizerAnalytics = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
+            <h3 className="text-white font-medium bg-white/[0.03] p-4 text-sm border-b border-white/10 flex items-center gap-2">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  clip-rule="evenodd"
+                  d="M2.25 0C1.65326 0 1.08097 0.237053 0.65901 0.65901C0.237053 1.08097 0 1.65326 0 2.25V4.75C0 5.34674 0.237053 5.91903 0.65901 6.34099C1.08097 6.76295 1.65326 7 2.25 7H4.75C5.34674 7 5.91903 6.76295 6.34099 6.34099C6.76295 5.91903 7 5.34674 7 4.75V2.25C7 1.65326 6.76295 1.08097 6.34099 0.65901C5.91903 0.237053 5.34674 0 4.75 0H2.25ZM2.25 9C1.65326 9 1.08097 9.23705 0.65901 9.65901C0.237053 10.081 0 10.6533 0 11.25V13.75C0 14.3467 0.237053 14.919 0.65901 15.341C1.08097 15.7629 1.65326 16 2.25 16H4.75C5.34674 16 5.91903 15.7629 6.34099 15.341C6.76295 14.919 7 14.3467 7 13.75V11.25C7 10.6533 6.76295 10.081 6.34099 9.65901C5.91903 9.23705 5.34674 9 4.75 9H2.25ZM11.25 0C10.6533 0 10.081 0.237053 9.65901 0.65901C9.23705 1.08097 9 1.65326 9 2.25V4.75C9 5.34674 9.23705 5.91903 9.65901 6.34099C10.081 6.76295 10.6533 7 11.25 7H13.75C14.3467 7 14.919 6.76295 15.341 6.34099C15.7629 5.91903 16 5.34674 16 4.75V2.25C16 1.65326 15.7629 1.08097 15.341 0.65901C14.919 0.237053 14.3467 0 13.75 0H11.25ZM11.25 9C10.6533 9 10.081 9.23705 9.65901 9.65901C9.23705 10.081 9 10.6533 9 11.25V13.75C9 14.3467 9.23705 14.919 9.65901 15.341C10.081 15.7629 10.6533 16 11.25 16H13.75C14.3467 16 14.919 15.7629 15.341 15.341C15.7629 14.919 16 14.3467 16 13.75V11.25C16 10.6533 15.7629 10.081 15.341 9.65901C14.919 9.23705 14.3467 9 13.75 9H11.25Z"
+                  fill="white"
+                  fill-opacity="0.5"
+                />
+              </svg>
+              Traffic Sources
+            </h3>
+            <div className="p-4">
+              <div className="flex flex-wrap gap-4 mb-6">
+                {trafficData.map((item) => (
+                  <div
+                    key={item.name}
+                    className="flex items-center gap-2 px-3 py-1 border border-white/20 rounded-full"
+                  >
+                    <span
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: item.fill }}
+                      aria-hidden="true"
+                    />
+                    <span className="text-white text-sm">{item.name}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Pie
+                      data={trafficData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={105}
+                      outerRadius={115}
+                      strokeWidth={0}
+                      paddingAngle={3}
+                      activeShape={CustomizedShape}
+                      shape={<CustomizedShape />}
+                      activeIndex={[]}
+                      startAngle={90}
+                      endAngle={-270}
+                    >
+                      {trafficData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.fill}
+                          stroke={entry.fill}
+                          strokeLinecap="round"
+                        />
+                      ))}
+                      <Label
+                        content={({ viewBox }) => {
+                          const { cx, cy } = viewBox;
+                          return (
+                            <g>
+                              <text
+                                x={cx}
+                                y={cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={cx}
+                                  y={cy}
+                                  className="fill-white text-3xl font-bold"
+                                >
+                                  {numberFormatter(totalVisits)}
+                                </tspan>
+                                <tspan
+                                  x={cx}
+                                  y={cy + 25}
+                                  className="fill-gray-400 text-sm"
+                                >
+                                  Total visits
+                                </tspan>
+                              </text>
+                            </g>
+                          );
+                        }}
+                      />
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
           <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
             <h3 className="text-white font-medium bg-white/[0.03] p-4 text-sm border-b border-white/10 flex items-center gap-2">
               <svg
@@ -660,107 +1089,6 @@ const OrganizerAnalytics = () => {
                                   className="fill-gray-400 text-sm"
                                 >
                                   Total sells
-                                </tspan>
-                              </text>
-                            </g>
-                          );
-                        }}
-                      />
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden">
-            <h3 className="text-white font-medium bg-white/[0.03] p-4 text-sm border-b border-white/10 flex items-center gap-2">
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M2.25 0C1.65326 0 1.08097 0.237053 0.65901 0.65901C0.237053 1.08097 0 1.65326 0 2.25V4.75C0 5.34674 0.237053 5.91903 0.65901 6.34099C1.08097 6.76295 1.65326 7 2.25 7H4.75C5.34674 7 5.91903 6.76295 6.34099 6.34099C6.76295 5.91903 7 5.34674 7 4.75V2.25C7 1.65326 6.76295 1.08097 6.34099 0.65901C5.91903 0.237053 5.34674 0 4.75 0H2.25ZM2.25 9C1.65326 9 1.08097 9.23705 0.65901 9.65901C0.237053 10.081 0 10.6533 0 11.25V13.75C0 14.3467 0.237053 14.919 0.65901 15.341C1.08097 15.7629 1.65326 16 2.25 16H4.75C5.34674 16 5.91903 15.7629 6.34099 15.341C6.76295 14.919 7 14.3467 7 13.75V11.25C7 10.6533 6.76295 10.081 6.34099 9.65901C5.91903 9.23705 5.34674 9 4.75 9H2.25ZM11.25 0C10.6533 0 10.081 0.237053 9.65901 0.65901C9.23705 1.08097 9 1.65326 9 2.25V4.75C9 5.34674 9.23705 5.91903 9.65901 6.34099C10.081 6.76295 10.6533 7 11.25 7H13.75C14.3467 7 14.919 6.76295 15.341 6.34099C15.7629 5.91903 16 5.34674 16 4.75V2.25C16 1.65326 15.7629 1.08097 15.341 0.65901C14.919 0.237053 14.3467 0 13.75 0H11.25ZM11.25 9C10.6533 9 10.081 9.23705 9.65901 9.65901C9.23705 10.081 9 10.6533 9 11.25V13.75C9 14.3467 9.23705 14.919 9.65901 15.341C10.081 15.7629 10.6533 16 11.25 16H13.75C14.3467 16 14.919 15.7629 15.341 15.341C15.7629 14.919 16 14.3467 16 13.75V11.25C16 10.6533 15.7629 10.081 15.341 9.65901C14.919 9.23705 14.3467 9 13.75 9H11.25Z"
-                  fill="white"
-                  fill-opacity="0.5"
-                />
-              </svg>
-              Traffic Sources
-            </h3>
-            <div className="p-4">
-              <div className="flex flex-wrap gap-4 mb-6">
-                {trafficData.map((item) => (
-                  <div
-                    key={item.name}
-                    className="flex items-center gap-2 px-3 py-1 border border-white/20 rounded-full"
-                  >
-                    <span
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: item.fill }}
-                      aria-hidden="true"
-                    />
-                    <span className="text-white text-sm">{item.name}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Pie
-                      data={trafficData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={105}
-                      outerRadius={115}
-                      strokeWidth={0}
-                      paddingAngle={3}
-                      activeShape={CustomizedShape}
-                      shape={<CustomizedShape />}
-                      activeIndex={[]}
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      {trafficData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.fill}
-                          stroke={entry.fill}
-                          strokeLinecap="round"
-                        />
-                      ))}
-                      <Label
-                        content={({ viewBox }) => {
-                          const { cx, cy } = viewBox;
-                          return (
-                            <g>
-                              <text
-                                x={cx}
-                                y={cy}
-                                textAnchor="middle"
-                                dominantBaseline="middle"
-                              >
-                                <tspan
-                                  x={cx}
-                                  y={cy}
-                                  className="fill-white text-3xl font-bold"
-                                >
-                                  {numberFormatter(totalVisits)}
-                                </tspan>
-                                <tspan
-                                  x={cx}
-                                  y={cy + 25}
-                                  className="fill-gray-400 text-sm"
-                                >
-                                  Total visits
                                 </tspan>
                               </text>
                             </g>
@@ -930,14 +1258,22 @@ const OrganizerAnalytics = () => {
             </h3>
             <div className="p-4">
               <div className="relative w-full h-[300px] flex flex-col">
-                <div className="absolute top-0 left-0 h-[calc(100%-28px)] w-12 flex flex-col justify-between text-white/70 text-sm">
-                  <div>500</div>
-                  <div>400</div>
-                  <div>300</div>
-                  <div>200</div>
-                  <div>100</div>
-                  <div>0</div>
-                </div>
+                {(() => {
+                  // Calculate the max value from the data for dynamic y-axis
+                  const maxTickets = Math.max(...popularDaysData.map(item => item.ticketSold));
+                  // Round up to the nearest 100 for a cleaner axis
+                  const yAxisMax = Math.ceil(maxTickets / 100) * 100;
+                  // Create array of y-axis values
+                  const yAxisValues = Array.from({length: 6}, (_, i) => Math.round(yAxisMax / 5 * (5 - i)));
+
+                  return (
+                    <div className="absolute top-0 left-0 h-[calc(100%-28px)] w-12 flex flex-col justify-between text-white/70 text-sm">
+                      {yAxisValues.map((value, index) => (
+                        <div key={index}>{value}</div>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 <div className="absolute left-12 right-0 top-0 h-[calc(100%-28px)] flex flex-col justify-between">
                   {[0, 1, 2, 3, 4, 5].map((_, i) => (
@@ -957,8 +1293,9 @@ const OrganizerAnalytics = () => {
                   }}
                 >
                   {popularDaysData.map((item, index) => {
-                    const maxValue = 500;
-                    const height = (item.visitors / maxValue) * 100;
+                    const maxValue = Math.max(...popularDaysData.map(item => item.ticketSold));
+                    const yAxisMax = Math.ceil(maxValue / 100) * 100;
+                    const height = (item.ticketSold / yAxisMax) * 100;
 
                     return (
                       <div
@@ -977,7 +1314,7 @@ const OrganizerAnalytics = () => {
                         >
                           {hoveredDay === index && (
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-[#111] p-2 rounded border border-white/10 text-white text-xs whitespace-nowrap z-20">
-                              {numberFormatter(item.visitors)}
+                              {item.ticketSold} tickets sold
                             </div>
                           )}
                         </div>
@@ -991,6 +1328,7 @@ const OrganizerAnalytics = () => {
               </div>
             </div>
           </div>
+
         </div>
 
         <div className="w-full bg-transparent border border-white/10 rounded-xl overflow-hidden mb-6">

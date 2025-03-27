@@ -8,6 +8,7 @@ import { use } from 'react';
 import { Spin } from 'antd';
 import LoginModal from '../../components/modals/LoginModal';
 import { FaEnvelope, FaInstagram, FaPhone } from 'react-icons/fa';
+import { trackEvent, trackPageView } from '../../lib/analytics';
 
 const Info = () => {
     const { name } = useParams()
@@ -28,6 +29,13 @@ const Info = () => {
 
     const id = localStorage.getItem('user_event_id') || {};
     const userId = localStorage.getItem('userID') || "";
+
+    useEffect(() => {
+        if (event._id && event.event_name) {
+            trackPageView(`/${event.event_name}`);
+            trackEvent("Event", "View", event.event_name);
+        }
+    }, [event, event._id, event.event_name])
 
     const fetchBook = async () => {
         //setLoading(true);
@@ -208,6 +216,12 @@ const Info = () => {
         localStorage.setItem('max_count', selectedTicket.max_count)
         localStorage.setItem('min_count', selectedTicket.min_count)
         localStorage.setItem('remaining_tickets', selectedRemainingTickets);
+        trackEvent(
+            "Conversion",
+            "Checkout Initiated",
+            selectedTicket.ticket_name,
+            selectedTicket.price * selectedTicket.count
+        )
         navigate("/ticket");
     };
 
@@ -252,6 +266,7 @@ const Info = () => {
     const handleDetail = (id, creater) => {
         localStorage.setItem('user_organizer_id', id);
         localStorage.setItem('user_organizer_name', creater);
+        trackEvent("Engagement", "Organizer Profile Click", creater);
         navigate(`/creator/${creater}`);
     };
 
@@ -326,6 +341,8 @@ const Info = () => {
             text: `Check out ${event.event_name}!`,
             url: window.location.href,
         };
+
+        trackEvent("Engagement", "Share", event.event_name)
 
         if (navigator.share) {
             try {
