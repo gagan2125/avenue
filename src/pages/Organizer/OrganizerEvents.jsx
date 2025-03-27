@@ -127,6 +127,7 @@ export default function OrganizerEvents() {
   const [draftDialogOpen, setDraftDialogOpen] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showCopied, setShowCopied] = useState(false);
 
   const [oragnizerId, setOragnizerId] = useState(null);
   const [events, setEvents] = useState([]);
@@ -216,6 +217,25 @@ export default function OrganizerEvents() {
 
   const handleViewEvent = (eventId) => {
     navigate(`/organizer/events/${eventId}`);
+  };
+  const handleCopyLink = (id, name) => {
+    const cleanName = name
+      .replace(/[^a-zA-Z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .trim();
+    const url = `${window.location.origin}/${encodeURIComponent(cleanName)}`;
+
+    navigator.clipboard
+      .writeText(url)
+      .then(() => {
+        setShowCopied(true);
+        setTimeout(() => {
+          setShowCopied(false);
+        }, [3000]);
+      })
+      .catch((err) => {
+        console.error("Failed to copy: ", err);
+      });
   };
 
   useEffect(() => {
@@ -831,6 +851,36 @@ export default function OrganizerEvents() {
                                         <span>View event</span>
                                       </div>
                                     </MenuItem>
+                                    <Link
+                      to={`/organizer/edit-event/${event._id}`}
+                      // className="bg-transparent flex items-center gap-1 justify-center border border-white/10 text-white text-sm md:text-base h-8 md:h-10 px-4 rounded-full hover:bg-white/10 transition"
+                    >
+                                    <MenuItem
+                                      // onClick={() => handleViewEvent(event._id)}
+                                    >
+                                      <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                      >
+                        <path
+                          d="M13.4872 2.51299C13.3247 2.35047 13.1318 2.22155 12.9194 2.13359C12.7071 2.04564 12.4795 2.00037 12.2497 2.00037C12.0199 2.00037 11.7923 2.04564 11.58 2.13359C11.3676 2.22155 11.1747 2.35047 11.0122 2.51299L6.74919 6.77399C6.49389 7.02932 6.29137 7.33242 6.15319 7.66599L5.30519 9.71299C5.24839 9.85005 5.23351 10.0009 5.26244 10.1464C5.29137 10.2919 5.36281 10.4256 5.46772 10.5305C5.57262 10.6354 5.70629 10.7068 5.8518 10.7357C5.99731 10.7647 6.14814 10.7498 6.28519 10.693L8.33219 9.84499C8.66577 9.70681 8.96887 9.50429 9.22419 9.24899L13.4852 4.98699C13.8131 4.65884 13.9973 4.21391 13.9973 3.74999C13.9973 3.28608 13.8131 2.84115 13.4852 2.51299H13.4872Z"
+                          fill="white"
+                          fillOpacity="0.5"
+                        />
+                        <path
+                          d="M4.75 3.5C4.06 3.5 3.5 4.06 3.5 4.75V11.25C3.5 11.94 4.06 12.5 4.75 12.5H11.25C11.94 12.5 12.5 11.94 12.5 11.25V9C12.5 8.80109 12.579 8.61032 12.7197 8.46967C12.8603 8.32902 13.0511 8.25 13.25 8.25C13.4489 8.25 13.6397 8.32902 13.7803 8.46967C13.921 8.61032 14 8.80109 14 9V11.25C14 11.9793 13.7103 12.6788 13.1945 13.1945C12.6788 13.7103 11.9793 14 11.25 14H4.75C4.02065 14 3.32118 13.7103 2.80546 13.1945C2.28973 12.6788 2 11.9793 2 11.25V4.75C2 4.02065 2.28973 3.32118 2.80546 2.80546C3.32118 2.28973 4.02065 2 4.75 2H7C7.19891 2 7.38968 2.07902 7.53033 2.21967C7.67098 2.36032 7.75 2.55109 7.75 2.75C7.75 2.94891 7.67098 3.13968 7.53033 3.28033C7.38968 3.42098 7.19891 3.5 7 3.5H4.75Z"
+                          fill="white"
+                          fillOpacity="0.5"
+                        />
+                      </svg>
+                                        <span>Edit event</span>
+                                      </div>
+                                    </MenuItem>
+                                    </Link>
                                     <MenuItem
                                       onClick={() => {
                                         setSelectedEvent(event);
@@ -859,6 +909,33 @@ export default function OrganizerEvents() {
                                           />
                                         </svg>
                                         <span>Make it draft</span>
+                                      </div>
+                                    </MenuItem>
+                                    <MenuItem
+                                      onClick={() =>
+                                        handleCopyLink(event._id, event.event_name)
+                                      }
+                                    >
+                                      <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                      >
+                        <path
+                          d="M5 6.5C5 6.10218 5.15804 5.72064 5.43934 5.43934C5.72064 5.15804 6.10218 5 6.5 5H12.5C12.8978 5 13.2794 5.15804 13.5607 5.43934C13.842 5.72064 14 6.10218 14 6.5V12.5C14 12.8978 13.842 13.2794 13.5607 13.5607C13.2794 13.842 12.8978 14 12.5 14H6.5C6.10218 14 5.72064 13.842 5.43934 13.5607C5.15804 13.2794 5 12.8978 5 12.5V6.5Z"
+                          fill="white"
+                          fillOpacity="0.5"
+                        />
+                        <path
+                          d="M3.5 2C3.10218 2 2.72064 2.15804 2.43934 2.43934C2.15804 2.72064 2 3.10218 2 3.5V9.5C2 9.89782 2.15804 10.2794 2.43934 10.5607C2.72064 10.842 3.10218 11 3.5 11V6.5C3.5 5.70435 3.81607 4.94129 4.37868 4.37868C4.94129 3.81607 5.70435 3.5 6.5 3.5H11C11 3.10218 10.842 2.72064 10.5607 2.43934C10.2794 2.15804 9.89782 2 9.5 2H3.5Z"
+                          fill="white"
+                          fillOpacity="0.5"
+                        />
+                      </svg>
+                                        <span>Copy link</span>
                                       </div>
                                     </MenuItem>
                                     <MenuSeparator />
@@ -2078,6 +2155,54 @@ export default function OrganizerEvents() {
           </div>
           <button
             onClick={() => setshowActivateNotification(false)}
+            className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <path
+                d="M5.28033 4.21967C4.98744 3.92678 4.51256 3.92678 4.21967 4.21967C3.92678 4.51256 3.92678 4.98744 4.21967 5.28033L6.93934 8L4.21967 10.7197C3.92678 11.0126 3.92678 11.4874 4.21967 11.7803C4.51256 12.0732 4.98744 12.0732 5.28033 11.7803L8 9.06066L10.7197 11.7803C11.0126 12.0732 11.4874 12.0732 11.7803 11.7803C12.0732 11.4874 12.0732 11.0126 11.7803 10.7197L9.06066 8L11.7803 5.28033C12.0732 4.98744 12.0732 4.51256 11.7803 4.21967C11.4874 3.92678 11.0126 3.92678 10.7197 4.21967L8 6.93934L5.28033 4.21967Z"
+                fill="white"
+              />
+            </svg>
+          </button>
+        </motion.div>
+      )}
+      {showCopied && (
+        <motion.div
+          initial={{ y: -50, opacity: 0, scale: 0.9 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: -50, opacity: 0, scale: 0.9 }}
+          transition={{
+            type: "spring",
+            stiffness: 150,
+            damping: 15,
+          }}
+          className="fixed top-20 sm:top-10 inset-x-0 mx-auto w-fit backdrop-blur-md text-white p-3 pl-4 rounded-lg flex items-center gap-2 border border-white/10 shadow-lg max-w-[400px] justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M8 15C9.85652 15 11.637 14.2625 12.9497 12.9497C14.2625 11.637 15 9.85652 15 8C15 6.14348 14.2625 4.36301 12.9497 3.05025C11.637 1.7375 9.85652 1 8 1C6.14348 1 4.36301 1.7375 3.05025 3.05025C1.7375 4.36301 1 6.14348 1 8C1 9.85652 1.7375 11.637 3.05025 12.9497C4.36301 14.2625 6.14348 15 8 15ZM11.844 6.209C11.9657 6.05146 12.0199 5.85202 11.9946 5.65454C11.9693 5.45706 11.8665 5.27773 11.709 5.156C11.5515 5.03427 11.352 4.9801 11.1545 5.00542C10.9571 5.03073 10.7777 5.13346 10.656 5.291L6.956 10.081L5.307 8.248C5.24174 8.17247 5.16207 8.11073 5.07264 8.06639C4.98322 8.02205 4.88584 7.99601 4.78622 7.98978C4.6866 7.98356 4.58674 7.99729 4.4925 8.03016C4.39825 8.06303 4.31151 8.11438 4.23737 8.1812C4.16322 8.24803 4.10316 8.32898 4.06071 8.41931C4.01825 8.50965 3.99425 8.60755 3.99012 8.70728C3.98599 8.807 4.00181 8.90656 4.03664 9.00009C4.07148 9.09363 4.12464 9.17927 4.193 9.252L6.443 11.752C6.51649 11.8335 6.60697 11.8979 6.70806 11.9406C6.80915 11.9833 6.91838 12.0034 7.02805 11.9993C7.13772 11.9952 7.24515 11.967 7.34277 11.9169C7.44038 11.8667 7.5258 11.7958 7.593 11.709L11.844 6.209Z"
+                fill="#10B981"
+              />
+            </svg>
+            <p className="text-sm">Event link copied to clipboard</p>
+          </div>
+          <button
+            onClick={() => setShowCopied(false)}
             className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
           >
             <svg

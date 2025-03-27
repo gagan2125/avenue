@@ -232,7 +232,7 @@ export default function OrganizeMembers() {
       fullName: "",
       email: "",
       phoneNumber: "",
-      role: roles[0],
+      role: roles[0].name,
       events: [],
     },
   });
@@ -1386,7 +1386,7 @@ export default function OrganizeMembers() {
                       type="button"
                       className="flex w-full justify-between items-center text-white gap-2 border border-white/10 hover:bg-white/10 transition-colors px-4 py-2 rounded-lg text-sm font-medium"
                     >
-                      <span>{watch("role")}</span>
+                      <span>{typeof watch("role") === 'object' ? watch("role").name : watch("role")}</span>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -1408,13 +1408,13 @@ export default function OrganizeMembers() {
                   <DropdownContent className="w-full bg-[#151515] border border-white/10 tex-white rounded-lg shadow-lg overflow-hidden">
                     {roles.map((role) => (
                       <DropdownItem
-                        key={role}
+                        key={role.name}
                         onClick={() =>
-                          setValue("role", role, { shouldValidate: true })
+                          setValue("role", role.name, { shouldValidate: true })
                         }
                         className="px-4 py-2 hover:bg-white/5 transition-colors text-white"
                       >
-                        {role}
+                        {role.name}
                       </DropdownItem>
                     ))}
                   </DropdownContent>

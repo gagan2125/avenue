@@ -101,6 +101,7 @@ const QrTicket = ({ isOpen, onClose, card }) => {
                                 <img
                                     src={card.qrcode}
                                     alt="QR Code"
+                                    style={{ imageRendering: 'pixelated' }}
                                     className="w-full max-w-xs rounded-lg"
                                 />
                                 {/* <div className="absolute inset-0 flex items-center justify-center">

@@ -1925,14 +1925,20 @@ export default function EditEvent() {
                 {/* Progress steps in the middle */}
                 <div className="hidden md:flex items-center gap-2 flex-1 max-w-[400px] mx-8">
                     {[1, 2, 3, 4, 5, 6].map((stepNumber) => (
-                        <div key={stepNumber} className="flex-1">
+                        <div
+                            key={stepNumber}
+                            className={`flex-1 ${stepNumber !== 6 ? "cursor-pointer" : "cursor-default"}`}
+                            onClick={() => {
+                                if (stepNumber !== 6) {
+                                    setStep(stepNumber);
+                                }
+                            }}
+                        >
                             <div
-                                className={`h-1 w-full rounded-full ${stepNumber <= step ? "bg-[#34B2DA]" : "bg-white/10"
-                                    }`}
+                                className={`h-1 w-full rounded-full ${stepNumber <= step ? "bg-[#34B2DA]" : "bg-white/10"}`}
                             />
                             <span
-                                className={`mt-1 text-xs ${stepNumber <= step ? "text-white" : "text-white/40"
-                                    } text-center block`}
+                                className={`mt-1 text-xs ${stepNumber <= step ? "text-white" : "text-white/40"} text-center block`}
                             >
                                 {stepNumber === 1 && "Basic info"}
                                 {stepNumber === 2 && "Date"}
@@ -1944,6 +1950,7 @@ export default function EditEvent() {
                         </div>
                     ))}
                 </div>
+
 
                 <button
                     onClick={() => window.history.back()}

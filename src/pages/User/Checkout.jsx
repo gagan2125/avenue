@@ -38,6 +38,7 @@ const CheckoutForm = ({
   firstName,
   lastName,
   tickets,
+  storeId
 }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -45,6 +46,8 @@ const CheckoutForm = ({
   const [errorMsg, setErrorMsg] = useState(null);
   const [success, setSuccess] = useState(false);
   const [disabled, setDisabled] = useState(true);
+
+  console.log(storeId)
 
 
   const handleSubmit = async (event) => {
@@ -61,7 +64,7 @@ const CheckoutForm = ({
     try {
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        confirmParams:{
+        confirmParams: {
           return_url: 'https://avenue.tickets/ticket#step3',
         },
         redirect: "if_required",
@@ -70,42 +73,54 @@ const CheckoutForm = ({
       console.log("Error:", error);
       console.log("Payment Intent:", paymentIntent);
 
-      if (error) {
-        setErrorMsg(error.message || "Payment failed. Please try again.");
-      } else if (paymentIntent && paymentIntent.status === "succeeded") {
+      let status = "failed";
+      let paymentMethodType = null;
+
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        status = "success";
         setSuccess(true);
 
-        const paymentMethodType =
+        paymentMethodType =
           paymentIntent.payment_method_types &&
             paymentIntent.payment_method_types.length > 0
             ? paymentIntent.payment_method_types[0]
             : null;
-        console.log("Payment Method Type:", paymentMethodType);
 
-        const response = await fetch(`${url}/send-ticket-email`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            amount: amount,
-            organizerId: organizerId,
-            userId: userId,
-            eventId: eventId,
-            date: date,
-            status: "pending",
-            count: count,
-            ticketId: ticketId,
-            tickets: tickets,
-            firstName: firstName,
-            lastName: lastName,
-            email: email,
-            clientSecret: clientSecret,
-            paymentMethod: paymentMethodType
-          }),
-        });
-        const data = await response.json();
-        localStorage.setItem("payId", data.paymentId);
+        console.log("Payment Method Type:", paymentMethodType);
+      } else if (error) {
+        setErrorMsg(error.message || "Payment failed. Please try again.");
+      }
+
+      // Send details to backend regardless of payment status
+      const response = await fetch(`${url}/send-ticket-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: amount,
+          organizerId: organizerId,
+          userId: userId,
+          eventId: eventId,
+          date: date,
+          status: status,
+          count: count,
+          ticketId: ticketId,
+          tickets: tickets,
+          firstName: firstName,
+          lastName: lastName,
+          email: email,
+          clientSecret: clientSecret,
+          paymentMethod: paymentMethodType,
+          storeId: storeId
+        }),
+      });
+
+      const data = await response.json();
+      localStorage.setItem("payId", data.paymentId);
+
+      if (status === "success") {
         setStep(3);
       }
+
     } catch (err) {
       console.error("Unexpected error:", err);
       setErrorMsg("An unexpected error occurred. Please try again.");
@@ -113,6 +128,7 @@ const CheckoutForm = ({
       setLoading(false);
     }
   };
+
 
   return (
     <>
@@ -168,7 +184,7 @@ const CheckoutForm = ({
   );
 };
 
-const Checkout = ({ clientSecret, setStep, amount, organizerId, userId, eventId, date, count, ticketId, email, firstName, lastName, tickets }) => {
+const Checkout = ({ clientSecret, setStep, amount, organizerId, userId, eventId, date, count, ticketId, email, firstName, lastName, tickets, storeId }) => {
   if (!clientSecret)
     return (
       <div className="text-white text-center min-h-screen flex items-center justify-center">
@@ -192,6 +208,7 @@ const Checkout = ({ clientSecret, setStep, amount, organizerId, userId, eventId,
         firstName={firstName}
         lastName={lastName}
         email={email}
+        storeId={storeId}
       />
     </Elements>
   );

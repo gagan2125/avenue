@@ -91,14 +91,12 @@ export default function CustomerTab({ eventId, event }) {
     const filteredCustomers = book.filter((customer) => {
         const searchLower = searchQuery.toLowerCase();
         const matchesSearch =
-            customer.firstName.toLowerCase().includes(searchLower) ||
-            (((customer?.amount / 100) - 0.89) / 1.09).toString().includes(searchLower)
+            (customer.firstName?.toLowerCase() || "").includes(searchLower) ||
+            ((((customer?.amount || 0) / 100) - 0.89) / 1.09).toString().includes(searchLower);
 
-        // if (activeTab === "pending") {
-        //     return matchesSearch && customer.status === "pending";
-        // }
         return matchesSearch;
     });
+
 
     const pendingCustomers = customers.filter(
         (customer) => customer.status === "pending"
@@ -503,8 +501,9 @@ export default function CustomerTab({ eventId, event }) {
                                                                         <td className="py-4 pl-4">
                                                                             <div className="flex items-center gap-3">
                                                                                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm">
-                                                                                    {customer.firstName.slice(0, 2).toUpperCase() ? customer.firstName.slice(0, 2).toUpperCase() : "Complimentary".slice(0,2).toUpperCase()}
+                                                                                    {(customer.firstName || "Complimentary").slice(0, 2).toUpperCase()}
                                                                                 </div>
+
                                                                                 <span>{customer.firstName ? customer.firstName : "Complimentary"}</span>
                                                                             </div>
                                                                         </td>
@@ -533,7 +532,7 @@ export default function CustomerTab({ eventId, event }) {
                                                                                 )} */}
                                                                             </div>
                                                                         </td>
-                                                                        <td className="py-4 pl-4">${customer.transaction_id ? (((customer.amount / 100) - 0.89) / 1.09).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2}) : (0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                                                                        <td className="py-4 pl-4">${customer.transaction_id ? (((customer.amount / 100) - 0.89) / 1.09).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : (0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                                                         <td className="py-4 pl-4">{formatDate(customer.date)}</td>
                                                                         <td className="py-4 pl-4">
                                                                             {

@@ -35,6 +35,7 @@ import StripeSuccess from "./pages/StripeSuccess";
 import OrganizerAnalytics from "./pages/Organizer/OrganizerAnalytics";
 import { useEffect } from "react";
 import { initGA } from "./lib/analytics";
+import DisputesTab from "./pages/Organizer/DisputesTab";
 
 function App() {
   const location = useLocation();
@@ -53,12 +54,14 @@ function App() {
     "/organizer/analytics",
     "/organizer/wallet",
     "/organizer/members",
+    "/organizer/disputes",
     "/organizer/create-event",
     "/organizer/create-ticket/ticketedevent",
     "/organizer/edit-event",
     "/privacy-policy",
     "/terms-and-conditions",
     "/stripe-success",
+    "/organizer/create-ticket/rsvp",
   ];
   const hideFooter = [
     "/login",
@@ -76,12 +79,14 @@ function App() {
     "/organizer/analytics",
     "/organizer/wallet",
     "/organizer/members",
+    "/organizer/disputes",
     "/organizer/create-event",
     "/organizer/create-ticket/ticketedevent",
     "/organizer/edit-event",
     "/privacy-policy",
     "/terms-and-conditions",
     "/stripe-success",
+    "/organizer/create-ticket/rsvp",
   ];
 
   const shouldHideNavbarAndFooter = hideHeader.some((path) =>
@@ -139,6 +144,7 @@ function App() {
           <Route path="/organizer/wallet" element={<OrganizerWallet />} />
           <Route path="/organizer/events/:id" element={<EventDetails />} />
           <Route path="/organizer/members" element={<OrganizeMembers />} />
+          <Route path="/organizer/disputes" element={<DisputesTab />} />
           <Route path="/organizer/create-event" element={<CreateEvent />} />
           <Route path="/organizer/edit-event/:id" element={<EditEvent />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />

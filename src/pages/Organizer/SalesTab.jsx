@@ -1,5 +1,5 @@
-import { Ellipsis, MoreHorizontal } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Ellipsis, X, MoreHorizontal } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dropdown,
   DropdownTrigger,
@@ -10,6 +10,9 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import url from "../../constants/url";
 import { Spin } from "antd";
+import "../../css/global.css";
+import { BsFillTicketFill } from "react-icons/bs";
+
 import {
   DirectionAwareMenu,
   MenuItem,
@@ -26,6 +29,8 @@ import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import paymentIcons from "../../lib/paymentIcons";
+import { BeatLoader } from "react-spinners";
 
 const ticketTypesIcons = {
   regular: (
@@ -198,7 +203,44 @@ const saleTypesIcons = {
     </svg>
   ),
 };
-
+const saleTypeIcons = {
+  Sale: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="17"
+      height="16"
+      viewBox="0 0 17 16"
+      fill="none"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M1.75 3C1.75 2.73478 1.85536 2.48043 2.04289 2.29289C2.23043 2.10536 2.48478 2 2.75 2H14.75C15.0152 2 15.2696 2.10536 15.4571 2.29289C15.6446 2.48043 15.75 2.73478 15.75 3V9C15.75 9.26522 15.6446 9.51957 15.4571 9.70711C15.2696 9.89464 15.0152 10 14.75 10H2.75C2.48478 10 2.23043 9.89464 2.04289 9.70711C1.85536 9.51957 1.75 9.26522 1.75 9V3ZM10.75 6C10.75 6.53043 10.5393 7.03914 10.1642 7.41421C9.78914 7.78929 9.28043 8 8.75 8C8.21957 8 7.71086 7.78929 7.33579 7.41421C6.96071 7.03914 6.75 6.53043 6.75 6C6.75 5.46957 6.96071 4.96086 7.33579 4.58579C7.71086 4.21071 8.21957 4 8.75 4C9.28043 4 9.78914 4.21071 10.1642 4.58579C10.5393 4.96086 10.75 5.46957 10.75 6ZM4.5 5.25C4.30109 5.25 4.11032 5.32902 3.96967 5.46967C3.82902 5.61032 3.75 5.80109 3.75 6C3.75 6.19891 3.82902 6.38968 3.96967 6.53033C4.11032 6.67098 4.30109 6.75 4.5 6.75C4.69891 6.75 4.88968 6.67098 5.03033 6.53033C5.17098 6.38968 5.25 6.19891 5.25 6C5.25 5.80109 5.17098 5.61032 5.03033 5.46967C4.88968 5.32902 4.69891 5.25 4.5 5.25ZM12.25 6C12.25 5.80109 12.329 5.61032 12.4697 5.46967C12.6103 5.32902 12.8011 5.25 13 5.25C13.1989 5.25 13.3897 5.32902 13.5303 5.46967C13.671 5.61032 13.75 5.80109 13.75 6C13.75 6.19891 13.671 6.38968 13.5303 6.53033C13.3897 6.67098 13.1989 6.75 13 6.75C12.8011 6.75 12.6103 6.67098 12.4697 6.53033C12.329 6.38968 12.25 6.19891 12.25 6Z"
+        fill="#A3E635"
+      />
+      <path
+        d="M13.75 11.75C13.75 11.5511 13.671 11.3603 13.5303 11.2197C13.3897 11.079 13.1989 11 13 11C12.8011 11 12.6103 11.079 12.4697 11.2197C12.329 11.3603 12.25 11.5511 12.25 11.75V11.929C12.25 12.079 12.112 12.209 11.944 12.184C8.81671 11.7277 5.66041 11.4991 2.5 11.5C2.30109 11.5 2.11032 11.579 1.96967 11.7197C1.82902 11.8603 1.75 12.0511 1.75 12.25C1.75 12.4489 1.82902 12.6397 1.96967 12.7803C2.11032 12.921 2.30109 13 2.5 13C5.635 13 8.715 13.228 11.727 13.668C11.9774 13.7052 12.2328 13.688 12.476 13.6177C12.7192 13.5474 12.9444 13.4256 13.1363 13.2605C13.3282 13.0954 13.4823 12.891 13.5882 12.6611C13.6941 12.4311 13.7493 12.1811 13.75 11.928V11.75Z"
+        fill="#A3E635"
+      />
+    </svg>
+  ),
+  refund: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="17"
+      height="16"
+      viewBox="0 0 17 16"
+      fill="none"
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M13.2501 9.74985C13.2501 9.38871 13.1789 9.03111 13.0407 8.69747C12.9025 8.36382 12.7 8.06066 12.4446 7.8053C12.1893 7.54994 11.8861 7.34738 11.5525 7.20918C11.2188 7.07098 10.8612 6.99985 10.5001 6.99985H5.31007L7.53007 9.21985C7.60376 9.28851 7.66286 9.37131 7.70385 9.46331C7.74485 9.55531 7.76689 9.65462 7.76866 9.75532C7.77044 9.85603 7.75192 9.95606 7.7142 10.0494C7.67647 10.1428 7.62033 10.2277 7.54911 10.2989C7.47789 10.3701 7.39306 10.4262 7.29967 10.464C7.20628 10.5017 7.10625 10.5202 7.00555 10.5184C6.90485 10.5167 6.80553 10.4946 6.71353 10.4536C6.62154 10.4126 6.53873 10.3535 6.47007 10.2798L2.97007 6.77985C2.82962 6.63922 2.75073 6.4486 2.75073 6.24985C2.75073 6.0511 2.82962 5.86047 2.97007 5.71985L6.47007 2.21985C6.61225 2.08737 6.80029 2.01524 6.9946 2.01867C7.1889 2.0221 7.37428 2.10081 7.51169 2.23822C7.64911 2.37564 7.72782 2.56102 7.73125 2.75532C7.73468 2.94963 7.66255 3.13767 7.53007 3.27985L5.31007 5.49985H10.5001C11.6272 5.49985 12.7082 5.94761 13.5053 6.74464C14.3023 7.54167 14.7501 8.62268 14.7501 9.74985C14.7501 10.877 14.3023 11.958 13.5053 12.7551C12.7082 13.5521 11.6272 13.9998 10.5001 13.9998H9.50007C9.30116 13.9998 9.11039 13.9208 8.96974 13.7802C8.82909 13.6395 8.75007 13.4488 8.75007 13.2498C8.75007 13.0509 8.82909 12.8602 8.96974 12.7195C9.11039 12.5789 9.30116 12.4998 9.50007 12.4998H10.5001C10.8612 12.4998 11.2188 12.4287 11.5525 12.2905C11.8861 12.1523 12.1893 11.9498 12.4446 11.6944C12.7 11.439 12.9025 11.1359 13.0407 10.8022C13.1789 10.4686 13.2501 10.111 13.2501 9.74985Z"
+        fill="#F43F5E"
+      />
+    </svg>
+  ),
+};
 const eventSalesHistory = [
   {
     date: "Today 13:55",
@@ -277,6 +319,164 @@ export default function SalesTab({ eventId, event }) {
   const [includeFee, setIncludeFee] = useState(false);
   const [maxAmount, setMaxAmount] = useState(0);
   const [amountEntered, setAmountEntered] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [isViewTicketOpen, setIsViewTicketOpen] = useState(false);
+  const [cardDetails, setCardDetails] = useState(null);
+  const [isLoadingTicket, setIsLoadingTicket] = useState(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
+  const [, setEvent] = useState([]);
+  const [isQROpen, setIsQROpen] = useState(false);
+  const [selectedTicketUpdate, setSelectedTicketUpdate] = useState(null);
+  const [sendTicketUpdateOpen, setSendTicketUpdateOpen] = useState(false);
+
+  const handleViewTicket = async (sale) => {
+    setIsLoadingTicket(true);
+    setSelectedTicket(sale);
+    setCardDetails(null); // Clear previous card details
+
+    // Add a small delay to show the loading state
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    setIsViewTicketOpen(true);
+    setIsLoadingTicket(false);
+  };
+  const receiptRef = useRef(null);
+
+  const handleViewQR = (payout) => {
+    setSelectedTicket(payout);
+    setIsQROpen(true);
+  };
+
+  const handleCloseQR = () => {
+    setIsQROpen(false);
+  };
+
+  useEffect(() => {
+    const fetchEvent = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${url}/event/get-event-by-id/${eventId}`
+        );
+        setEvent(response.data);
+      } catch (error) {
+        console.error("Error fetching event:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (eventId) {
+      fetchEvent();
+    }
+  }, [eventId]);
+  function extractPaymentId(fullString) {
+    return fullString?.split("_secret")[0];
+  }
+  useEffect(() => {
+    const fetchCardDetails = async () => {
+      if (!selectedTicket?.transaction_id || selectedTicket?.amount === 0) {
+        return; // Don't fetch for comp tickets
+      }
+
+      const paymentId = extractPaymentId(selectedTicket.transaction_id);
+
+      try {
+        const res = await fetch(`${url}/payment-detail/${paymentId}`);
+        const data = await res.json();
+
+        console.log("✅ Payment details:", data);
+        setCardDetails(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("❌ Failed to fetch payment info:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchCardDetails();
+  }, [selectedTicket?.transaction_id]);
+
+  const flyerImgRef = useRef(null);
+  const toDataURL = (url) =>
+    fetch(url)
+      .then((response) => response.blob())
+      .then(
+        (blob) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          })
+      );
+
+  const handleDownloadReceipt = async () => {
+    if (!selectedTicket) return;
+
+    setIsDownloadingReceipt(true);
+    const element = receiptRef.current;
+
+    // Show the element
+    element.style.display = "block";
+
+    // Convert flyer image to base64
+    const flyerImgEl = flyerImgRef.current;
+    if (flyerImgEl && selectedTicket?.party?.flyer) {
+      try {
+        const base64 = await toDataURL(selectedTicket.party.flyer);
+        flyerImgEl.src = base64;
+      } catch (error) {
+        console.warn("Failed to convert flyer to base64", error);
+      }
+    }
+
+    // Proceed to generate the PDF
+    const opt = {
+      margin: 10,
+      filename: `receipt-${selectedTicket?.transaction_id?.slice(-6)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: "mm", format: "letter", orientation: "portrait" },
+    };
+
+    try {
+      await html2pdf().set(opt).from(element).save();
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+    } finally {
+      element.style.display = "none";
+      setIsDownloadingReceipt(false);
+
+      // Revert to original image if needed (optional)
+      if (flyerImgEl && selectedTicket?.party?.flyer) {
+        flyerImgEl.src = selectedTicket.party.flyer;
+      }
+    }
+  };
+  useEffect(() => {
+    const fetchCardDetails = async () => {
+      if (!selectedTicket?.transaction_id || selectedTicket?.amount === 0) {
+        return; // Don't fetch for comp tickets
+      }
+
+      const paymentId = extractPaymentId(selectedTicket.transaction_id);
+
+      try {
+        const res = await fetch(`${url}/payment-detail/${paymentId}`);
+        const data = await res.json();
+
+        console.log("✅ Payment details:", data);
+        setCardDetails(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("❌ Failed to fetch payment info:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchCardDetails();
+  }, [selectedTicket?.transaction_id]);
 
   const filteredSalesHistory = book.filter((sale) => {
     const isRefund = sale.refund === "true";
@@ -295,11 +495,15 @@ export default function SalesTab({ eventId, event }) {
       return false;
     }
 
+    const rawDate = sale?.date;
+    if (!rawDate) return false;
+
     const saleDate = new Date(
-      sale.date
+      rawDate
         .replace("Today", new Date().toDateString())
         .replace("Yesterday", new Date(Date.now() - 86400000).toDateString())
     );
+
     const last7Days = new Date(Date.now() - 7 * 86400000);
     const last30Days = new Date(Date.now() - 30 * 86400000);
     const last90Days = new Date(Date.now() - 90 * 86400000);
@@ -314,7 +518,7 @@ export default function SalesTab({ eventId, event }) {
       return false;
     }
 
-    const formattedDate = new Date(sale.date)
+    const formattedDate = new Date(sale?.date)
       .toLocaleString("en-US", {
         month: "short",
         day: "numeric",
@@ -488,7 +692,12 @@ export default function SalesTab({ eventId, event }) {
   useEffect(() => {
     fetchBook();
   }, [eventId]);
-
+  const formatAmount = (amount) => {
+    return (Math.abs(amount / 100 - 0.89) / 1.09).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  };
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const dayOfWeek = date.toLocaleString("en-US", { weekday: "short" });
@@ -532,6 +741,42 @@ export default function SalesTab({ eventId, event }) {
         }, [3000]);
       } else {
         console.log(data.message || "Failed to resend ticket.");
+      }
+    } catch (err) {
+      console.log("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+
+    if (!selectedTicketUpdate?.email) {
+      console.log("Email is required.");
+      return;
+    }
+
+    setLoading(true);
+    console.log(null);
+
+    try {
+      const response = await fetch(`${url}/resend-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: selectedPay.email, book: selectedPay }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSendTicketUpdateOpen(false);
+        setResendNotificationModal(true);
+        setTimeout(() => {
+          setResendNotificationModal(false);
+        }, [3000]);
+      } else {
+        console.log(data.message || "Failed to edit details.");
       }
     } catch (err) {
       console.log("Something went wrong. Please try again.");
@@ -634,7 +879,7 @@ export default function SalesTab({ eventId, event }) {
                     <p className="text-gray-400 flex items-center">
                       <span>{stat.title}</span>
                       {stat.title === "Revenue" ||
-                      stat.title === "Currently Live" ? (
+                        stat.title === "Currently Live" ? (
                         <span className="ml-1">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -1023,7 +1268,13 @@ export default function SalesTab({ eventId, event }) {
                               <MenuTrigger>
                                 <Ellipsis />
                               </MenuTrigger>
-                              <MenuItem>
+
+                              <MenuItem
+                                onClick={() => {
+                                  setSelectedTicketUpdate(payout);
+                                  setSendTicketUpdateOpen(true);
+                                }}
+                              >
                                 <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -1033,23 +1284,111 @@ export default function SalesTab({ eventId, event }) {
                                     fill="none"
                                   >
                                     <path
-                                      d="M8 9.5C8.39782 9.5 8.77936 9.34196 9.06066 9.06066C9.34196 8.77936 9.5 8.39782 9.5 8C9.5 7.60218 9.34196 7.22064 9.06066 6.93934C8.77936 6.65804 8.39782 6.5 8 6.5C7.60218 6.5 7.22064 6.65804 6.93934 6.93934C6.65804 7.22064 6.5 7.60218 6.5 8C6.5 8.39782 6.65804 8.77936 6.93934 9.06066C7.22064 9.34196 7.60218 9.5 8 9.5Z"
+                                      d="M13.4872 2.51299C13.3247 2.35047 13.1318 2.22155 12.9194 2.13359C12.7071 2.04564 12.4795 2.00037 12.2497 2.00037C12.0199 2.00037 11.7923 2.04564 11.58 2.13359C11.3676 2.22155 11.1747 2.35047 11.0122 2.51299L6.74919 6.77399C6.49389 7.02932 6.29137 7.33242 6.15319 7.66599L5.30519 9.71299C5.24839 9.85005 5.23351 10.0009 5.26244 10.1464C5.29137 10.2919 5.36281 10.4256 5.46772 10.5305C5.57262 10.6354 5.70629 10.7068 5.8518 10.7357C5.99731 10.7647 6.14814 10.7498 6.28519 10.693L8.33219 9.84499C8.66577 9.70681 8.96887 9.50429 9.22419 9.24899L13.4852 4.98699C13.8131 4.65884 13.9973 4.21391 13.9973 3.74999C13.9973 3.28608 13.8131 2.84115 13.4852 2.51299H13.4872Z"
                                       fill="white"
                                       fillOpacity="0.5"
                                     />
                                     <path
-                                      fillRule="evenodd"
-                                      clipRule="evenodd"
-                                      d="M1.37996 8.28012C1.31687 8.09672 1.31687 7.89751 1.37996 7.71412C1.85633 6.33749 2.75014 5.14368 3.93692 4.29893C5.1237 3.45419 6.54437 3.00056 8.00109 3.00122C9.45782 3.00188 10.8781 3.4568 12.0641 4.30262C13.2501 5.14844 14.1428 6.34306 14.618 7.72012C14.681 7.90351 14.681 8.10273 14.618 8.28612C14.1418 9.6631 13.248 10.8573 12.0611 11.7023C10.8742 12.5473 9.4533 13.0011 7.99632 13.0005C6.53934 12.9998 5.11883 12.5447 3.9327 11.6986C2.74657 10.8525 1.85387 9.65753 1.37896 8.28012H1.37996ZM11 8.00012C11 8.79577 10.6839 9.55883 10.1213 10.1214C9.55867 10.684 8.79561 11.0001 7.99996 11.0001C7.20431 11.0001 6.44125 10.684 5.87864 10.1214C5.31603 9.55883 4.99996 8.79577 4.99996 8.00012C4.99996 7.20447 5.31603 6.44141 5.87864 5.8788C6.44125 5.31619 7.20431 5.00012 7.99996 5.00012C8.79561 5.00012 9.55867 5.31619 10.1213 5.8788C10.6839 6.44141 11 7.20447 11 8.00012Z"
+                                      d="M4.75 3.5C4.06 3.5 3.5 4.06 3.5 4.75V11.25C3.5 11.94 4.06 12.5 4.75 12.5H11.25C11.94 12.5 12.5 11.94 12.5 11.25V9C12.5 8.80109 12.579 8.61032 12.7197 8.46967C12.8603 8.32902 13.0511 8.25 13.25 8.25C13.4489 8.25 13.6397 8.32902 13.7803 8.46967C13.921 8.61032 14 8.80109 14 9V11.25C14 11.9793 13.7103 12.6788 13.1945 13.1945C12.6788 13.7103 11.9793 14 11.25 14H4.75C4.02065 14 3.32118 13.7103 2.80546 13.1945C2.28973 12.6788 2 11.9793 2 11.25V4.75C2 4.02065 2.28973 3.32118 2.80546 2.80546C3.32118 2.28973 4.02065 2 4.75 2H7C7.19891 2 7.38968 2.07902 7.53033 2.21967C7.67098 2.36032 7.75 2.55109 7.75 2.75C7.75 2.94891 7.67098 3.13968 7.53033 3.28033C7.38968 3.42098 7.19891 3.5 7 3.5H4.75Z"
                                       fill="white"
                                       fillOpacity="0.5"
                                     />
                                   </svg>
-                                  <span>View details</span>
+                                  <span>Edit ticket details</span>
                                 </div>
                               </MenuItem>
+
+                              <MenuItem
+                                onClick={() => handleViewTicket(payout)}
+                              >
+                                <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                  {isLoadingTicket ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  ) : (
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 16 16"
+                                      fill="none"
+                                    >
+                                      <path
+                                        d="M8 9.5C8.39782 9.5 8.77936 9.34196 9.06066 9.06066C9.34196 8.77936 9.5 8.39782 9.5 8C9.5 7.60218 9.34196 7.22064 9.06066 6.93934C8.77936 6.65804 8.39782 6.5 8 6.5C7.60218 6.5 7.22064 6.65804 6.93934 6.93934C6.65804 7.22064 6.5 7.60218 6.5 8C6.5 8.39782 6.65804 8.77936 6.93934 9.06066C7.22064 9.34196 7.60218 9.5 8 9.5Z"
+                                        fill="white"
+                                        fillOpacity="0.5"
+                                      />
+                                      <path
+                                        fillRule="evenodd"
+                                        clipRule="evenodd"
+                                        d="M1.37996 8.28012C1.31687 8.09672 1.31687 7.89751 1.37996 7.71412C1.85633 6.33749 2.75014 5.14368 3.93692 4.29893C5.1237 3.45419 6.54437 3.00056 8.00109 3.00122C9.45782 3.00188 10.8781 3.4568 12.0641 4.30262C13.2501 5.14844 14.1428 6.34306 14.618 7.72012C14.681 7.90351 14.681 8.10273 14.618 8.28612C14.1418 9.6631 13.248 10.8573 12.0611 11.7023C10.8742 12.5473 9.4533 13.0011 7.99632 13.0005C6.53934 12.9998 5.11883 12.5447 3.9327 11.6986C2.74657 10.8525 1.85387 9.65753 1.37896 8.28012H1.37996ZM11 8.00012C11 8.79577 10.6839 9.55883 10.1213 10.1214C9.55867 10.684 8.79561 11.0001 7.99996 11.0001C7.20431 11.0001 6.44125 10.684 5.87864 10.1214C5.31603 9.55883 4.99996 8.79577 4.99996 8.00012C4.99996 7.20447 5.31603 6.44141 5.87864 5.8788C6.44125 5.31619 7.20431 5.00012 7.99996 5.00012C8.79561 5.00012 9.55867 5.31619 10.1213 5.8788C10.6839 6.44141 11 7.20447 11 8.00012Z"
+                                        fill="white"
+                                        fillOpacity="0.5"
+                                      />
+                                    </svg>
+                                  )}
+                                  <span>View ticket</span>
+                                </div>
+                              </MenuItem>
+
                               {payout.refund !== "true" && (
                                 <>
+                                  <MenuItem
+                                    onClick={() => handleViewQR(payout)}
+                                  >
+                                    <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                      <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 16 16"
+                                        fill="none"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                      >
+                                        <path
+                                          d="M4.75 4.25C4.61739 4.25 4.49021 4.30268 4.39645 4.39645C4.30268 4.49021 4.25 4.61739 4.25 4.75C4.25 4.88261 4.30268 5.00979 4.39645 5.10355C4.49021 5.19732 4.61739 5.25 4.75 5.25C4.88261 5.25 5.00979 5.19732 5.10355 5.10355C5.19732 5.00979 5.25 4.88261 5.25 4.75C5.25 4.61739 5.19732 4.49021 5.10355 4.39645C5.00979 4.30268 4.88261 4.25 4.75 4.25Z"
+                                          fill="white"
+                                          fill-opacity="0.5"
+                                        />
+                                        <path
+                                          fill-rule="evenodd"
+                                          clip-rule="evenodd"
+                                          d="M2 3.5C2 3.10218 2.15804 2.72064 2.43934 2.43934C2.72064 2.15804 3.10218 2 3.5 2H6C6.39782 2 6.77936 2.15804 7.06066 2.43934C7.34196 2.72064 7.5 3.10218 7.5 3.5V6C7.5 6.39782 7.34196 6.77936 7.06066 7.06066C6.77936 7.34196 6.39782 7.5 6 7.5H3.5C3.10218 7.5 2.72064 7.34196 2.43934 7.06066C2.15804 6.77936 2 6.39782 2 6V3.5ZM3.5 3.5H6V6H3.5V3.5Z"
+                                          fill="white"
+                                          fill-opacity="0.5"
+                                        />
+                                        <path
+                                          d="M4.25 11.25C4.25 11.1174 4.30268 10.9902 4.39645 10.8964C4.49021 10.8027 4.61739 10.75 4.75 10.75C4.88261 10.75 5.00979 10.8027 5.10355 10.8964C5.19732 10.9902 5.25 11.1174 5.25 11.25C5.25 11.3826 5.19732 11.5098 5.10355 11.6036C5.00979 11.6973 4.88261 11.75 4.75 11.75C4.61739 11.75 4.49021 11.6973 4.39645 11.6036C4.30268 11.5098 4.25 11.3826 4.25 11.25Z"
+                                          fill="white"
+                                          fill-opacity="0.5"
+                                        />
+                                        <path
+                                          fill-rule="evenodd"
+                                          clip-rule="evenodd"
+                                          d="M2 10C2 9.60218 2.15804 9.22064 2.43934 8.93934C2.72064 8.65804 3.10218 8.5 3.5 8.5H6C6.39782 8.5 6.77936 8.65804 7.06066 8.93934C7.34196 9.22064 7.5 9.60218 7.5 10V12.5C7.5 12.8978 7.34196 13.2794 7.06066 13.5607C6.77936 13.842 6.39782 14 6 14H3.5C3.10218 14 2.72064 13.842 2.43934 13.5607C2.15804 13.2794 2 12.8978 2 12.5V10ZM3.5 12.5V10H6V12.5H3.5Z"
+                                          fill="white"
+                                          fill-opacity="0.5"
+                                        />
+                                        <path
+                                          d="M11.25 4.25C11.1174 4.25 10.9902 4.30268 10.8964 4.39645C10.8027 4.49021 10.75 4.61739 10.75 4.75C10.75 4.88261 10.8027 5.00979 10.8964 5.10355C10.9902 5.19732 11.1174 5.25 11.25 5.25C11.3826 5.25 11.5098 5.19732 11.6036 5.10355C11.6973 5.00979 11.75 4.88261 11.75 4.75C11.75 4.61739 11.6973 4.49021 11.6036 4.39645C11.5098 4.30268 11.3826 4.25 11.25 4.25Z"
+                                          fill="white"
+                                          fill-opacity="0.5"
+                                        />
+                                        <path
+                                          fill-rule="evenodd"
+                                          clip-rule="evenodd"
+                                          d="M10 2C9.60218 2 9.22064 2.15804 8.93934 2.43934C8.65804 2.72064 8.5 3.10218 8.5 3.5V6C8.5 6.39782 8.65804 6.77936 8.93934 7.06066C9.22064 7.34196 9.60218 7.5 10 7.5H12.5C12.8978 7.5 13.2794 7.34196 13.5607 7.06066C13.842 6.77936 14 6.39782 14 6V3.5C14 3.10218 13.842 2.72064 13.5607 2.43934C13.2794 2.15804 12.8978 2 12.5 2H10ZM12.5 3.5H10V6H12.5V3.5Z"
+                                          fill="white"
+                                          fill-opacity="0.5"
+                                        />
+                                        <path
+                                          d="M8.50001 9.417C8.49595 9.2941 8.51665 9.17164 8.56088 9.0569C8.60511 8.94215 8.67197 8.83748 8.75748 8.7491C8.84298 8.66073 8.94539 8.59045 9.05861 8.54246C9.17183 8.49446 9.29354 8.46973 9.41651 8.46973C9.53948 8.46973 9.6612 8.49446 9.77442 8.54246C9.88763 8.59045 9.99004 8.66073 10.0755 8.7491C10.1611 8.83748 10.2279 8.94215 10.2721 9.0569C10.3164 9.17164 10.3371 9.2941 10.333 9.417C10.3252 9.65484 10.2252 9.8803 10.0541 10.0458C9.88311 10.2112 9.65447 10.3037 9.41651 10.3037C9.17855 10.3037 8.94991 10.2112 8.77889 10.0458C8.60787 9.8803 8.50787 9.65484 8.50001 9.417ZM8.50001 13.083C8.49595 12.9601 8.51665 12.8376 8.56088 12.7229C8.60511 12.6082 8.67197 12.5035 8.75748 12.4151C8.84298 12.3267 8.94539 12.2565 9.05861 12.2085C9.17183 12.1605 9.29354 12.1357 9.41651 12.1357C9.53948 12.1357 9.6612 12.1605 9.77442 12.2085C9.88763 12.2565 9.99004 12.3267 10.0755 12.4151C10.1611 12.5035 10.2279 12.6082 10.2721 12.7229C10.3164 12.8376 10.3371 12.9601 10.333 13.083C10.3252 13.3208 10.2252 13.5463 10.0541 13.7118C9.88311 13.8772 9.65447 13.9697 9.41651 13.9697C9.17855 13.9697 8.94991 13.8772 8.77889 13.7118C8.60787 13.5463 8.50787 13.3208 8.50001 13.083ZM13.083 8.5C12.9601 8.49594 12.8376 8.51665 12.7229 8.56088C12.6082 8.60511 12.5035 8.67196 12.4151 8.75747C12.3267 8.84298 12.2565 8.94538 12.2085 9.0586C12.1605 9.17182 12.1357 9.29353 12.1357 9.4165C12.1357 9.53948 12.1605 9.66119 12.2085 9.77441C12.2565 9.88763 12.3267 9.99003 12.4151 10.0755C12.5035 10.161 12.6082 10.2279 12.7229 10.2721C12.8376 10.3164 12.9601 10.3371 13.083 10.333C13.3208 10.3251 13.5463 10.2251 13.7118 10.0541C13.8772 9.88311 13.9697 9.65447 13.9697 9.4165C13.9697 9.17854 13.8772 8.9499 13.7118 8.77888C13.5463 8.60786 13.3208 8.50786 13.083 8.5ZM12.166 13.084C12.162 12.9611 12.1827 12.8386 12.2269 12.7239C12.2711 12.6092 12.338 12.5045 12.4235 12.4161C12.509 12.3277 12.6114 12.2575 12.7246 12.2095C12.8378 12.1615 12.9595 12.1367 13.0825 12.1367C13.2055 12.1367 13.3272 12.1615 13.4404 12.2095C13.5536 12.2575 13.656 12.3277 13.7415 12.4161C13.8271 12.5045 13.8939 12.6092 13.9381 12.7239C13.9824 12.8386 14.0031 12.9611 13.999 13.084C13.9912 13.3218 13.8912 13.5473 13.7201 13.7128C13.5491 13.8782 13.3205 13.9707 13.0825 13.9707C12.8446 13.9707 12.6159 13.8782 12.4449 13.7128C12.2739 13.5473 12.1739 13.3218 12.166 13.084ZM11.25 10.333C11.1271 10.3289 11.0046 10.3496 10.8899 10.3939C10.7752 10.4381 10.6705 10.505 10.5821 10.5905C10.4937 10.676 10.4235 10.7784 10.3755 10.8916C10.3275 11.0048 10.3027 11.1265 10.3027 11.2495C10.3027 11.3725 10.3275 11.4942 10.3755 11.6074C10.4235 11.7206 10.4937 11.823 10.5821 11.9085C10.6705 11.994 10.7752 12.0609 10.8899 12.1051C11.0046 12.1494 11.1271 12.1701 11.25 12.166C11.4878 12.1581 11.7133 12.0581 11.8788 11.8871C12.0442 11.7161 12.1367 11.4875 12.1367 11.2495C12.1367 11.0115 12.0442 10.7829 11.8788 10.6119C11.7133 10.4409 11.4878 10.3409 11.25 10.333Z"
+                                          fill="white"
+                                          fill-opacity="0.5"
+                                        />
+                                      </svg>
+
+                                      <span>View QR</span>
+                                    </div>
+                                  </MenuItem>
                                   <MenuItem
                                     onClick={() => {
                                       setSelectedPay(payout);
@@ -1076,30 +1415,30 @@ export default function SalesTab({ eventId, event }) {
                                     </div>
                                   </MenuItem>
                                   {payout.transaction_id && (
-                                  <MenuItem
-                                    onClick={() => {
-                                      setSelectedPay(payout);
-                                      setIsRefundOpen(true);
-                                    }}
-                                  >
-                                    <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
-                                      <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="17"
-                                        height="16"
-                                        viewBox="0 0 17 16"
-                                        fill="none"
-                                      >
-                                        <path
-                                          fillRule="evenodd"
-                                          clipRule="evenodd"
-                                          d="M13.2501 9.74985C13.2501 9.38871 13.1789 9.03111 13.0407 8.69747C12.9025 8.36382 12.7 8.06066 12.4446 7.8053C12.1893 7.54994 11.8861 7.34738 11.5525 7.20918C11.2188 7.07098 10.8612 6.99985 10.5001 6.99985H5.31007L7.53007 9.21985C7.60376 9.28851 7.66286 9.37131 7.70385 9.46331C7.74485 9.55531 7.76689 9.65462 7.76866 9.75532C7.77044 9.85603 7.75192 9.95606 7.7142 10.0494C7.67647 10.1428 7.62033 10.2277 7.54911 10.2989C7.47789 10.3701 7.39306 10.4262 7.29967 10.464C7.20628 10.5017 7.10625 10.5202 7.00555 10.5184C6.90485 10.5167 6.80553 10.4946 6.71353 10.4536C6.62154 10.4126 6.53873 10.3535 6.47007 10.2798L2.97007 6.77985C2.82962 6.63922 2.75073 6.4486 2.75073 6.24985C2.75073 6.0511 2.82962 5.86047 2.97007 5.71985L6.47007 2.21985C6.61225 2.08737 6.80029 2.01524 6.9946 2.01867C7.1889 2.0221 7.37428 2.10081 7.51169 2.23822C7.64911 2.37564 7.72782 2.56102 7.73125 2.75532C7.73468 2.94963 7.66255 3.13767 7.53007 3.27985L5.31007 5.49985H10.5001C11.6272 5.49985 12.7082 5.94761 13.5053 6.74464C14.3023 7.54167 14.7501 8.62268 14.7501 9.74985C14.7501 10.877 14.3023 11.958 13.5053 12.7551C12.7082 13.5521 11.6272 13.9998 10.5001 13.9998H9.50007C9.30116 13.9998 9.11039 13.9208 8.96974 13.7802C8.82909 13.6395 8.75007 13.4488 8.75007 13.2498C8.75007 13.0509 8.82909 12.8602 8.96974 12.7195C9.11039 12.5789 9.30116 12.4998 9.50007 12.4998H10.5001C10.8612 12.4998 11.2188 12.4287 11.5525 12.2905C11.8861 12.1523 12.1893 11.9498 12.4446 11.6944C12.7 11.439 12.9025 11.1359 13.0407 10.8022C13.1789 10.4686 13.2501 10.111 13.2501 9.74985Z"
-                                          fill="#F43F5E"
-                                        />
-                                      </svg>
-                                      <span>Refund</span>
-                                    </div>
-                                  </MenuItem>
+                                    <MenuItem
+                                      onClick={() => {
+                                        setSelectedPay(payout);
+                                        setIsRefundOpen(true);
+                                      }}
+                                    >
+                                      <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="17"
+                                          height="16"
+                                          viewBox="0 0 17 16"
+                                          fill="none"
+                                        >
+                                          <path
+                                            fillRule="evenodd"
+                                            clipRule="evenodd"
+                                            d="M13.2501 9.74985C13.2501 9.38871 13.1789 9.03111 13.0407 8.69747C12.9025 8.36382 12.7 8.06066 12.4446 7.8053C12.1893 7.54994 11.8861 7.34738 11.5525 7.20918C11.2188 7.07098 10.8612 6.99985 10.5001 6.99985H5.31007L7.53007 9.21985C7.60376 9.28851 7.66286 9.37131 7.70385 9.46331C7.74485 9.55531 7.76689 9.65462 7.76866 9.75532C7.77044 9.85603 7.75192 9.95606 7.7142 10.0494C7.67647 10.1428 7.62033 10.2277 7.54911 10.2989C7.47789 10.3701 7.39306 10.4262 7.29967 10.464C7.20628 10.5017 7.10625 10.5202 7.00555 10.5184C6.90485 10.5167 6.80553 10.4946 6.71353 10.4536C6.62154 10.4126 6.53873 10.3535 6.47007 10.2798L2.97007 6.77985C2.82962 6.63922 2.75073 6.4486 2.75073 6.24985C2.75073 6.0511 2.82962 5.86047 2.97007 5.71985L6.47007 2.21985C6.61225 2.08737 6.80029 2.01524 6.9946 2.01867C7.1889 2.0221 7.37428 2.10081 7.51169 2.23822C7.64911 2.37564 7.72782 2.56102 7.73125 2.75532C7.73468 2.94963 7.66255 3.13767 7.53007 3.27985L5.31007 5.49985H10.5001C11.6272 5.49985 12.7082 5.94761 13.5053 6.74464C14.3023 7.54167 14.7501 8.62268 14.7501 9.74985C14.7501 10.877 14.3023 11.958 13.5053 12.7551C12.7082 13.5521 11.6272 13.9998 10.5001 13.9998H9.50007C9.30116 13.9998 9.11039 13.9208 8.96974 13.7802C8.82909 13.6395 8.75007 13.4488 8.75007 13.2498C8.75007 13.0509 8.82909 12.8602 8.96974 12.7195C9.11039 12.5789 9.30116 12.4998 9.50007 12.4998H10.5001C10.8612 12.4998 11.2188 12.4287 11.5525 12.2905C11.8861 12.1523 12.1893 11.9498 12.4446 11.6944C12.7 11.439 12.9025 11.1359 13.0407 10.8022C13.1789 10.4686 13.2501 10.111 13.2501 9.74985Z"
+                                            fill="#F43F5E"
+                                          />
+                                        </svg>
+                                        <span>Refund</span>
+                                      </div>
+                                    </MenuItem>
                                   )}
                                 </>
                               )}
@@ -1115,6 +1454,342 @@ export default function SalesTab({ eventId, event }) {
         </div>
       </div>
 
+      {/* QR Code Modal */}
+      {isQROpen && selectedTicket && (
+        <div className="fixed inset-0 z-50 backdrop-blur-sm">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={handleCloseQR}
+          />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xs">
+            <div className="bg-[#151515] rounded-xl overflow-hidden shadow-lg relative">
+              <button
+                onClick={handleCloseQR}
+                className="absolute right-3 top-3 text-gray-400 hover:text-white z-10"
+              >
+                <X size={16} />
+              </button>
+              <div className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <BsFillTicketFill color="#cccccc" />
+                  <span className="text-xs text-gray-400 uppercase tracking-wide font-inter font-semibold">
+                    Ticket Pass
+                  </span>
+                </div>
+                <div className="flex justify-start mb-4 mt-5">
+                  <img
+                    src={event?.flyer}
+                    alt="Event Profile"
+                    className="w-14 h-14 rounded-xl object-cover"
+                  />
+                </div>
+
+                <div className="text-lg text-white mb-2 font-inter">
+                  {event?.start_date
+                    ? formatDate(event?.start_date)
+                    : "Date information unavailable"}
+                </div>
+                <div className="flex flex-row space-x-3">
+                  <div className="text-xs text-gray-400 font-inter">
+                    {event?.event_name}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    <svg
+                      width="10"
+                      height="14"
+                      viewBox="0 0 10 14"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        clip-rule="evenodd"
+                        d="M4.539 13.3415L4.542 13.3445L4.544 13.3465C4.67522 13.446 4.83535 13.4998 5 13.4998C5.16465 13.4998 5.32478 13.446 5.456 13.3465L5.458 13.3445L5.461 13.3415L5.473 13.3325C5.53744 13.2829 5.60079 13.2319 5.663 13.1795C6.40862 12.5511 7.09362 11.854 7.709 11.0975C8.81 9.73555 10 7.75555 10 5.50055C10 4.17447 9.47322 2.9027 8.53553 1.96502C7.59785 1.02733 6.32608 0.500549 5 0.500549C3.67392 0.500549 2.40215 1.02733 1.46447 1.96502C0.526784 2.9027 0 4.17447 0 5.50055C0 7.75555 1.19 9.73555 2.292 11.0975C2.90739 11.854 3.59239 12.5511 4.338 13.1795C4.4003 13.2314 4.46331 13.2824 4.527 13.3325L4.539 13.3425V13.3415ZM5 7.00055C5.19698 7.00055 5.39204 6.96175 5.57403 6.88637C5.75601 6.81099 5.92137 6.7005 6.06066 6.56121C6.19995 6.42192 6.31044 6.25656 6.38582 6.07457C6.4612 5.89259 6.5 5.69753 6.5 5.50055C6.5 5.30357 6.4612 5.10851 6.38582 4.92652C6.31044 4.74454 6.19995 4.57918 6.06066 4.43989C5.92137 4.3006 5.75601 4.19011 5.57403 4.11473C5.39204 4.03935 5.19698 4.00055 5 4.00055C4.60218 4.00055 4.22064 4.15858 3.93934 4.43989C3.65804 4.72119 3.5 5.10272 3.5 5.50055C3.5 5.89837 3.65804 6.27991 3.93934 6.56121C4.22064 6.84251 4.60218 7.00055 5 7.00055Z"
+                        fill="white"
+                        fill-opacity="0.5"
+                      />
+                    </svg>
+                  </div>
+                  <div className="text-xs text-gray-400 font-inter">
+                    {event?.venue_name}
+                  </div>
+                </div>
+              </div>
+              <div className="px-2 rounded-lg">
+                <div className="bg-[#ffffff] p-7 flex justify-center items-center relative rounded-t-2xl">
+                  <div>
+                    <img
+                      src={selectedTicket?.qrcode}
+                      alt="QR Code"
+                      style={{ imageRendering: 'pixelated' }}
+                      className="w-full max-w-xs rounded-lg"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center bg-[#0b6694] bg-opacity-50 p-1 rounded-b-2xl px-4">
+                  <div className="flex items-center">
+                    <div className="rounded-full py-1.5">
+                      <span className="text-xs text-white font-medium font-inter">
+                        {selectedTicket?.tickets?.ticket_name
+                          ? `${selectedTicket.tickets.ticket_name} x ${selectedTicket.count}`
+                          : `Ticket x ${selectedTicket.count || 1}`}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-white text-md font-bold font-inter">
+                    $
+                    {selectedTicket?.amount
+                      ? selectedTicket.amount / 100
+                      : "0.00"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Dialog */}
+      <Dialog
+        open={isViewTicketOpen}
+        onOpenChange={(open) => {
+          setIsViewTicketOpen(open);
+          if (!open) {
+            setCardDetails(null); // Clear card details when dialog closes
+          }
+        }}
+        className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
+      >
+        <DialogContent className="max-h-[90vh] !gap-0 text-white overflow-y-auto hide-scrollbar">
+          <div className="flex flex-col gap-y-3 bg-white/[0.03] rounded-t-xl border-b border-white/10 p-6">
+            <DialogTitle>Ticket Details</DialogTitle>
+            <DialogDescription>
+              View the details of the ticket.
+            </DialogDescription>
+          </div>
+          <div className="flex flex-col">
+            {/* Ticket Image and Basic Info */}
+            <div className="flex gap-4 p-6">
+              <div className="w-16 h-16 rounded-lg bg-white/10">
+                <img src={event?.flyer || ""} alt="" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h3 className="font-medium">
+                  {event?.event_name || "Event Name"}
+                </h3>
+                <p className="text-sm text-white/70">
+                  Reference: #
+                  {selectedTicket?.transaction_id?.slice(-6) || "000000"}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  {statusIcons["completed"]}
+                  <span className="text-sm">Completed</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-white/10" />
+
+            {/* Transaction Details */}
+            <div className="flex flex-col gap-4 p-6">
+              <h4 className="text-sm font-medium text-white/70">
+                Transaction Details
+              </h4>
+              <div className="grid grid-cols-2 gap-4">
+                {selectedTicket?.transaction_id &&
+                  selectedTicket?.amount > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-white/50">Amount</span>
+                      <span className="font-medium">
+                        $
+                        {selectedTicket?.amount
+                          ? formatAmount(selectedTicket.amount)
+                          : "0.00"}
+                      </span>
+                    </div>
+                  )}
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-white/50">Date</span>
+                  <span className="font-medium">
+                    {selectedTicket?.date
+                      ? formatDate(selectedTicket.date)
+                      : "Today"}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  {selectedTicket?.transaction_id &&
+                    selectedTicket?.amount > 0 && (
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm text-white/50">
+                          Payment Method
+                        </span>
+
+                        {cardDetails?.paymentMethod?.card ? (
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const brand =
+                                cardDetails.paymentMethod.card.brand;
+                              const last4 =
+                                cardDetails.paymentMethod.card.last4 ||
+                                cardDetails.paymentMethod.card.dynamic_last4 ||
+                                "0000";
+                              const wallet =
+                                cardDetails.paymentMethod.card.wallet?.type;
+
+                              return (
+                                <>
+                                  {wallet && paymentIcons[wallet] && (
+                                    <img
+                                      src={paymentIcons[wallet]}
+                                      alt={wallet}
+                                      className="w-7 h-5 object-contain"
+                                    />
+                                  )}
+
+                                  {brand && paymentIcons[brand] && (
+                                    <img
+                                      src={paymentIcons[brand]}
+                                      alt={brand}
+                                      className="w-8 h-6 object-contain"
+                                    />
+                                  )}
+
+                                  <span className="font-medium text-white">
+                                    {brand?.charAt(0).toUpperCase() +
+                                      brand?.slice(1)}{" "}
+                                    * {last4}
+                                  </span>
+                                </>
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-white/40">
+                            Loading...
+                          </span>
+                        )}
+                      </div>
+                    )}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-white/50">Type</span>
+                  <div className="flex items-center gap-2">
+                    {saleTypeIcons["Sale"]}
+                    <span className="font-medium">Sale</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 mt-2 p-6 border-t border-white/10">
+              <button
+                // onClick={handleDownloadReceipt}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
+                disabled={isDownloadingReceipt}
+              >
+                {isDownloadingReceipt ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  "Download Receipt"
+                )}
+              </button>
+              <button
+                onClick={() =>
+                  (window.location.href = "mailto:support@avenue.tickets")
+                }
+                className="flex-1 bg-white hover:bg-white/90 text-black rounded-lg px-4 py-2 text-sm font-medium transition-colors"
+              >
+                Contact Support
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={sendTicketUpdateOpen}
+        onOpenChange={setSendTicketUpdateOpen}
+        className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
+      >
+        <DialogContent className="max-h-[90vh] !gap-0">
+          <form onSubmit={handleUpdate}>
+            <div className="flex flex-col gap-y-3 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
+              <DialogTitle>Edit ticket details</DialogTitle>
+              <DialogDescription>
+                Change your personal details below.
+              </DialogDescription>
+            </div>
+            <div className="flex flex-col gap-4 p-6">
+              <div className="flex flex-col items-start justify-between gap-4">
+                <div className="flex flex-col gap-3 w-full">
+                  <span className="text-sm font-medium text-white">
+                    Name
+                  </span>
+                  <input
+                    type="text"
+                    value={selectedTicketUpdate?.name || ""}
+                    onChange={(e) =>
+                      setSelectedTicketUpdate((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
+                    }
+                    placeholder="john doe"
+                    className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
+                  />
+                </div>
+                <div className="flex flex-col gap-3 w-full">
+                  <span className="text-sm font-medium text-white">
+                    Email Id
+                  </span>
+                  <input
+                    type="email"
+                    value={selectedPay?.email || ""}
+                    onChange={(e) =>
+                      setSelectedPay((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    placeholder="johndoe@gmail.com"
+                    className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
+                  />
+                </div>
+              </div>
+            </div>
+            {/* <div className="flex flex-col gap-3 p-6 pt-0">
+              <button
+                type="submit"
+                disabled={() => {}}
+                className="w-full bg-white hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed text-black border-white/10 border text-center rounded-full h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
+              >
+                Save
+              </button> */}
+            {/* </div> */}
+            <div className="flex gap-3 mt-2 p-6 border-t border-white/10">
+              <button
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
+              >
+                {isDownloadingReceipt ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  "Cancel"
+                )}
+              </button>
+              <button
+                type="submit"
+                disabled={() => { }}
+                className="flex-1 bg-white hover:bg-white/90 text-black border border-white/10 rounded-lg h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
+              >
+                Save
+              </button>
+            </div>
+
+          </form>
+        </DialogContent>
+      </Dialog>
       {/* resend email */}
       <Dialog
         open={sendTicketOpen}
@@ -1153,7 +1828,7 @@ export default function SalesTab({ eventId, event }) {
             <div className="flex flex-col gap-3 p-6 pt-0">
               <button
                 type="submit"
-                disabled={() => {}}
+                disabled={() => { }}
                 className="w-full bg-white hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed text-black border-white/10 border text-center rounded-full h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
               >
                 Resend Ticket

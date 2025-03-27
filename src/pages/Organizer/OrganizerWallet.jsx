@@ -6,7 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "../../components/ui/Dailog";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Dropdown,
   DropdownTrigger,
@@ -29,6 +29,13 @@ import {
   MenuTrigger,
 } from "../../components/ui/DirectionAwareMenu";
 import { Checkbox } from "../../components/ui/Checkbox";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable"; // Only if you want to use autoTable
+import { CalendarIcon, MapPinIcon, TicketIcon } from "lucide-react";
+import html2pdf from "html2pdf.js";
+import paymentIcons from "../../lib/paymentIcons";
+import ReceiptDownload from "../../lib/receipt";
+import { PDFDownloadLink } from '@react-pdf/renderer';
 
 const salesHistory = [
   {
@@ -260,16 +267,21 @@ const statusIcons = {
 const cardIcons = {
   visa: (
     <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="20"
-      height="8"
-      viewBox="0 0 20 8"
+      width="29"
+      height="20"
+      viewBox="0 0 29 20"
       fill="none"
+      xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M5.30011 7.16942H3.60385L2.33187 2.17399C2.27149 1.9442 2.1433 1.74106 1.95474 1.64531C1.48415 1.4047 0.965597 1.21321 0.399902 1.11663V0.924305H3.13244C3.50957 0.924305 3.79242 1.21321 3.83956 1.54873L4.49954 5.1521L6.19497 0.924305H7.84408L5.30011 7.16942ZM8.78691 7.16942H7.18494L8.50406 0.924305H10.106L8.78691 7.16942ZM12.1786 2.65439C12.2257 2.31803 12.5086 2.12571 12.8386 2.12571C13.3571 2.07742 13.922 2.174 14.3934 2.41378L14.6763 1.06918C14.2048 0.876852 13.6863 0.780273 13.2157 0.780273C11.6609 0.780273 10.5295 1.64531 10.5295 2.84588C10.5295 3.75921 11.3309 4.23877 11.8966 4.52767C12.5086 4.81574 12.7443 5.00807 12.6972 5.29614C12.6972 5.72824 12.2257 5.92057 11.7552 5.92057C11.1895 5.92057 10.6238 5.77653 10.106 5.53592L9.82319 6.88135C10.3889 7.12113 11.0009 7.21771 11.5666 7.21771C13.31 7.26517 14.3934 6.40096 14.3934 5.10381C14.3934 3.47031 12.1786 3.37456 12.1786 2.65439ZM19.9999 7.16942L18.7279 0.924305H17.3616C17.0788 0.924305 16.796 1.11663 16.7017 1.4047L14.3463 7.16942H15.9954L16.3245 6.25692H18.3508L18.5394 7.16942H19.9999ZM17.5974 2.6061L18.0679 4.95978H16.7488L17.5974 2.6061Z"
+        d="M0.699951 10C0.699951 8.12157 0.70043 6.74617 0.798391 5.66532C0.895729 4.59135 1.08615 3.85737 1.43681 3.25C1.91954 2.41389 2.61385 1.71959 3.44995 1.23686C4.05732 0.886195 4.7913 0.695778 5.86527 0.59844C6.94612 0.500479 8.32152 0.5 10.2 0.5H18.2C20.0784 0.5 21.4538 0.500479 22.5346 0.59844C23.6086 0.695778 24.3426 0.886195 24.95 1.23686C25.7861 1.71959 26.4804 2.41389 26.9631 3.25C27.3138 3.85737 27.5042 4.59135 27.6015 5.66532C27.6995 6.74617 27.7 8.12157 27.7 10C27.7 11.8784 27.6995 13.2538 27.6015 14.3347C27.5042 15.4087 27.3138 16.1426 26.9631 16.75C26.4804 17.5861 25.7861 18.2804 24.95 18.7631C24.3426 19.1138 23.6086 19.3042 22.5346 19.4016C21.4538 19.4995 20.0784 19.5 18.2 19.5H10.2C8.32152 19.5 6.94612 19.4995 5.86527 19.4016C4.7913 19.3042 4.05732 19.1138 3.44995 18.7631C2.61385 18.2804 1.91954 17.5861 1.43681 16.75C1.08615 16.1426 0.895729 15.4087 0.798391 14.3347C0.70043 13.2538 0.699951 11.8784 0.699951 10Z"
+        stroke="white"
+        stroke-opacity="0.1"
+      />
+      <path
+        fill-rule="evenodd"
+        clip-rule="evenodd"
+        d="M9.30011 13.1694H7.60385L6.33187 8.17399C6.27149 7.9442 6.1433 7.74106 5.95474 7.64531C5.48415 7.4047 4.9656 7.21321 4.3999 7.11663V6.92431H7.13244C7.50957 6.92431 7.79242 7.21321 7.83956 7.54873L8.49954 11.1521L10.195 6.92431H11.8441L9.30011 13.1694ZM12.7869 13.1694H11.1849L12.5041 6.92431H14.106L12.7869 13.1694ZM16.1786 8.65439C16.2257 8.31803 16.5086 8.12571 16.8386 8.12571C17.3571 8.07742 17.922 8.174 18.3934 8.41378L18.6763 7.06918C18.2048 6.87685 17.6863 6.78027 17.2157 6.78027C15.6609 6.78027 14.5295 7.64531 14.5295 8.84588C14.5295 9.75921 15.3309 10.2388 15.8966 10.5277C16.5086 10.8157 16.7443 11.0081 16.6972 11.2961C16.6972 11.7282 16.2257 11.9206 15.7552 11.9206C15.1895 11.9206 14.6238 11.7765 14.106 11.5359L13.8232 12.8814C14.3889 13.1211 15.0009 13.2177 15.5666 13.2177C17.31 13.2652 18.3934 12.401 18.3934 11.1038C18.3934 9.47031 16.1786 9.37456 16.1786 8.65439ZM23.9999 13.1694L22.7279 6.92431H21.3616C21.0788 6.92431 20.796 7.11663 20.7017 7.4047L18.3463 13.1694H19.9954L20.3245 12.2569H22.3508L22.5394 13.1694H23.9999ZM21.5974 8.6061L22.0679 10.9598H20.7488L21.5974 8.6061Z"
         fill="white"
       />
     </svg>
@@ -457,9 +469,11 @@ const cards = [
   { id: 1, type: "visa", last4: "4468" },
   { id: 2, type: "mastercard", last4: "1234" },
 ];
+import { Canvg } from "canvg";
+import logoImage from "../../avenue2.svg";
 
-// Add withdrawal form schema
-
+// import jsPDF from "jspdf";
+// import Canvg from "canvg";
 export default function OrganizerWallet() {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
@@ -472,15 +486,34 @@ export default function OrganizerWallet() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isViewTicketOpen, setIsViewTicketOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [event, setEvent] = useState({});
   const [isQROpen, setIsQROpen] = useState(false);
   const [accountId, setAccountId] = useState("");
   const [oragnizerId, setOragnizerId] = useState(null);
-  const [organizer, setOrganizer] = useState(null);
+  const [dataFetched, setDataFetched] = useState(false);
+  const eventId = localStorage.getItem("user_event_id") || {};
+
+  const [cardDetails, setCardDetails] = useState(null);
+
+  const [organizer, setOrganizer] = useState({
+    bio: "",
+    name: "",
+    email: "",
+    phone: "",
+    instagram: "",
+    twitter: "",
+    website: "",
+    url: "",
+  });
+  const prevValuesRef = useRef(null); // Store previous values
+
+  const [loading, setLoading] = useState(false);
   const [accountBalance, setSetAccountBalance] = useState({
     available: [],
     instant_available: [],
     pending: [],
   });
+
   const [transferedAmount, setTransferedAmount] = useState("");
   const [bankDetails, setBankDetails] = useState({});
   const [payoutList, setPayoutList] = useState([]);
@@ -498,10 +531,131 @@ export default function OrganizerWallet() {
   const [amountEntered, setAmountEntered] = useState(false);
   const [sortColumn, setSortColumn] = useState(null);
   const [sortOrder, setSortOrder] = useState("asc");
-  const handleViewTicket = (sale) => {
+  const [isLoadingTicket, setIsLoadingTicket] = useState(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
+
+  const handleViewTicket = async (sale) => {
+    setIsLoadingTicket(true);
     setSelectedTicket(sale);
+    setCardDetails(null); // Clear previous card details
+
+    // Add a small delay to show the loading state
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     setIsViewTicketOpen(true);
+    setIsLoadingTicket(false);
   };
+
+  useEffect(() => {
+    const loadFromLocalStorage = () => {
+      const storedUserOrganizerId = localStorage.getItem("organizerId");
+      if (storedUserOrganizerId) {
+        setOragnizerId(storedUserOrganizerId);
+      } else {
+        console.warn("No organizerId found in localStorage");
+      }
+    };
+
+    loadFromLocalStorage();
+    const handleStorageChange = () => {
+      loadFromLocalStorage();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
+  function extractPaymentId(fullString) {
+    return fullString?.split("_secret")[0];
+  }
+  useEffect(() => {
+    const fetchCardDetails = async () => {
+      if (!selectedTicket?.transaction_id || selectedTicket?.amount === 0) {
+        return; // Don't fetch for comp tickets
+      }
+
+      const paymentId = extractPaymentId(selectedTicket.transaction_id);
+
+      try {
+        const res = await fetch(`${url}/payment-detail/${paymentId}`);
+        const data = await res.json();
+
+        console.log("✅ Payment details:", data);
+        setCardDetails(data);
+        setLoading(false);
+      } catch (err) {
+        console.error("❌ Failed to fetch payment info:", err);
+        setLoading(false);
+      }
+    };
+
+    fetchCardDetails();
+  }, [selectedTicket?.transaction_id]);
+
+  useEffect(() => {
+    if (!oragnizerId) return;
+
+    const fetchOrganizer = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(`${url}/get-organizer/${oragnizerId}`);
+        setOrganizer(response.data);
+        prevValuesRef.current = response.data; // Store initial fetched values
+        setDataFetched(true); // Mark that initial data has been fetched
+      } catch (error) {
+        console.error("Error fetching organizer:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizer();
+  }, [oragnizerId]);
+  const receiptRef = useRef(null);
+  useEffect(() => {
+    const fetchEvent = async () => {
+      setLoading(true);
+      try {
+        const response = await axios.get(
+          `${url}/event/get-event-by-id/${eventId}`
+        );
+        setEvent(response.data);
+      } catch (error) {
+        console.error("Error fetching event:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (eventId) {
+      fetchEvent();
+    }
+  }, [eventId]);
+  const flyerImgRef = useRef(null);
+  const toDataURL = (url) =>
+    fetch(url)
+      .then((response) => response.blob())
+      .then(
+        (blob) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          })
+      );
+
+  const handleDownloadReceipt = () => {
+    if (!selectedTicket) return;
+    setIsDownloadingReceipt(true);
+
+    // Reset the loading state after a short delay
+    setTimeout(() => {
+      setIsDownloadingReceipt(false);
+    }, 1000); // Adjust the timeout duration as needed
+  };
+
   const handleViewQR = (sale) => {
     setSelectedTicket(sale);
     setIsQROpen(true);
@@ -530,7 +684,15 @@ export default function OrganizerWallet() {
       maximumFractionDigits: 2,
     });
   };
-
+  const formatAmounts = (amount) => {
+    if (!amount || isNaN(amount)) return "0.00";
+    return parseFloat(amount).toFixed(2);
+  };
+  const getTicketTotal = () => {
+    const count = selectedTicket?.count || 1;
+    const price = (selectedTicket?.amount || 0) / 100;
+    return count * price;
+  };
   const filteredSalesHistory = orgEventList.filter((sale) => {
     const isRefund = sale?.payout?.refund === "true" || sale?.refund === "true";
 
@@ -554,7 +716,7 @@ export default function OrganizerWallet() {
       const matchesSearch =
         sale?.party?.event_name.toLowerCase().includes(searchLower) ||
         ticketName.toLowerCase().includes(searchLower) ||
-        sale?.firstName.toLowerCase().includes(searchLower) ||
+        sale?.firstName?.toLowerCase().includes(searchLower) ||
         (sale?.amount / 100).toString().includes(searchLower) ||
         typeText.includes(searchLower) ||
         formattedDate.includes(searchLower);
@@ -1053,11 +1215,11 @@ export default function OrganizerWallet() {
                         $
                         {accountBalance?.balance?.pending?.[0]?.amount
                           ? (
-                              accountBalance?.balance?.pending[0].amount / 100
-                            ).toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
+                            accountBalance?.balance?.pending[0].amount / 100
+                          ).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
                           : 0}
                       </>
                     )}
@@ -1089,11 +1251,10 @@ export default function OrganizerWallet() {
                     <button
                       disabled={!statusInstant}
                       onClick={() => setIsWithdrawOpen(true)}
-                      className={`text-sm ${
-                        statusInstant === false
-                          ? "bg-[#ffffff] bg-opacity-30"
-                          : "bg-white"
-                      } text-black px-3 py-2 cursor-pointer rounded-full flex items-center gap-2 font-semibold`}
+                      className={`text-sm ${statusInstant === false
+                        ? "bg-[#ffffff] bg-opacity-30"
+                        : "bg-white"
+                        } text-black px-3 py-2 cursor-pointer rounded-full flex items-center gap-2 font-semibold`}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -1245,9 +1406,9 @@ export default function OrganizerWallet() {
                         $
                         {filteredTotal
                           ? filteredTotal.toLocaleString("en-US", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
                           : "0.00"}
                       </>
                     )}
@@ -1863,26 +2024,30 @@ export default function OrganizerWallet() {
                                         onClick={() => handleViewTicket(sale)}
                                       >
                                         <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
-                                          <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            width="16"
-                                            height="16"
-                                            viewBox="0 0 16 16"
-                                            fill="none"
-                                          >
-                                            <path
-                                              d="M8 9.5C8.39782 9.5 8.77936 9.34196 9.06066 9.06066C9.34196 8.77936 9.5 8.39782 9.5 8C9.5 7.60218 9.34196 7.22064 9.06066 6.93934C8.77936 6.65804 8.39782 6.5 8 6.5C7.60218 6.5 7.22064 6.65804 6.93934 6.93934C6.65804 7.22064 6.5 7.60218 6.5 8C6.5 8.39782 6.65804 8.77936 6.93934 9.06066C7.22064 9.34196 7.60218 9.5 8 9.5Z"
-                                              fill="white"
-                                              fillOpacity="0.5"
-                                            />
-                                            <path
-                                              fillRule="evenodd"
-                                              clipRule="evenodd"
-                                              d="M1.37996 8.28012C1.31687 8.09672 1.31687 7.89751 1.37996 7.71412C1.85633 6.33749 2.75014 5.14368 3.93692 4.29893C5.1237 3.45419 6.54437 3.00056 8.00109 3.00122C9.45782 3.00188 10.8781 3.4568 12.0641 4.30262C13.2501 5.14844 14.1428 6.34306 14.618 7.72012C14.681 7.90351 14.681 8.10273 14.618 8.28612C14.1418 9.6631 13.248 10.8573 12.0611 11.7023C10.8742 12.5473 9.4533 13.0011 7.99632 13.0005C6.53934 12.9998 5.11883 12.5447 3.9327 11.6986C2.74657 10.8525 1.85387 9.65753 1.37896 8.28012H1.37996ZM11 8.00012C11 8.79577 10.6839 9.55883 10.1213 10.1214C9.55867 10.684 8.79561 11.0001 7.99996 11.0001C7.20431 11.0001 6.44125 10.684 5.87864 10.1214C5.31603 9.55883 4.99996 8.79577 4.99996 8.00012C4.99996 7.20447 5.31603 6.44141 5.87864 5.8788C6.44125 5.31619 7.20431 5.00012 7.99996 5.00012C8.79561 5.00012 9.55867 5.31619 10.1213 5.8788C10.6839 6.44141 11 7.20447 11 8.00012Z"
-                                              fill="white"
-                                              fillOpacity="0.5"
-                                            />
-                                          </svg>
+                                          {isLoadingTicket ? (
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                          ) : (
+                                            <svg
+                                              xmlns="http://www.w3.org/2000/svg"
+                                              width="16"
+                                              height="16"
+                                              viewBox="0 0 16 16"
+                                              fill="none"
+                                            >
+                                              <path
+                                                d="M8 9.5C8.39782 9.5 8.77936 9.34196 9.06066 9.06066C9.34196 8.77936 9.5 8.39782 9.5 8C9.5 7.60218 9.34196 7.22064 9.06066 6.93934C8.77936 6.65804 8.39782 6.5 8 6.5C7.60218 6.5 7.22064 6.65804 6.93934 6.93934C6.65804 7.22064 6.5 7.60218 6.5 8C6.5 8.39782 6.65804 8.77936 6.93934 9.06066C7.22064 9.34196 7.60218 9.5 8 9.5Z"
+                                                fill="white"
+                                                fillOpacity="0.5"
+                                              />
+                                              <path
+                                                fillRule="evenodd"
+                                                clipRule="evenodd"
+                                                d="M1.37996 8.28012C1.31687 8.09672 1.31687 7.89751 1.37996 7.71412C1.85633 6.33749 2.75014 5.14368 3.93692 4.29893C5.1237 3.45419 6.54437 3.00056 8.00109 3.00122C9.45782 3.00188 10.8781 3.4568 12.0641 4.30262C13.2501 5.14844 14.1428 6.34306 14.618 7.72012C14.681 7.90351 14.681 8.10273 14.618 8.28612C14.1418 9.6631 13.248 10.8573 12.0611 11.7023C10.8742 12.5473 9.4533 13.0011 7.99632 13.0005C6.53934 12.9998 5.11883 12.5447 3.9327 11.6986C2.74657 10.8525 1.85387 9.65753 1.37896 8.28012H1.37996ZM11 8.00012C11 8.79577 10.6839 9.55883 10.1213 10.1214C9.55867 10.684 8.79561 11.0001 7.99996 11.0001C7.20431 11.0001 6.44125 10.684 5.87864 10.1214C5.31603 9.55883 4.99996 8.79577 4.99996 8.00012C4.99996 7.20447 5.31603 6.44141 5.87864 5.8788C6.44125 5.31619 7.20431 5.00012 7.99996 5.00012C8.79561 5.00012 9.55867 5.31619 10.1213 5.8788C10.6839 6.44141 11 7.20447 11 8.00012Z"
+                                                fill="white"
+                                                fillOpacity="0.5"
+                                              />
+                                            </svg>
+                                          )}
                                           <span>View ticket</span>
                                         </div>
                                       </MenuItem>
@@ -2121,7 +2286,7 @@ export default function OrganizerWallet() {
                           accountBalance?.balance?.instant_available?.[0]
                             ?.amount
                             ? accountBalance?.balance?.instant_available[0]
-                                .amount / 100
+                              .amount / 100
                             : 0,
                           { shouldValidate: true }
                         )
@@ -2139,12 +2304,12 @@ export default function OrganizerWallet() {
                       $
                       {accountBalance?.balance?.instant_available?.[0]?.amount
                         ? (
-                            accountBalance?.balance?.instant_available[0]
-                              .amount / 100
-                          ).toLocaleString("en-US", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })
+                          accountBalance?.balance?.instant_available[0]
+                            .amount / 100
+                        ).toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })
                         : 0}
                     </span>
                   </div>
@@ -2341,8 +2506,8 @@ export default function OrganizerWallet() {
                         {(payout.status === "in_transit"
                           ? "processing"
                           : payout.status === "paid"
-                          ? "completed"
-                          : payout.status
+                            ? "completed"
+                            : payout.status
                         ).replace(/^./, (char) => char.toUpperCase())}
                       </span>
                     </td>
@@ -2461,10 +2626,347 @@ export default function OrganizerWallet() {
           </form>
         </DialogContent>
       </Dialog>
+
+      <div ref={receiptRef} style={{ display: "none" }}>
+        <div className="bg-white min-h-screen flex justify-center">
+          <div className="w-[816px] py-16 relative">
+            {/* Logo and Order Number */}
+            <div className="flex justify-between items-start px-16 mb-8">
+              <div className="w-[177px] h-[26px]">
+                <img src={logoImage} alt="Avenue" className="h-full" />
+              </div>
+              <div className="text-sm">
+                <span className="text-black">Order </span>
+                <span className="text-black/60">
+                  #{selectedTicket?.transaction_id?.slice(-6)}
+                </span>
+              </div>
+            </div>
+            <div className="mx-16 bg-white rounded-[20px] border border-black/5 overflow-hidden">
+              <div className="flex">
+                {/* Left Content */}
+                <div className="flex-1 p-6">
+                  <h2 className="text-2xl font-medium mb-4">
+                    {selectedTicket?.party?.event_name || "Event Name"}
+                  </h2>
+
+                  <div className="space-y-4">
+                    {/* Date Row */}
+                    <div className="flex items-center gap-2 text-black/60">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M5.33333 1.33333C5.70152 1.33333 6 1.63181 6 1.99999V2.66666H10V1.99999C10 1.63181 10.2985 1.33333 10.6667 1.33333C11.0349 1.33333 11.3333 1.63181 11.3333 1.99999V2.66666H12C13.1046 2.66666 14 3.56209 14 4.66666V5.99999H2V4.66666C2 3.56209 2.89543 2.66666 4 2.66666H4.66667V1.99999C4.66667 1.63181 4.96515 1.33333 5.33333 1.33333Z"
+                          fill="black"
+                          fillOpacity="0.5"
+                        />
+                        <path
+                          d="M2 12V7.33333H14V12C14 13.1046 13.1046 14 12 14H4C2.89543 14 2 13.1046 2 12Z"
+                          fill="black"
+                          fillOpacity="0.5"
+                        />
+                      </svg>
+                      <span className="text-sm">
+                        {selectedTicket?.date
+                          ? formatDate(
+                            new Date(selectedTicket.date),
+                            "EEEE, dd MMM, HH:mm (z)"
+                          )
+                          : "Date not provided"}
+                      </span>
+                    </div>
+
+                    {/* Venue Row */}
+                    <div className="flex items-start gap-2 text-black/60">
+                      <svg
+                        width="12"
+                        height="14"
+                        viewBox="0 0 12 14"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M0.666626 5.66666C0.666626 2.72114 3.05444 0.333328 5.99996 0.333328C8.94549 0.333328 11.3333 2.72114 11.3333 5.66666C11.3333 7.31613 10.6039 8.8392 9.75369 10.0627C8.89849 11.2935 7.87723 12.2841 7.19476 12.8825C6.50556 13.4868 5.49436 13.4868 4.80516 12.8825C4.12267 12.2841 3.10141 11.2935 2.24619 10.0627C1.39605 8.8392 0.666626 7.31613 0.666626 5.66666ZM5.99849 7.33333C6.91896 7.33333 7.66516 6.58713 7.66516 5.66666C7.66516 4.74619 6.91896 3.99999 5.99849 3.99999C5.07803 3.99999 4.33183 4.74619 4.33183 5.66666C4.33183 6.58713 5.07803 7.33333 5.99849 7.33333Z"
+                          fill="black"
+                          fillOpacity="0.5"
+                        />
+                      </svg>
+                      <div className="text-sm flex-1">
+                        <p>
+                          {selectedTicket?.party?.venue_name ||
+                            "Venue not provided"}
+                        </p>
+                        <p>
+                          {selectedTicket?.party?.address ||
+                            "Address not provided"}
+                        </p>
+                        {/* <p>{selectedTicket?.party?.venue_city || "City not provided"}</p> */}
+                      </div>
+                    </div>
+
+                    {/* Tickets Row */}
+                    <div className="flex items-center gap-2 text-black/60">
+                      <svg
+                        width="14"
+                        height="12"
+                        viewBox="0 0 14 12"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M11.6 0.399994C12.0774 0.399994 12.5352 0.589636 12.8728 0.927202C13.2103 1.26477 13.4 1.7226 13.4 2.19999V3.17119C13.4 3.50959 13.1784 3.80159 12.8936 3.98639C12.5577 4.20408 12.2817 4.50238 12.0907 4.85409C11.8996 5.20581 11.7997 5.59975 11.8 5.99999C11.8 6.84399 12.2352 7.58559 12.8936 8.01359C13.1784 8.19839 13.4 8.49039 13.4 8.82959V9.79999C13.4 10.2774 13.2103 10.7352 12.8728 11.0728C12.5352 11.4104 12.0774 11.6 11.6 11.6H2.39998C1.92259 11.6 1.46475 11.4104 1.12718 11.0728C0.789618 10.7352 0.599976 10.2774 0.599976 9.79999V8.82959C0.599976 8.49039 0.821576 8.19839 1.10638 8.01359C1.44219 7.79586 1.71818 7.49755 1.9092 7.14584C2.10021 6.79414 2.20017 6.40022 2.19998 5.99999C2.20025 5.59975 2.10031 5.20581 1.90929 4.85409C1.71827 4.50238 1.44224 4.20408 1.10638 3.98639C0.821576 3.80159 0.599976 3.50959 0.599976 3.17039V2.19999C0.599976 1.7226 0.789618 1.26477 1.12718 0.927202C1.46475 0.589636 1.92259 0.399994 2.39998 0.399994H11.6ZM9.79998 3.91679C9.79998 3.75766 9.73676 3.60505 9.62424 3.49253C9.51172 3.38001 9.35911 3.31679 9.19998 3.31679C9.04085 3.31679 8.88823 3.38001 8.77571 3.49253C8.66319 3.60505 8.59998 3.75766 8.59998 3.91679V4.75039C8.59998 4.90952 8.66319 5.06214 8.77571 5.17466C8.88823 5.28718 9.04085 5.35039 9.19998 5.35039C9.35911 5.35039 9.51172 5.28718 9.62424 5.17466C9.73676 5.06214 9.79998 4.90952 9.79998 4.75039V3.91679ZM9.79998 7.25039C9.79998 7.09126 9.73676 6.93865 9.62424 6.82613C9.51172 6.71361 9.35911 6.65039 9.19998 6.65039C9.04085 6.65039 8.88823 6.71361 8.77571 6.82613C8.66319 6.93865 8.59998 7.09126 8.59998 7.25039V8.08319C8.59998 8.24232 8.66319 8.39494 8.77571 8.50746C8.88823 8.61998 9.04085 8.68319 9.19998 8.68319C9.35911 8.68319 9.51172 8.61998 9.62424 8.50746C9.73676 8.39494 9.79998 8.24232 9.79998 8.08319V7.25039Z"
+                          fill="black"
+                          fillOpacity="0.5"
+                        />
+                      </svg>
+                      <span className="text-sm">
+                        {selectedTicket?.tickets?.ticket_name
+                          ? `${selectedTicket.tickets.ticket_name} x ${selectedTicket?.count || 1
+                          }`
+                          : `Ticket x ${selectedTicket?.count || 1}`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 text-sm text-black/60">
+                    <p className="font-semibold">Refund Policy</p>
+                    <p>
+                      {selectedTicket?.refund_policy ||
+                        "Please contact the organizer directly for refund queries."}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Content */}
+                <div className="w-[200px] p-4">
+                  <div className="aspect-[3/4] rounded-lg mb-4">
+                    <img
+                      ref={flyerImgRef}
+                      src={selectedTicket?.party?.flyer || ""}
+                      alt="Event"
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  </div>
+                  <div className="aspect-square relative">
+                    <img
+                      src={selectedTicket?.qrcode || ""}
+                      alt="QR Code"
+                      className="w-full h-full"
+                      style={{ imageRendering: 'pixelated' }}
+                      onError={(e) =>
+                      (e.target.src =
+                        "https://via.placeholder.com/150?text=QR+Code+Not+Available")
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Order Summary Card */}
+            <div className="mx-16 mt-6 bg-white rounded-[20px] border border-black/5 overflow-hidden">
+              <div className="border-b border-black/5 p-4">
+                <h3 className="text-base font-medium">Order summary</h3>
+              </div>
+              <div className="p-5 flex gap-6">
+                <div className="flex-1">
+                  <h4 className="font-medium mb-2">Purchase</h4>
+                  <div className="space-y-1 text-sm text-black/60">
+                    <p>Organizer: {organizer.name}</p>
+                    <p>Order #{selectedTicket?.transaction_id?.slice(-6)}</p>
+                    <p>
+                      Order Date:{" "}
+                      {selectedTicket?.date
+                        ? formatDate(
+                          new Date(selectedTicket.date),
+                          "dd MMM, HH:mm"
+                        )
+                        : ""}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium mb-2">Billing</h4>
+                  <div className="space-y-1 text-sm text-black/60">
+                    <p>
+                      Name:{" "}
+                      {cardDetails?.paymentIntent?.metadata?.customer_name ||
+                        "Customer"}
+                    </p>
+
+                    <p>Payment method:</p>
+                    <div className="flex items-center gap-2">
+                      {(() => {
+                        const brand = cardDetails?.paymentMethod?.card?.brand;
+                        const last4 =
+                          cardDetails?.paymentMethod?.card?.last4 ||
+                          cardDetails?.paymentMethod?.card?.dynamic_last4 ||
+                          "0000";
+                        const wallet =
+                          cardDetails?.paymentMethod?.card?.wallet?.type;
+
+                        return (
+                          <>
+                            {wallet && paymentIcons[wallet] && (
+                              <img
+                                src={paymentIcons[wallet]}
+                                alt={wallet}
+                                className="w-7 h-5 object-contain"
+                              />
+                            )}
+
+                            {brand && paymentIcons[brand] && (
+                              <img
+                                src={paymentIcons[brand]}
+                                alt={brand}
+                                className="w-8 h-6 object-contain"
+                              />
+                            )}
+
+                            <span className="font-medium text-black">
+                              {brand?.charAt(0).toUpperCase() + brand?.slice(1)}{" "}
+                              * {last4}
+                            </span>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Your Order Card */}
+            <div className="mx-16 mt-6 bg-white rounded-[20px] border border-black/5 overflow-hidden">
+              <div className="border-b border-black/5 p-4">
+                <h3 className="text-base font-medium">Your Order</h3>
+              </div>
+
+              {/* Ticket Item */}
+              <div className="border-b border-black/5">
+                <div className="p-4 flex items-center">
+                  <div className="flex-1">
+                    <p className="text-[10px] font-medium text-black/60 uppercase tracking-wider">
+                      TICKET
+                    </p>
+                    <p className="text-base font-medium">
+                      {selectedTicket?.tickets?.ticket_name}
+                    </p>
+                    <p className="text-[10px] text-black/60">
+                      {selectedTicket?.count || 1} x $
+                      {formatAmount(selectedTicket?.amount || 0)}
+                    </p>
+                  </div>
+                  <div className="text-base font-medium">
+                    $
+                    {formatAmount(
+                      (selectedTicket?.count || 1) *
+                      (selectedTicket?.amount || 0)
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fees */}
+              <div className="border-b border-black/5">
+                <div className="p-4 flex items-center">
+                  <div className="flex-1">
+                    <p className="text-base font-medium">Fees</p>
+                    <div className="text-[10px] text-black/60">
+                      <p>Platform fee - $5.39</p>
+                      <p>Custom fee - $5.00</p>
+                    </div>
+                  </div>
+                  <div className="text-base font-medium">
+                    ${formatAmounts(5.39 + 5.0)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Total */}
+              <div className="p-4 flex items-center">
+                <div className="flex-1">
+                  <p className="text-base font-bold">Total Charges</p>
+                </div>
+                <div className="text-base font-bold">
+                  ${formatAmounts(getTicketTotal() + 5.39 + 5.0)}
+                </div>
+              </div>
+            </div>
+
+            {/* Terms and Conditions */}
+            <div className="mx-16 mt-8">
+              <h3 className="text-base font-medium mb-2">
+                Terms and Conditions
+              </h3>
+              <div className="text-[10px] text-black/60 space-y-2">
+                <p>
+                  <strong>Support & Assistance:</strong>
+                  <br />
+                  For any questions regarding your purchase, please contact
+                  Avenue Ticketing Support at support@avenue.tickets or visit
+                  our support page at www.avenue.tickets/support.
+                </p>
+                <p>
+                  <strong>Event Organizer Contact:</strong>
+                  <br />
+                  For event-specific inquiries, including venue details,
+                  accessibility, or event policies, please contact the event
+                  organizer at{" "}
+                  {selectedTicket?.party?.organizer_email ||
+                    "[Organizer Email]"}
+                  .
+                </p>
+                <p>
+                  <strong>Refund & Cancellation Policy:</strong>
+                  <br />
+                  Refunds and cancellations are subject to the event organizer's
+                  policy. Please refer to the event listing for more details or
+                  contact the organizer directly. Avenue Ticketing does not
+                  guarantee refunds unless specified by the event organizer.
+                </p>
+                <p>
+                  <strong>Terms & Conditions:</strong>
+                  <br />
+                  By purchasing this ticket, you agree to Avenue Ticketing's
+                  Terms of Service and Privacy Policy. Tickets are
+                  non-transferable unless stated otherwise by the event
+                  organizer. Unauthorized resale of tickets is strictly
+                  prohibited.
+                </p>
+                <p>
+                  <strong>Important Notice:</strong>
+                  <br />
+                  This receipt serves as proof of payment. Your tickets may be
+                  attached separately or accessible via your Avenue Ticketing
+                  account. Please check your email for further details.
+                </p>
+                <p>
+                  © {new Date().getFullYear()} Avenue Ticketing, Inc. All rights
+                  reserved.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       {/* View Ticket Dialog */}
       <Dialog
         open={isViewTicketOpen}
-        onOpenChange={setIsViewTicketOpen}
+        onOpenChange={(open) => {
+          setIsViewTicketOpen(open);
+          if (!open) {
+            setCardDetails(null); // Clear card details when dialog closes
+          }
+        }}
         className="!max-w-[400px] border border-white/10 rounded-xl !p-0"
       >
         <DialogContent className="max-h-[90vh] !gap-0 text-white overflow-y-auto">
@@ -2504,15 +3006,17 @@ export default function OrganizerWallet() {
                 Transaction Details
               </h4>
               <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm text-white/50">Amount</span>
-                  <span className="font-medium">
-                    $
-                    {selectedTicket?.amount
-                      ? formatAmount(selectedTicket.amount)
-                      : "0.00"}
-                  </span>
-                </div>
+                {selectedTicket?.transaction_id && selectedTicket?.amount > 0 && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm text-white/50">Amount</span>
+                    <span className="font-medium">
+                      $
+                      {selectedTicket?.amount
+                        ? formatAmount(selectedTicket.amount)
+                        : "0.00"}
+                    </span>
+                  </div>
+                )}
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-white/50">Date</span>
                   <span className="font-medium">
@@ -2522,15 +3026,55 @@ export default function OrganizerWallet() {
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-sm text-white/50">Payment Method</span>
-                  <div className="flex items-center gap-2">
-                    <div className="border border-white/10 rounded h-6 w-fit px-1 py-1 flex items-center justify-center">
-                      {cardIcons["visa"]}
+                  {selectedTicket?.transaction_id && selectedTicket?.amount > 0 && (
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-white/50">
+                        Payment Method
+                      </span>
+
+                      {cardDetails?.paymentMethod?.card ? (
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const brand = cardDetails.paymentMethod.card.brand;
+                            const last4 =
+                              cardDetails.paymentMethod.card.last4 ||
+                              cardDetails.paymentMethod.card.dynamic_last4 ||
+                              "0000";
+                            const wallet =
+                              cardDetails.paymentMethod.card.wallet?.type;
+
+                            return (
+                              <>
+                                {wallet && paymentIcons[wallet] && (
+                                  <img
+                                    src={paymentIcons[wallet]}
+                                    alt={wallet}
+                                    className="w-7 h-5 object-contain"
+                                  />
+                                )}
+
+                                {brand && paymentIcons[brand] && (
+                                  <img
+                                    src={paymentIcons[brand]}
+                                    alt={brand}
+                                    className="w-8 h-6 object-contain"
+                                  />
+                                )}
+
+                                <span className="font-medium text-white">
+                                  {brand?.charAt(0).toUpperCase() +
+                                    brand?.slice(1)}{" "}
+                                  * {last4}
+                                </span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-white/40">Loading...</span>
+                      )}
                     </div>
-                    <span className="font-medium">
-                      •••• {selectedTicket?.last4 || "4468"}
-                    </span>
-                  </div>
+                  )}
                 </div>
                 <div className="flex flex-col gap-1">
                   <span className="text-sm text-white/50">Type</span>
@@ -2544,9 +3088,22 @@ export default function OrganizerWallet() {
 
             {/* Actions */}
             <div className="flex gap-3 mt-2 p-6 border-t border-white/10">
-              <button className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors">
-                Download Receipt
-              </button>
+              <PDFDownloadLink
+                document={<ReceiptDownload data={selectedTicket} />}
+                fileName={`receipt-${selectedTicket?.transaction_id}.pdf`}
+                onClick={handleDownloadReceipt} // Trigger download on click
+              >
+                <button
+                  className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
+                  disabled={isDownloadingReceipt}
+                >
+                  {isDownloadingReceipt ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    "Download Receipt"
+                  )}
+                </button>
+              </PDFDownloadLink>
               <button
                 onClick={() =>
                   (window.location.href = "mailto:support@avenue.tickets")
@@ -2627,6 +3184,7 @@ export default function OrganizerWallet() {
                     <img
                       src={selectedTicket?.qrcode}
                       alt="QR Code"
+                      style={{ imageRendering: 'pixelated' }}
                       className="w-full max-w-xs rounded-lg"
                     />
                   </div>
