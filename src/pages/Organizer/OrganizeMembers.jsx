@@ -203,6 +203,9 @@ export default function OrganizeMembers() {
   const [showActivateNotification, setShowActivateNotification] = useState(false);
   const [showDeleteNotification, setShowDeleteNotification] = useState(false);
   const [showAssignNotification, setShowAssignNotification] = useState(false);
+  const [showAddRoleNotification, setShowAddRoleNotification] = useState(false);
+  const [showEditRoleNotification, setShowEditRoleNotification] = useState(false);
+  const [showDeleteRoleNotification, setShowDeleteRoleNotification] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [assignLoading, setAssignLoading] = useState(false)
@@ -210,14 +213,10 @@ export default function OrganizeMembers() {
   const [newRole, setNewRole] = useState({
     name: "",
     description: "",
-    accessLevel: "full",
+    accessLevel: [],
   });
   const [selectedExistingRole, setSelectedExistingRole] = useState(null);
-  const [roles, setRoles] = useState([
-    { name: "Admin", access: ["full", "limited", "basic"] },
-    { name: "Manager", access: ["limited", "basic"] },
-    { name: "Staff", access: ["basic"] },
-  ]);
+  const [roles, setRoles] = useState([]);
 
   const {
     register,
@@ -232,7 +231,7 @@ export default function OrganizeMembers() {
       fullName: "",
       email: "",
       phoneNumber: "",
-      role: roles[0].name,
+      role: [],
       events: [],
     },
   });
@@ -251,7 +250,7 @@ export default function OrganizeMembers() {
       fullName: "",
       email: "",
       phoneNumber: "",
-      role: roles[0],
+      role: [],
       events: [],
     },
   });
@@ -524,6 +523,59 @@ export default function OrganizeMembers() {
       console.error("Error:", error);
     }
   };
+
+  const handleCreateRole = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        role_name: newRole.name,
+        access_type: newRole.accessLevel,
+        organizer_id: oragnizerId,
+      };
+
+      const response = await axios.post(`${url}/role/add-role`, payload);
+
+      const createdRole = {
+        ...response.data.role, // assuming backend returns `{ role: { ... } }`
+        name: response.data.role.role_name,
+        access: response.data.role.access_type,
+      };
+
+      // Update local state with new role
+      setRoles(prev => [...prev, createdRole]);
+
+      // Reset form and UI
+      setNewRoleDialogOpen(false);
+      setNewRole({ name: "", accessLevel: [] });
+      setShowAddRoleNotification(true);
+      setTimeout(() => {
+        setShowAddRoleNotification(false);
+      }, 3000); // ✅ timeout should be a number, not an array
+    } catch (error) {
+      console.error("Error creating role:", error);
+      alert("Failed to create role");
+    }
+  };
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const response = await axios.get(`${url}/role/get-by-organizer-id/${oragnizerId}`);
+
+        const transformed = response.data.map(role => ({
+          ...role,
+          name: role.role_name,
+          access: role.access_type,
+        }));
+
+        setRoles(transformed);
+      } catch (error) {
+        console.error('Error fetching members:', error);
+      }
+    };
+
+    if (oragnizerId) fetchRoles();
+  }, [oragnizerId]);
 
 
   return (
@@ -1037,9 +1089,9 @@ export default function OrganizeMembers() {
       >
         <DialogContent className="!gap-0 text-white">
           <div className="flex flex-col gap-y-3 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
-            <DialogTitle>Add new member</DialogTitle>
+            <DialogTitle>Manage role</DialogTitle>
             <DialogDescription>
-              Add a new member to your team.
+              Manage roles of your organization
             </DialogDescription>
           </div>
           <div>
@@ -1048,145 +1100,198 @@ export default function OrganizeMembers() {
               <div className="p-4 text-white ">
                 <h3 className="text-sm font-semibold mb-3">Existing Roles</h3>
                 <div className="flex flex-col divide-y divide-white/10 border border-white/10 rounded-lg">
-                  {roles.map((role) => (
-                    <div
-                      key={role.name}
-                      onClick={() => setSelectedExistingRole(role)}
-                      className={`flex flex-col cursor-pointer transition-colors ${selectedExistingRole?.name === role.name
-                        ? "bg-white/[0.03]"
-                        : "hover:bg-white/5"
-                        }`}
-                    >
-                      <div className="flex items-center justify-between text-sm p-3">
-                        <span>{role.name}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedExistingRole(role);
-                          }}
-                          className="text-white/60 hover:text-white transition-colors"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M11 4H4a2 2 0 0 0-2 2v6c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1"></path>
-                            <path d="M7 8h3"></path>
-                          </svg>
-                        </button>
-                      </div>
 
-                      {selectedExistingRole?.name === role.name && (
-                        <div className="border-t border-white/10 p-4">
-                          <div className="text-sm text-white/60 mb-2">
-                            Access Level
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <label className="flex items-center gap-2 text-sm">
-                              <Checkbox
-                                checked={role.access.includes("full")}
-                                onCheckedChange={(checked) => {
-                                  const updatedRoles = roles.map((r) => {
-                                    if (r.name === role.name) {
-                                      return {
-                                        ...r,
-                                        access: checked
-                                          ? [...r.access, "full"]
-                                          : r.access.filter(
-                                            (level) => level !== "full"
-                                          ),
-                                      };
-                                    }
-                                    return r;
-                                  });
-                                  setRoles(updatedRoles);
-                                }}
-                                className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
-                              />
-                              Full Access
-                            </label>
-                            <label className="flex items-center gap-2 text-sm">
-                              <Checkbox
-                                checked={role.access.includes("limited")}
-                                onCheckedChange={(checked) => {
-                                  const updatedRoles = roles.map((r) => {
-                                    if (r.name === role.name) {
-                                      return {
-                                        ...r,
-                                        access: checked
-                                          ? [...r.access, "limited"]
-                                          : r.access.filter(
-                                            (level) => level !== "limited"
-                                          ),
-                                      };
-                                    }
-                                    return r;
-                                  });
-                                  setRoles(updatedRoles);
-                                }}
-                                className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
-                              />
-                              Limited Access
-                            </label>
-                            <label className="flex items-center gap-2 text-sm">
-                              <Checkbox
-                                checked={role.access.includes("basic")}
-                                onCheckedChange={(checked) => {
-                                  const updatedRoles = roles.map((r) => {
-                                    if (r.name === role.name) {
-                                      return {
-                                        ...r,
-                                        access: checked
-                                          ? [...r.access, "basic"]
-                                          : r.access.filter(
-                                            (level) => level !== "basic"
-                                          ),
-                                      };
-                                    }
-                                    return r;
-                                  });
-                                  setRoles(updatedRoles);
-                                }}
-                                className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
-                              />
-                              Basic Access
-                            </label>
-                          </div>
-                          <div className="flex justify-end gap-2 mt-3">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedExistingRole(null);
-                              }}
-                              className="px-3 py-1 text-sm rounded-lg hover:bg-white/5"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                console.log(
-                                  "Saving changes for role:",
-                                  role.name
-                                );
-                                setSelectedExistingRole(null);
-                              }}
-                              className="px-3 py-1 text-sm bg-[#34B2DA] rounded-lg hover:bg-[#34B2DA]/90"
-                            >
-                              Save Changes
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                  {roles.length === 0 ? (
+                    <div className="text-sm text-white/50 text-center py-2">
+                      No roles are added.
                     </div>
-                  ))}
+                  ) : (
+                    roles.map((role) => (
+                      <div
+                        key={role.name}
+                        onClick={() => setSelectedExistingRole(role)}
+                        className={`flex flex-col cursor-pointer transition-colors ${selectedExistingRole?.name === role.name
+                          ? "bg-white/[0.03]"
+                          : "hover:bg-white/5"
+                          }`}
+                      >
+                        <div className="flex items-center justify-between text-sm p-3">
+                          <span>{role.name}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedExistingRole(role);
+                            }}
+                            className="text-white/60 hover:text-white transition-colors"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 16 16"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M11 4H4a2 2 0 0 0-2 2v6c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1"></path>
+                              <path d="M7 8h3"></path>
+                            </svg>
+                          </button>
+                        </div>
+
+                        {selectedExistingRole?.name === role.name && (
+                          <div className="border-t border-white/10 p-4">
+                            <div className="text-sm text-white/60 mb-2">
+                              Access Level
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <label className="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                  checked={role.access.includes("full")}
+                                  onCheckedChange={(checked) => {
+                                    const updatedRoles = roles.map((r) => {
+                                      if (r.name === role.name) {
+                                        return {
+                                          ...r,
+                                          access: checked
+                                            ? [...r.access, "full"]
+                                            : r.access.filter(
+                                              (level) => level !== "full"
+                                            ),
+                                        };
+                                      }
+                                      return r;
+                                    });
+                                    setRoles(updatedRoles);
+                                  }}
+                                  className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                                />
+                                Full Access
+                              </label>
+                              <label className="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                  checked={role.access.includes("limited")}
+                                  onCheckedChange={(checked) => {
+                                    const updatedRoles = roles.map((r) => {
+                                      if (r.name === role.name) {
+                                        return {
+                                          ...r,
+                                          access: checked
+                                            ? [...r.access, "limited"]
+                                            : r.access.filter(
+                                              (level) => level !== "limited"
+                                            ),
+                                        };
+                                      }
+                                      return r;
+                                    });
+                                    setRoles(updatedRoles);
+                                  }}
+                                  className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                                />
+                                Limited Access
+                              </label>
+                              <label className="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                  checked={role.access.includes("basic")}
+                                  onCheckedChange={(checked) => {
+                                    const updatedRoles = roles.map((r) => {
+                                      if (r.name === role.name) {
+                                        return {
+                                          ...r,
+                                          access: checked
+                                            ? [...r.access, "basic"]
+                                            : r.access.filter(
+                                              (level) => level !== "basic"
+                                            ),
+                                        };
+                                      }
+                                      return r;
+                                    });
+                                    setRoles(updatedRoles);
+                                  }}
+                                  className="border-white/10 rounded bg-white/5 data-[state=checked]:bg-[#34B2DA] data-[state=checked]:text-black"
+                                />
+                                Basic Access
+                              </label>
+                            </div>
+                            <div className="flex justify-end gap-2 mt-3">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedExistingRole(null);
+                                }}
+                                className="px-3 py-1 text-sm rounded-lg hover:bg-white/5"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    const payload = {
+                                      role_name: role.name,
+                                      access_type: role.access,
+                                    };
+                                    const response = await axios.put(`${url}/role/update-role/${role._id}`, payload);
+                                    const updatedRoles = roles.map((r) => {
+                                      if (r._id === role._id) {
+                                        return {
+                                          ...r,
+                                          name: response.data.role.role_name,
+                                          access: response.data.role.access_type,
+                                        };
+                                      }
+                                      return r;
+                                    });
+                                    setRoles(updatedRoles);
+                                    setNewRoleDialogOpen(false);
+                                    setShowEditRoleNotification(true)
+                                    setTimeout(() => {
+                                      setShowEditRoleNotification(false);
+                                    }, 3000);
+                                    setSelectedExistingRole(null);
+                                  } catch (error) {
+                                    console.error("Error updating role:", error);
+                                    alert("Failed to update role");
+                                  }
+                                }}
+
+                                className="px-3 py-1 text-sm bg-[#34B2DA] rounded-lg hover:bg-[#34B2DA]/90"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    await axios.delete(`${url}/role/delete-role/${role._id}`);
+                                    const updatedRoles = roles.filter((r) => r._id !== role._id);
+                                    setRoles(updatedRoles);
+
+                                    setSelectedExistingRole(null);
+                                    setNewRoleDialogOpen(false);
+                                    setShowDeleteRoleNotification(true);
+                                    setTimeout(() => {
+                                      setShowDeleteRoleNotification(false);
+                                    }, 3000);
+                                  } catch (error) {
+                                    console.error("Error deleting role:", error);
+                                    alert("Failed to delete role");
+                                  }
+                                }}
+                                className="px-3 py-1 text-sm bg-[#FB5234] rounded-lg hover:bg-[#FB5234]/90"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
               {/* New Role Form */}
@@ -1199,6 +1304,10 @@ export default function OrganizeMembers() {
                     type="text"
                     className="w-full bg-primary border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-white/30"
                     placeholder="Enter role name"
+                    value={newRole.name}
+                    onChange={(e) =>
+                      setNewRole({ ...newRole, name: e.target.value })
+                    }
                   />
                 </div>
 
@@ -1286,7 +1395,7 @@ export default function OrganizeMembers() {
             {/* Replace the bottom button container div with this */}
             <div className="w-full bg-white/[0.03] border-t border-white/10 rounded-b-xl p-4 backdrop-blur-xl z-10">
               <button
-                type="submit"
+                onClick={handleCreateRole}
                 className="w-full bg-white hover:bg-white/90 text-black border-white/10 border text-center rounded-full h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
               >
                 Create Role
@@ -1386,7 +1495,11 @@ export default function OrganizeMembers() {
                       type="button"
                       className="flex w-full justify-between items-center text-white gap-2 border border-white/10 hover:bg-white/10 transition-colors px-4 py-2 rounded-lg text-sm font-medium"
                     >
-                      <span>{typeof watch("role") === 'object' ? watch("role").name : watch("role")}</span>
+                      <span>
+                        {typeof watch("role") === "object"
+                          ? watch("role")?.name || "Select Role"
+                          : watch("role") || "Select Role"}
+                      </span>
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="16"
@@ -1710,13 +1823,13 @@ export default function OrganizeMembers() {
                   <DropdownContent className="w-full bg-[#151515] border border-white/10 tex-white rounded-lg shadow-lg overflow-hidden">
                     {roles.map((role) => (
                       <DropdownItem
-                        key={role}
+                        key={role._id || role.name} // ✅ safer unique key
                         onClick={() =>
-                          setEditValue("role", role, { shouldValidate: true })
+                          setEditValue("role", role.name, { shouldValidate: true })
                         }
                         className="px-4 py-2 hover:bg-white/5 transition-colors text-white"
                       >
-                        {role}
+                        {role.name}
                       </DropdownItem>
                     ))}
                   </DropdownContent>
@@ -2278,6 +2391,159 @@ export default function OrganizeMembers() {
             </div>
             <button
               onClick={() => setShowAssignNotification(false)}
+              className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <path
+                  d="M5.28033 4.21967C4.98744 3.92678 4.51256 3.92678 4.21967 4.21967C3.92678 4.51256 3.92678 4.98744 4.21967 5.28033L6.93934 8L4.21967 10.7197C3.92678 11.0126 3.92678 11.4874 4.21967 11.7803C4.51256 12.0732 4.98744 12.0732 5.28033 11.7803L8 9.06066L10.7197 11.7803C11.0126 12.0732 11.4874 12.0732 11.7803 11.7803C12.0732 11.4874 12.0732 11.0126 11.7803 10.7197L9.06066 8L11.7803 5.28033C12.0732 4.98744 12.0732 4.51256 11.7803 4.21967C11.4874 3.92678 11.0126 3.92678 10.7197 4.21967L8 6.93934L5.28033 4.21967Z"
+                  fill="white"
+                />
+              </svg>
+            </button>
+          </motion.div>
+        )
+      }
+
+      {
+        showAddRoleNotification && (
+          <motion.div
+            initial={{ y: -50, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -50, opacity: 0, scale: 0.9 }}
+            transition={{
+              type: "spring",
+              stiffness: 150,
+              damping: 15,
+            }}
+            className="fixed top-20 sm:top-10 inset-x-0 mx-auto w-fit backdrop-blur-md text-white p-3 pl-4 rounded-lg flex items-center gap-2 border border-white/10 shadow-lg max-w-[400px] justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M8 15C9.85652 15 11.637 14.2625 12.9497 12.9497C14.2625 11.637 15 9.85652 15 8C15 6.14348 14.2625 4.36301 12.9497 3.05025C11.637 1.7375 9.85652 1 8 1C6.14348 1 4.36301 1.7375 3.05025 3.05025C1.7375 4.36301 1 6.14348 1 8C1 9.85652 1.7375 11.637 3.05025 12.9497C4.36301 14.2625 6.14348 15 8 15ZM11.844 6.209C11.9657 6.05146 12.0199 5.85202 11.9946 5.65454C11.9693 5.45706 11.8665 5.27773 11.709 5.156C11.5515 5.03427 11.352 4.9801 11.1545 5.00542C10.9571 5.03073 10.7777 5.13346 10.656 5.291L6.956 10.081L5.307 8.248C5.24174 8.17247 5.16207 8.11073 5.07264 8.06639C4.98322 8.02205 4.88584 7.99601 4.78622 7.98978C4.6866 7.98356 4.58674 7.99729 4.4925 8.03016C4.39825 8.06303 4.31151 8.11438 4.23737 8.1812C4.16322 8.24803 4.10316 8.32898 4.06071 8.41931C4.01825 8.50965 3.99425 8.60755 3.99012 8.70728C3.98599 8.807 4.00181 8.90656 4.03664 9.00009C4.07148 9.09363 4.12464 9.17927 4.193 9.252L6.443 11.752C6.51649 11.8335 6.60697 11.8979 6.70806 11.9406C6.80915 11.9833 6.91838 12.0034 7.02805 11.9993C7.13772 11.9952 7.24515 11.967 7.34277 11.9169C7.44038 11.8667 7.5258 11.7958 7.593 11.709L11.844 6.209Z"
+                  fill="#10B981"
+                />
+              </svg>
+              <p className="text-sm">Role added successfully</p>
+            </div>
+            <button
+              onClick={() => setShowAddRoleNotification(false)}
+              className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <path
+                  d="M5.28033 4.21967C4.98744 3.92678 4.51256 3.92678 4.21967 4.21967C3.92678 4.51256 3.92678 4.98744 4.21967 5.28033L6.93934 8L4.21967 10.7197C3.92678 11.0126 3.92678 11.4874 4.21967 11.7803C4.51256 12.0732 4.98744 12.0732 5.28033 11.7803L8 9.06066L10.7197 11.7803C11.0126 12.0732 11.4874 12.0732 11.7803 11.7803C12.0732 11.4874 12.0732 11.0126 11.7803 10.7197L9.06066 8L11.7803 5.28033C12.0732 4.98744 12.0732 4.51256 11.7803 4.21967C11.4874 3.92678 11.0126 3.92678 10.7197 4.21967L8 6.93934L5.28033 4.21967Z"
+                  fill="white"
+                />
+              </svg>
+            </button>
+          </motion.div>
+        )
+      }
+
+      {
+        showEditRoleNotification && (
+          <motion.div
+            initial={{ y: -50, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -50, opacity: 0, scale: 0.9 }}
+            transition={{
+              type: "spring",
+              stiffness: 150,
+              damping: 15,
+            }}
+            className="fixed top-20 sm:top-10 inset-x-0 mx-auto w-fit backdrop-blur-md text-white p-3 pl-4 rounded-lg flex items-center gap-2 border border-white/10 shadow-lg max-w-[400px] justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M8 15C9.85652 15 11.637 14.2625 12.9497 12.9497C14.2625 11.637 15 9.85652 15 8C15 6.14348 14.2625 4.36301 12.9497 3.05025C11.637 1.7375 9.85652 1 8 1C6.14348 1 4.36301 1.7375 3.05025 3.05025C1.7375 4.36301 1 6.14348 1 8C1 9.85652 1.7375 11.637 3.05025 12.9497C4.36301 14.2625 6.14348 15 8 15ZM11.844 6.209C11.9657 6.05146 12.0199 5.85202 11.9946 5.65454C11.9693 5.45706 11.8665 5.27773 11.709 5.156C11.5515 5.03427 11.352 4.9801 11.1545 5.00542C10.9571 5.03073 10.7777 5.13346 10.656 5.291L6.956 10.081L5.307 8.248C5.24174 8.17247 5.16207 8.11073 5.07264 8.06639C4.98322 8.02205 4.88584 7.99601 4.78622 7.98978C4.6866 7.98356 4.58674 7.99729 4.4925 8.03016C4.39825 8.06303 4.31151 8.11438 4.23737 8.1812C4.16322 8.24803 4.10316 8.32898 4.06071 8.41931C4.01825 8.50965 3.99425 8.60755 3.99012 8.70728C3.98599 8.807 4.00181 8.90656 4.03664 9.00009C4.07148 9.09363 4.12464 9.17927 4.193 9.252L6.443 11.752C6.51649 11.8335 6.60697 11.8979 6.70806 11.9406C6.80915 11.9833 6.91838 12.0034 7.02805 11.9993C7.13772 11.9952 7.24515 11.967 7.34277 11.9169C7.44038 11.8667 7.5258 11.7958 7.593 11.709L11.844 6.209Z"
+                  fill="#10B981"
+                />
+              </svg>
+              <p className="text-sm">Role updated successfully</p>
+            </div>
+            <button
+              onClick={() => setShowEditRoleNotification(false)}
+              className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <path
+                  d="M5.28033 4.21967C4.98744 3.92678 4.51256 3.92678 4.21967 4.21967C3.92678 4.51256 3.92678 4.98744 4.21967 5.28033L6.93934 8L4.21967 10.7197C3.92678 11.0126 3.92678 11.4874 4.21967 11.7803C4.51256 12.0732 4.98744 12.0732 5.28033 11.7803L8 9.06066L10.7197 11.7803C11.0126 12.0732 11.4874 12.0732 11.7803 11.7803C12.0732 11.4874 12.0732 11.0126 11.7803 10.7197L9.06066 8L11.7803 5.28033C12.0732 4.98744 12.0732 4.51256 11.7803 4.21967C11.4874 3.92678 11.0126 3.92678 10.7197 4.21967L8 6.93934L5.28033 4.21967Z"
+                  fill="white"
+                />
+              </svg>
+            </button>
+          </motion.div>
+        )
+      }
+
+      {
+        showDeleteRoleNotification && (
+          <motion.div
+            initial={{ y: -50, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: -50, opacity: 0, scale: 0.9 }}
+            transition={{
+              type: "spring",
+              stiffness: 150,
+              damping: 15,
+            }}
+            className="fixed top-20 sm:top-10 inset-x-0 mx-auto w-fit backdrop-blur-md text-white p-3 pl-4 rounded-lg flex items-center gap-2 border border-white/10 shadow-lg max-w-[400px] justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+              >
+                <path
+                  fillRule="evenodd"
+                  clipRule="evenodd"
+                  d="M8 15C9.85652 15 11.637 14.2625 12.9497 12.9497C14.2625 11.637 15 9.85652 15 8C15 6.14348 14.2625 4.36301 12.9497 3.05025C11.637 1.7375 9.85652 1 8 1C6.14348 1 4.36301 1.7375 3.05025 3.05025C1.7375 4.36301 1 6.14348 1 8C1 9.85652 1.7375 11.637 3.05025 12.9497C4.36301 14.2625 6.14348 15 8 15ZM11.844 6.209C11.9657 6.05146 12.0199 5.85202 11.9946 5.65454C11.9693 5.45706 11.8665 5.27773 11.709 5.156C11.5515 5.03427 11.352 4.9801 11.1545 5.00542C10.9571 5.03073 10.7777 5.13346 10.656 5.291L6.956 10.081L5.307 8.248C5.24174 8.17247 5.16207 8.11073 5.07264 8.06639C4.98322 8.02205 4.88584 7.99601 4.78622 7.98978C4.6866 7.98356 4.58674 7.99729 4.4925 8.03016C4.39825 8.06303 4.31151 8.11438 4.23737 8.1812C4.16322 8.24803 4.10316 8.32898 4.06071 8.41931C4.01825 8.50965 3.99425 8.60755 3.99012 8.70728C3.98599 8.807 4.00181 8.90656 4.03664 9.00009C4.07148 9.09363 4.12464 9.17927 4.193 9.252L6.443 11.752C6.51649 11.8335 6.60697 11.8979 6.70806 11.9406C6.80915 11.9833 6.91838 12.0034 7.02805 11.9993C7.13772 11.9952 7.24515 11.967 7.34277 11.9169C7.44038 11.8667 7.5258 11.7958 7.593 11.709L11.844 6.209Z"
+                  fill="#10B981"
+                />
+              </svg>
+              <p className="text-sm">Role removed successfully</p>
+            </div>
+            <button
+              onClick={() => setShowDeleteRoleNotification(false)}
               className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
             >
               <svg

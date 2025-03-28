@@ -17,6 +17,7 @@ import { FiCheck } from 'react-icons/fi';
 import { GoBookmarkSlash, GoBookmark } from "react-icons/go"
 import { Search } from 'lucide-react';
 import SearchModal from '../../components/modals/SearchModal';
+import { Spin } from 'antd';
 
 const Home = () => {
   const [isModalSearchOpen, setIsModalSearchOpen] = useState(false);
@@ -33,6 +34,7 @@ const Home = () => {
   const [savedEvents, setSavedEvents] = useState([]);
   const [savedEventIds, setSavedEventIds] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
 
   const cards = [
@@ -131,10 +133,13 @@ const Home = () => {
 
   const fetchEvents = async () => {
     try {
+      setLoading(true);
       const response = await axios.get(`${url}/event/get-event`);
       setEvents(response.data);
     } catch (error) {
-      //console.error('Error fetching events:', error);
+      console.error('Error fetching events:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -412,14 +417,17 @@ const Home = () => {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-16 sm:mt-8 px-4 sm:px-8 md:px-16 lg:px-10 bg-primary mb-10">
-        {sortedEvents.length === 0 ? (
+        {loading ? (
+          <div className="col-span-full text-center text-white text-xl py-20 font-inter animate-pulse">
+            <Spin size='default' />
+          </div>
+        ) : sortedEvents.length === 0 ? (
           <div className="col-span-full text-center text-white text-5xl font-medium py-20 font-inter">
             No events found!
           </div>
         ) : (
           sortedEvents.map((card) => {
             const isEventSaved = savedEventIds.has(card._id);
-
             return (
               <button
                 onClick={() => handleDetail(card._id, card.event_slug)}
@@ -485,6 +493,29 @@ const Home = () => {
           })
         )}
       </div>
+
+
+      {/* <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-16 sm:mt-8 px-4 sm:px-8 md:px-16 lg:px-10 bg-primary mb-10">
+        {sortedEvents.length === 0 ? (
+          <div className="col-span-full text-center text-white text-5xl font-medium py-20 font-inter">
+            No events found!
+          </div>
+        ) : (
+          sortedEvents.map((card) => {
+            const isEventSaved = savedEventIds.has(card._id);
+
+            return (
+              <button
+                onClick={() => handleDetail(card._id, card.event_slug)}
+                key={card._id}
+                className="bg-neutral-800 bg-opacity-15 px-4 py-3 rounded-2xl shadow-lg text-left flex flex-col transition-transform duration-300 transform hover:scale-105"
+              >
+
+              </button>
+            );
+          })
+        )}
+      </div> */}
 
 
       {/* <div className="mt-5">
