@@ -22,7 +22,6 @@ export { default as RefundTypeIcon } from "./refund-type";
 export { default as PaidIcon } from "./paid";
 export { default as InTransitIcon } from "./in-transit";
 export { default as FailedIcon } from "./failed";
-export { default as PendingIcon } from "./pending";
 export { default as UnderReviewIcon } from "./under-review";
 export { default as VisaCardIcon } from "./visa-card";
 export { default as MastercardIcon } from "./mastercard";

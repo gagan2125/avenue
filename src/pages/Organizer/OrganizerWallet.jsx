@@ -53,7 +53,6 @@ import {
   MastercardIcon,
   NameIcon,
   PaidIcon,
-  PendingIcon,
   RefundIcon,
   RefundTypeIcon,
   SaleIcon,
@@ -177,7 +176,6 @@ const statusIcons = {
   ),
   in_transit: <InTransitIcon />,
   failed: <FailedIcon />,
-  pending: <PendingIcon />,
   "Under review": <UnderReviewIcon />,
 };
 
@@ -1578,8 +1576,17 @@ export default function OrganizerWallet() {
                                   </td>
                                   <td className="p-4">
                                     <div className="flex items-center gap-2">
-                                      {statusIcons["paid"]}
-                                      <span>Completed</span>
+                                      {sale.status === "pending" ? (
+                                        <>
+                                          <ClockIcon fill="white" />
+                                          <span>Pending</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          {statusIcons["paid"]}
+                                          <span>Completed</span>
+                                        </>
+                                      )}
                                     </div>
                                   </td>
                                   <td className="py-4 pl-4">
@@ -1587,44 +1594,62 @@ export default function OrganizerWallet() {
                                       <MenuTrigger>
                                         <Ellipsis />
                                       </MenuTrigger>
-                                      <MenuItem
-                                        onClick={() => handleViewTicket(sale)}
-                                      >
-                                        <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
-                                          {isLoadingTicket ? (
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                          ) : (
-                                            <ViewTicketIcon />
-                                          )}
-                                          <span>View ticket</span>
-                                        </div>
-                                      </MenuItem>
-                                      {sale.refund !== "true" && (
+
+                                      {/* Show Transaction is pending in case of status === "pending" else show the menu */}
+
+                                      {sale.status === "pending" ? (
+                                        <MenuItem>
+                                          <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-4 rounded-md">
+                                            <ClockIcon fill="white" />
+                                            Transaction is Pending
+                                          </div>
+                                        </MenuItem>
+                                      ) : (
                                         <>
                                           <MenuItem
-                                            onClick={() => handleViewQR(sale)}
+                                            onClick={() =>
+                                              handleViewTicket(sale)
+                                            }
                                           >
                                             <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
-                                              <ViewQRIcon />
-
-                                              <span>View QR</span>
+                                              {isLoadingTicket ? (
+                                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                              ) : (
+                                                <ViewTicketIcon />
+                                              )}
+                                              <span>View ticket</span>
                                             </div>
                                           </MenuItem>
-                                          <MenuSeparator />
-                                          {sale.transaction_id && (
-                                            <MenuItem
-                                              onClick={() => {
-                                                setSelectedEvent(sale);
-                                                setIsRefundOpen(true);
-                                              }}
-                                            >
-                                              <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
-                                                <RefundIcon />
-                                                <span className="text-[#F43F5E]">
-                                                  Refund
-                                                </span>
-                                              </div>
-                                            </MenuItem>
+                                          {sale.refund !== "true" && (
+                                            <>
+                                              <MenuItem
+                                                onClick={() =>
+                                                  handleViewQR(sale)
+                                                }
+                                              >
+                                                <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                                  <ViewQRIcon />
+
+                                                  <span>View QR</span>
+                                                </div>
+                                              </MenuItem>
+                                              <MenuSeparator />
+                                              {sale.transaction_id && (
+                                                <MenuItem
+                                                  onClick={() => {
+                                                    setSelectedEvent(sale);
+                                                    setIsRefundOpen(true);
+                                                  }}
+                                                >
+                                                  <div className="flex items-center gap-2 hover:bg-white/5 transition-colors w-full h-full p-2 rounded-md">
+                                                    <RefundIcon />
+                                                    <span className="text-[#F43F5E]">
+                                                      Refund
+                                                    </span>
+                                                  </div>
+                                                </MenuItem>
+                                              )}
+                                            </>
                                           )}
                                         </>
                                       )}
