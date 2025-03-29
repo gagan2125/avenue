@@ -36,6 +36,7 @@ import OrganizerAnalytics from "./pages/Organizer/OrganizerAnalytics";
 import { useEffect } from "react";
 import { initGA } from "./lib/analytics";
 import DisputesTab from "./pages/Organizer/DisputesTab";
+import OrganizeCustomers from "./pages/Organizer/OrganizeCustomers";
 
 function App() {
   const location = useLocation();
@@ -54,6 +55,7 @@ function App() {
     "/organizer/analytics",
     "/organizer/wallet",
     "/organizer/members",
+    "/organizer/customers",
     "/organizer/disputes",
     "/organizer/create-event",
     "/organizer/create-ticket/ticketedevent",
@@ -79,6 +81,7 @@ function App() {
     "/organizer/analytics",
     "/organizer/wallet",
     "/organizer/members",
+    "/organizer/customers",
     "/organizer/disputes",
     "/organizer/create-event",
     "/organizer/create-ticket/ticketedevent",
@@ -144,6 +147,7 @@ function App() {
           <Route path="/organizer/wallet" element={<OrganizerWallet />} />
           <Route path="/organizer/events/:id" element={<EventDetails />} />
           <Route path="/organizer/members" element={<OrganizeMembers />} />
+          <Route path="/organizer/customers" element={<OrganizeCustomers />} />
           <Route path="/organizer/disputes" element={<DisputesTab />} />
           <Route path="/organizer/create-event" element={<CreateEvent />} />
           <Route path="/organizer/edit-event/:id" element={<EditEvent />} />

@@ -433,198 +433,22 @@ const DisputesTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-transparent border border-white/10 rounded-xl p-4 flex justify-between items-center">
             <div>
-              <h3 className="text-white text-md mb-1">Open Cases</h3>
-              <h5 className="text-white/70 text-xs mb-1">Unresolved disputes</h5>
-
-              {/* <div className="flex items-center gap-2">
-                <p className="text-2xl font-bold">
-                  ${analyticsData.revenue.toLocaleString()}
-                </p>
-                <span
-                  className={`text-xs px-2 rounded ${
-                    analyticsData.revenueChange.startsWith("+")
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {analyticsData.revenueChange}
-                </span>
-              </div> */}
+            <h5 className="text-white/70 text-[10px]">Unresolved disputes</h5>
+              <h3 className="text-white text-md mb-4">Open Cases</h3>
             </div>
-            {/* <div className="p-2 rounded-full">
-              <svg
-                width="37"
-                height="36"
-                viewBox="0 0 37 36"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="0.75"
-                  width="36"
-                  height="36"
-                  rx="18"
-                  fill="white"
-                  fill-opacity="0.05"
-                />
-                <path
-                  d="M17.125 15.5H18V17.25H17.125C17.0101 17.25 16.8963 17.2274 16.7902 17.1834C16.684 17.1394 16.5875 17.075 16.5063 16.9937C16.425 16.9125 16.3606 16.816 16.3166 16.7098C16.2726 16.6037 16.25 16.4899 16.25 16.375C16.25 16.2601 16.2726 16.1463 16.3166 16.0402C16.3606 15.934 16.425 15.8375 16.5063 15.7563C16.5875 15.675 16.684 15.6106 16.7902 15.5666C16.8963 15.5226 17.0101 15.5 17.125 15.5ZM19.5 20.5V18.75H20.375C20.6071 18.75 20.8296 18.8422 20.9937 19.0063C21.1578 19.1704 21.25 19.3929 21.25 19.625C21.25 19.8571 21.1578 20.0796 20.9937 20.2437C20.8296 20.4078 20.6071 20.5 20.375 20.5H19.5Z"
-                  fill="white"
-                  fill-opacity="0.5"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M25.75 18C25.75 19.8565 25.0125 21.637 23.6997 22.9497C22.387 24.2625 20.6065 25 18.75 25C16.8935 25 15.113 24.2625 13.8003 22.9497C12.4875 21.637 11.75 19.8565 11.75 18C11.75 16.1435 12.4875 14.363 13.8003 13.0503C15.113 11.7375 16.8935 11 18.75 11C20.6065 11 22.387 11.7375 23.6997 13.0503C25.0125 14.363 25.75 16.1435 25.75 18ZM18 13.75C18 13.5511 18.079 13.3603 18.2197 13.2197C18.3603 13.079 18.5511 13 18.75 13C18.9489 13 19.1397 13.079 19.2803 13.2197C19.421 13.3603 19.5 13.5511 19.5 13.75V14H22C22.1989 14 22.3897 14.079 22.5303 14.2197C22.671 14.3603 22.75 14.5511 22.75 14.75C22.75 14.9489 22.671 15.1397 22.5303 15.2803C22.3897 15.421 22.1989 15.5 22 15.5H19.5V17.25H20.375C21.0049 17.25 21.609 17.5002 22.0544 17.9456C22.4998 18.391 22.75 18.9951 22.75 19.625C22.75 20.2549 22.4998 20.859 22.0544 21.3044C21.609 21.7498 21.0049 22 20.375 22H19.5V22.25C19.5 22.4489 19.421 22.6397 19.2803 22.7803C19.1397 22.921 18.9489 23 18.75 23C18.5511 23 18.3603 22.921 18.2197 22.7803C18.079 22.6397 18 22.4489 18 22.25V22H15.5C15.3011 22 15.1103 21.921 14.9697 21.7803C14.829 21.6397 14.75 21.4489 14.75 21.25C14.75 21.0511 14.829 20.8603 14.9697 20.7197C15.1103 20.579 15.3011 20.5 15.5 20.5H18V18.75H17.125C16.4951 18.75 15.891 18.4998 15.4456 18.0544C15.0002 17.609 14.75 17.0049 14.75 16.375C14.75 15.7451 15.0002 15.141 15.4456 14.6956C15.891 14.2502 16.4951 14 17.125 14H18V13.75Z"
-                  fill="white"
-                  fill-opacity="0.5"
-                />
-              </svg>
-            </div> */}
           </div>
-
           <div className="bg-transparent border border-white/10 rounded-xl p-4 flex justify-between items-center">
             <div>
-              <h3 className="text-white text-md mb-1">Dispute Percentage</h3>
-              <h5 className="text-white/70 text-xs mb-1">Percentage of transactions disputed</h5>
-
-              {/* <div className="flex items-center gap-2">
-                <p className="text-2xl font-bold">
-                  {analyticsData.ticketsSold}
-                </p>
-                <span
-                  className={`text-xs px-2 rounded ${
-                    analyticsData.ticketsSoldChange.startsWith("+")
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {analyticsData.ticketsSoldChange}
-                </span>
-              </div> */}
+            <h5 className="text-white/70 text-[10px]">Percentage of transactions disputed</h5>
+              <h3 className="text-white text-md mb-4">Dispute Percentage</h3>
             </div>
-            {/* <div className="p-2 rounded-full">
-              <svg
-                width="37"
-                height="36"
-                viewBox="0 0 37 36"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="0.5"
-                  width="36"
-                  height="36"
-                  rx="18"
-                  fill="white"
-                  fill-opacity="0.05"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M11.5 14.5C11.5 14.1022 11.658 13.7206 11.9393 13.4393C12.2206 13.158 12.6022 13 13 13H24C24.3978 13 24.7794 13.158 25.0607 13.4393C25.342 13.7206 25.5 14.1022 25.5 14.5V15.5C25.5 15.776 25.273 15.994 25.005 16.062C24.5743 16.1718 24.1925 16.4219 23.9198 16.7729C23.6472 17.1238 23.4991 17.5556 23.4991 18C23.4991 18.4444 23.6472 18.8762 23.9198 19.2271C24.1925 19.5781 24.5743 19.8282 25.005 19.938C25.273 20.006 25.5 20.224 25.5 20.5V21.5C25.5 21.8978 25.342 22.2794 25.0607 22.5607C24.7794 22.842 24.3978 23 24 23H13C12.6022 23 12.2206 22.842 11.9393 22.5607C11.658 22.2794 11.5 21.8978 11.5 21.5V20.5C11.5 20.224 11.727 20.006 11.995 19.938C12.4257 19.8282 12.8075 19.5781 13.0802 19.2271C13.3528 18.8762 13.5009 18.4444 13.5009 18C13.5009 17.5556 13.3528 17.1238 13.0802 16.7729C12.8075 16.4219 12.4257 16.1718 11.995 16.062C11.727 15.994 11.5 15.776 11.5 15.5V14.5ZM20.5 15.75C20.5 15.5511 20.579 15.3603 20.7197 15.2197C20.8603 15.079 21.0511 15 21.25 15C21.4489 15 21.6397 15.079 21.7803 15.2197C21.921 15.3603 22 15.5511 22 15.75V16.75C22 16.9489 21.921 17.1397 21.7803 17.2803C21.6397 17.421 21.4489 17.5 21.25 17.5C21.0511 17.5 20.8603 17.421 20.7197 17.2803C20.579 17.1397 20.5 16.9489 20.5 16.75V15.75ZM21.25 18.5C21.0511 18.5 20.8603 18.579 20.7197 18.7197C20.579 18.8603 20.5 19.0511 20.5 19.25V20.25C20.5 20.4489 20.579 20.6397 20.7197 20.7803C20.8603 20.921 21.0511 21 21.25 21C21.4489 21 21.6397 20.921 21.7803 20.7803C21.921 20.6397 22 20.4489 22 20.25V19.25C22 19.0511 21.921 18.8603 21.7803 18.7197C21.6397 18.579 21.4489 18.5 21.25 18.5Z"
-                  fill="white"
-                  fill-opacity="0.5"
-                />
-              </svg>
-            </div> */}
           </div>
-
           <div className="bg-transparent border border-white/10 rounded-xl p-4 flex justify-between items-center">
             <div>
-              <h3 className="text-white text-md mb-1">Money on hold</h3>
-              <h5 className="text-white/70 text-xs mb-1">money hold for dispute resolutions</h5>
-              
-              {/* <div className="flex items-center gap-2">
-                <p className="text-2xl font-bold">
-                  {analyticsData.currentlyLive}
-                </p>
-                <span
-                  className={`text-xs px-2 rounded ${
-                    analyticsData.currentlyLiveChange.startsWith("+")
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {analyticsData.currentlyLiveChange}
-                </span>
-              </div> */}
+            <h6 className="text-white/70 text-[10px]">Money hold for dispute resolutions</h6>
+              <h3 className="text-white text-md mb-4">Money on hold</h3>
             </div>
-            {/* <div className="p-2 rounded-full">
-              <svg
-                width="37"
-                height="36"
-                viewBox="0 0 37 36"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="0.25"
-                  width="36"
-                  height="36"
-                  rx="18"
-                  fill="white"
-                  fill-opacity="0.05"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M18.25 25C20.1065 25 21.887 24.2625 23.1997 22.9497C24.5125 21.637 25.25 19.8565 25.25 18C25.25 16.1435 24.5125 14.363 23.1997 13.0503C21.887 11.7375 20.1065 11 18.25 11C16.3935 11 14.613 11.7375 13.3003 13.0503C11.9875 14.363 11.25 16.1435 11.25 18C11.25 19.8565 11.9875 21.637 13.3003 22.9497C14.613 24.2625 16.3935 25 18.25 25ZM22.094 16.209C22.2157 16.0515 22.2699 15.852 22.2446 15.6545C22.2193 15.4571 22.1165 15.2777 21.959 15.156C21.8015 15.0343 21.602 14.9801 21.4045 15.0054C21.2071 15.0307 21.0277 15.1335 20.906 15.291L17.206 20.081L15.557 18.248C15.4917 18.1725 15.4121 18.1107 15.3226 18.0664C15.2332 18.022 15.1358 17.996 15.0362 17.9898C14.9366 17.9836 14.8367 17.9973 14.7425 18.0302C14.6483 18.063 14.5615 18.1144 14.4874 18.1812C14.4132 18.248 14.3532 18.329 14.3107 18.4193C14.2683 18.5096 14.2443 18.6075 14.2401 18.7073C14.236 18.807 14.2518 18.9066 14.2866 19.0001C14.3215 19.0936 14.3746 19.1793 14.443 19.252L16.693 21.752C16.7665 21.8335 16.857 21.8979 16.9581 21.9406C17.0591 21.9833 17.1684 22.0034 17.278 21.9993C17.3877 21.9952 17.4952 21.967 17.5928 21.9169C17.6904 21.8667 17.7758 21.7958 17.843 21.709L22.094 16.209Z"
-                  fill="white"
-                  fill-opacity="0.5"
-                />
-              </svg>
-            </div> */}
           </div>
-
-          {/* <div className="bg-transparent border border-white/10 rounded-xl p-4 flex justify-between items-center">
-            <div>
-              <h3 className="text-white/70 text-sm mb-1">Tickets views</h3>
-              <div className="flex items-center gap-2">
-                <p className="text-2xl font-bold">
-                  {analyticsData.ticketsViews}
-                </p>
-                <span
-                  className={`text-xs px-2 rounded ${
-                    analyticsData.ticketsViewsChange.startsWith("+")
-                      ? "text-green-500"
-                      : "text-red-500"
-                  }`}
-                >
-                  {analyticsData.ticketsViewsChange}
-                </span>
-              </div>
-            </div>
-            <div className="p-2 rounded-full">
-              <svg
-                width="36"
-                height="36"
-                viewBox="0 0 36 36"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  width="36"
-                  height="36"
-                  rx="18"
-                  fill="white"
-                  fill-opacity="0.05"
-                />
-                <path
-                  d="M18 19.5C18.3978 19.5 18.7794 19.342 19.0607 19.0607C19.342 18.7794 19.5 18.3978 19.5 18C19.5 17.6022 19.342 17.2206 19.0607 16.9393C18.7794 16.658 18.3978 16.5 18 16.5C17.6022 16.5 17.2206 16.658 16.9393 16.9393C16.658 17.2206 16.5 17.6022 16.5 18C16.5 18.3978 16.658 18.7794 16.9393 19.0607C17.2206 19.342 17.6022 19.5 18 19.5Z"
-                  fill="white"
-                  fill-opacity="0.5"
-                />
-                <path
-                  fill-rule="evenodd"
-                  clip-rule="evenodd"
-                  d="M11.38 18.28C11.3169 18.0966 11.3169 17.8974 11.38 17.714C11.8563 16.3374 12.7501 15.1436 13.9369 14.2988C15.1237 13.4541 16.5444 13.0004 18.0011 13.0011C19.4578 13.0018 20.8781 13.4567 22.0641 14.3025C23.2501 15.1483 24.1428 16.3429 24.618 17.72C24.681 17.9034 24.681 18.1026 24.618 18.286C24.1418 19.663 23.248 20.8572 22.0611 21.7022C20.8742 22.5472 19.4533 23.001 17.9963 23.0003C16.5393 22.9997 15.1188 22.5446 13.9327 21.6985C12.7466 20.8524 11.8539 19.6574 11.379 18.28H11.38ZM21 18C21 18.7956 20.6839 19.5587 20.1213 20.1213C19.5587 20.6839 18.7956 21 18 21C17.2043 21 16.4412 20.6839 15.8786 20.1213C15.316 19.5587 15 18.7956 15 18C15 17.2043 15.316 16.4413 15.8786 15.8787C16.4412 15.3161 17.2043 15 18 15C18.7956 15 19.5587 15.3161 20.1213 15.8787C20.6839 16.4413 21 17.2043 21 18Z"
-                  fill="white"
-                  fill-opacity="0.5"
-                />
-              </svg>
-            </div>
-          </div> */}
         </div>
 
         <div className="flex flex-col gap-4">

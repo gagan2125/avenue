@@ -280,7 +280,6 @@ const Profile = () => {
             alert("Failed to process image.");
         }
     };
-
     const handleNameChange = (e) => {
         const fullName = e.target.value;
         setFirstName(fullName);
@@ -317,11 +316,11 @@ const Profile = () => {
 
                             </div>
                             <input
-                                type="file"
-                                id="imageInput"
-                                accept="image/*"
-                                className="hidden"
-                                onChange={handleImageChange}
+                            type="file"
+                            id="imageInput"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleImageChange}
                             />
                             {showButtons && (
                                 <div className="flex space-x-2 mt-2 ml-2">
