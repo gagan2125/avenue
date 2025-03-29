@@ -211,7 +211,7 @@ const SidebarLayout = ({ children }) => {
       label: "Reports",
     },
     {
-      path: "/organizer/members",
+      path: "/organizer/customers",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
