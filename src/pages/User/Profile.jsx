@@ -7,6 +7,9 @@ import { Link, useParams } from 'react-router-dom';
 import { IoLockClosed, IoDocumentTextSharp } from "react-icons/io5";
 import { MdDone } from "react-icons/md";
 import { FaCheck } from 'react-icons/fa';
+import ImageCropper from "../../components/ImageCropper";
+import { motion } from "framer-motion"
+
 
 const Profile = () => {
     const { id } = useParams();
@@ -30,6 +33,9 @@ const Profile = () => {
     const [showButtons, setShowButtons] = useState(false);
     const [profilePhoto, setProfilePhoto] = useState(null);
     const [profileImage, setProfileImage] = useState(null);
+    const [tempImageFile, setTempImageFile] = useState(null);
+    const [isCropperOpen, setIsCropperOpen] = useState(false);
+    const [showUpdateNotification, setShowUpdateNotification] = useState(false)
 
     const org_id = localStorage.getItem('user_organizer_id') || {};
 
@@ -218,14 +224,62 @@ const Profile = () => {
     });
 
     const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        setProfilePhoto(file)
-        if (file) {
-            setImage(URL.createObjectURL(file));
-            setShowButtons(true);
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            // Clear previous image states
+            setProfilePhoto(null);
+            setImage(null);
+            setTempImageFile(file);
+            setIsCropperOpen(true);
         }
     };
 
+    // Helper: Convert blob to WebP file
+    const convertBlobToWebP = (blob) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            const blobUrl = URL.createObjectURL(blob);
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                canvas.toBlob(
+                    (webpBlob) => {
+                        if (webpBlob) {
+                            const file = new File([webpBlob], `${Date.now()}.webp`, {
+                                type: "image/webp",
+                            });
+                            resolve(file);
+                        } else {
+                            reject("Failed to convert blob to webp.");
+                        }
+                        URL.revokeObjectURL(blobUrl);
+                    },
+                    "image/webp",
+                    0.8
+                );
+            };
+            img.onerror = reject;
+            img.src = blobUrl;
+        });
+    };
+
+    // Called when cropping is complete in the ImageCropper.
+    const handleCropComplete = async ({ croppedImage, previewUrl }) => {
+        try {
+            const webpFile = await convertBlobToWebP(croppedImage);
+            setProfilePhoto(webpFile);
+            setImage(URL.createObjectURL(webpFile));
+            setIsCropperOpen(false);
+            // Optionally show buttons for submit/cancel if needed.
+            setShowButtons(true);
+        } catch (error) {
+            console.error("Failed to convert cropped image:", error);
+            alert("Failed to process image.");
+        }
+    };
     const handleNameChange = (e) => {
         const fullName = e.target.value;
         setFirstName(fullName);
@@ -233,29 +287,33 @@ const Profile = () => {
 
     return (
         <div className="min-h-screen bg-primary text-white p-4 lg:p-6">
+            <ImageCropper
+                open={isCropperOpen}
+                onOpenChange={setIsCropperOpen}
+                imageFile={tempImageFile}
+                onCropComplete={handleCropComplete}
+            />
             <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-6">
 
                 <div className="w-full lg:w-80 lg:flex-shrink-0">
                     <div className="border border-[#222222] px-4 py-4 rounded-2xl">
 
                         <div className="flex justify-center sm:justify-start">
+                            {/* New clickable circular div for image upload that triggers cropping */}
                             <div
                                 className="w-20 h-20 rounded-full overflow-hidden bg-[#10b981] flex items-center justify-center cursor-pointer"
-                                onClick={() => document.getElementById('imageInput').click()}
+                                onClick={() => document.getElementById("imageInput").click()}
                             >
                                 {image ? (
-                                    <img src={profileImage || image} alt="Profile" className="w-full h-full object-cover" />
+                                    <img src={image || profileImage} alt="Profile" className="w-full h-full object-cover" />
                                 ) : profileImage ? (
-                                    <img
-                                        src={profileImage}
-                                        alt="Profile"
-                                        className="w-full h-full object-cover"
-                                    />
+                                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <span className="text-xl font-inter font-semibold text-black">
-                                        {firstName?.slice(0, 2).toUpperCase() || ''}
+                                        {firstName?.slice(0, 2).toUpperCase() || ""}
                                     </span>
                                 )}
+
                             </div>
                             <input
                             type="file"
@@ -266,16 +324,10 @@ const Profile = () => {
                             />
                             {showButtons && (
                                 <div className="flex space-x-2 mt-2 ml-2">
-                                    <button
-                                        onClick={handleSubmit}
-                                        className="text-green-500 text-2xl"
-                                    >
+                                    <button onClick={() => handleSubmit("profile_image")} className="text-green-500 text-2xl">
                                         <MdDone />
                                     </button>
-                                    <button
-                                        onClick={() => window.location.reload()}
-                                        className="text-red-500 text-2xl"
-                                    >
+                                    <button onClick={() => window.location.reload()} className="text-red-500 text-2xl">
                                         X
                                     </button>
                                 </div>

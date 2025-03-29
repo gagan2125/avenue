@@ -138,10 +138,13 @@ export default function EventDetails() {
   const [soldTickets, setSoldTickets] = useState(0);
   const [remainCount, setRemainCount] = useState(0);
   const [ticketData, setTicketData] = useState(null);
-  const [showActivateNotification, setShowActivateNotification] = useState(false);
-  const [showActivatesNotification, setShowActivatesNotification] = useState(false);
+  const [showActivateNotification, setShowActivateNotification] =
+    useState(false);
+  const [showActivatesNotification, setShowActivatesNotification] =
+    useState(false);
   const [showSalesNotification, setShowSalesNotification] = useState(false);
-  const [showInActiveNotification, setShowInActiveNotification] = useState(false);
+  const [showInActiveNotification, setShowInActiveNotification] =
+    useState(false);
   const [renewDialogOpen, setRenewDialogOpen] = useState(false);
   const [ticketToRenew, setTicketToRenew] = useState(null);
   const [notificationEmail, setNotificationEmail] = useState("");
@@ -156,55 +159,55 @@ export default function EventDetails() {
   }, []);
 
   const handleTicketStatusChange = (updatedTicket) => {
-    setEvent(prev => ({
+    setEvent((prev) => ({
       ...prev,
-      tickets: prev.tickets.map(t =>
+      tickets: prev.tickets.map((t) =>
         t.ticket_id === updatedTicket.ticket_id ? updatedTicket : t
       ),
     }));
   };
-  
-  const scrollContainerRef = useRef(null);
-  const handleIncrement = () => {
-    if (!ticketData) return;
-    const current =
-      ticketCount === null
-        ? ticketData.min_count
-          ? Number(ticketData.min_count)
-          : 1
-        : ticketCount;
-    const available = remainCount[ticketData.ticket_name] || 0;
-    if (current < available) {
-      const newCount = current + 1;
-      setTicketCount(newCount);
-      setTicketData({ ...ticketData, count: newCount });
-    }
-  };
 
-  const handleDecrement = () => {
-    if (!ticketData) return;
-    const current =
-      ticketCount === null
-        ? ticketData.min_count
-          ? Number(ticketData.min_count)
-          : 1
-        : ticketCount;
-    if (current > 1) {
-      const newCount = current - 1;
-      setTicketCount(newCount);
-      setTicketData({ ...ticketData, count: newCount });
-    } else {
-      // Do not let count go below 1.
-      setTicketCount(1);
-      setTicketData({ ...ticketData, count: 1 });
-    }
-  };
+  const scrollContainerRef = useRef(null);
+  // const handleIncrement = () => {
+  //   if (!ticketData) return;
+  //   const current =
+  //     ticketCount === null
+  //       ? ticketData.min_count
+  //         ? Number(ticketData.min_count)
+  //         : 1
+  //       : ticketCount;
+  //   const available = remainCount[ticketData.ticket_name] || 0;
+  //   if (current < available) {
+  //     const newCount = current + 1;
+  //     setTicketCount(newCount);
+  //     setTicketData({ ...ticketData, count: newCount });
+  //   }
+  // };
+
+  // const handleDecrement = () => {
+  //   if (!ticketData) return;
+  //   const current =
+  //     ticketCount === null
+  //       ? ticketData.min_count
+  //         ? Number(ticketData.min_count)
+  //         : 1
+  //       : ticketCount;
+  //   if (current > 1) {
+  //     const newCount = current - 1;
+  //     setTicketCount(newCount);
+  //     setTicketData({ ...ticketData, count: newCount });
+  //   } else {
+  //     // Do not let count go below 1.
+  //     setTicketCount(1);
+  //     setTicketData({ ...ticketData, count: 1 });
+  //   }
+  // };
 
   const handleIncrements = () => {
     if (!ticketData) return;
     const current =
       ticketCount === null
-        ? ticketData.min_count
+        ? ticketData?.min_count
           ? Number(ticketData.min_count)
           : 1
         : ticketCount;
@@ -220,7 +223,7 @@ export default function EventDetails() {
     if (!ticketData) return;
     const current =
       ticketCount === null
-        ? ticketData.min_count
+        ? ticketData?.min_count
           ? Number(ticketData.min_count)
           : 1
         : ticketCount;
@@ -281,7 +284,7 @@ export default function EventDetails() {
             `${ticketData.ticket_name} ticket sales has been renewed.`
           );
           setShowSalesNotification(true);
-setTimeout(() => setShowSalesNotification(false), 3000);
+          setTimeout(() => setShowSalesNotification(false), 3000);
           setShowActivateNotification(true);
           setTimeout(() => setShowActivateNotification(false), 3000);
         }, 300);
@@ -513,9 +516,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
         phoneNumber: "+1" + data.phoneNumber, // Make sure this is included
 
         tickets: ticketData,
-        
+
         // userId: user_id
-        
       };
       // console.log("POST URL:", `${url}/complimentary/add-complimentary`);
 
@@ -525,7 +527,7 @@ setTimeout(() => setShowSalesNotification(false), 3000);
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Failed to send ticket:", errorData);
@@ -566,7 +568,7 @@ setTimeout(() => setShowSalesNotification(false), 3000);
       setAssignLoading(false);
     }
   };
- 
+
   const handleRemoveEvent = async (eventId, data) => {
     try {
       const updatedEvents = assignEvents.filter(
@@ -809,7 +811,12 @@ setTimeout(() => setShowSalesNotification(false), 3000);
           />
         </svg>
       ),
-      content: <TicketTab event={event}onTicketStatusChange={handleTicketStatusChange} />,
+      content: (
+        <TicketTab
+          event={event}
+          onTicketStatusChange={handleTicketStatusChange}
+        />
+      ),
     },
     {
       id: "customers",
@@ -1295,9 +1302,7 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                       fill="#10B981"
                     />
                   </svg>
-                  <p className="text-sm">
-                  {notificationMessage}
-                  </p>{" "}
+                  <p className="text-sm">{notificationMessage}</p>{" "}
                 </div>
                 <button
                   onClick={() => setShowSalesNotification(false)}
@@ -1566,10 +1571,15 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                         onClick={() => {
                                           setTicketData(ticket);
                                           setShowTicketCards(false);
+                                          // When "Select ticket" is clicked:
                                           const initCount = ticket.min_count
                                             ? Number(ticket.min_count)
                                             : 1;
                                           setTicketCount(initCount);
+                                          setTicketData({
+                                            ...ticket,
+                                            count: initCount,
+                                          });
                                         }}
                                         className="bg-[#0F0F0F] rounded-full px-4 py-2 h-10 flex items-center gap-2"
                                       >
@@ -1594,7 +1604,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                 {/* Left: Quantity Selector */}
                                 <div className="flex items-center bg-primary px-1 py-1 rounded-full w-max">
                                   <button
-                                    onClick={handleDecrement}
+                                    type="button"
+                                    onClick={handleDecrements}
                                     className={`p-3 font-inter bg-[#141414] text-white rounded-full ${
                                       ticketCount === null
                                         ? "cursor-not-allowed opacity-50"
@@ -1612,7 +1623,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                         }`}
                                   </span>
                                   <button
-                                    onClick={handleIncrement}
+                                    type="button"
+                                    onClick={handleIncrements}
                                     className="p-3 bg-[#141414] text-white rounded-full hover:bg-gray-500 hover:bg-opacity-30"
                                   >
                                     <PlusIcon width={16} height={16} />
@@ -2072,10 +2084,15 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                     onClick={() => {
                                       setTicketData(ticket);
                                       setShowTicketCards(false);
+
                                       const initCount = ticket.min_count
                                         ? Number(ticket.min_count)
                                         : 1;
                                       setTicketCount(initCount);
+                                      setTicketData({
+                                        ...ticket,
+                                        count: initCount,
+                                      });
                                     }}
                                     className="bg-[#0F0F0F] rounded-full px-4 py-2 h-10 flex items-center gap-2"
                                   >
