@@ -9,6 +9,7 @@ import { Spin } from 'antd';
 import LoginModal from '../../components/modals/LoginModal';
 import { FaEnvelope, FaInstagram, FaPhone } from 'react-icons/fa';
 import { trackEvent, trackPageView } from '../../lib/analytics';
+import { DateTime } from 'luxon';
 
 const Info = () => {
     const { name } = useParams()
@@ -26,6 +27,7 @@ const Info = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [remain, setRemain] = useState([])
     const [book, setBook] = useState([]);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     const id = localStorage.getItem('user_event_id') || {};
     const userId = localStorage.getItem('userID') || "";
@@ -225,19 +227,32 @@ const Info = () => {
         navigate("/ticket");
     };
 
-    const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        const dayOfWeek = date.toLocaleString('en-US', { weekday: 'short' });
-        const day = date.getDate();
-        const month = date.toLocaleString('en-US', { month: 'short' });
-        const year = "20" + date.getFullYear().toString().slice(-2);
-        let hours = date.getHours();
-        const minutes = date.getMinutes().toString().padStart(2, '0');
-        const ampm = hours >= 12 ? 'PM' : 'AM';
-        hours = hours % 12;
-        hours = hours ? hours : 12;
+    const formatDate = (dateString, timeString) => {
+        if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateString)) {
+            const [datePart] = dateString.split('T');
+            const [year, month, day] = datePart.split('-');
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+            const date = new Date(Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day)));
+            const dayOfWeek = daysOfWeek[date.getUTCDay()];
+            return `${dayOfWeek}, ${months[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${timeString ? timeString : ""}`;
+        }
 
-        return `${dayOfWeek}, ${day} ${month} ${year} ${hours}:${minutes} ${ampm}`;
+        if (typeof dateString === 'string') {
+            const parts = dateString.split(' ');
+            if (parts.length >= 3) {
+                const month = parts[1];
+                const day = parts[2];
+                const date = new Date(dateString);
+                const daysOfWeek = parts[0];
+                const dayOfWeek = parts[0];
+                return `${dayOfWeek}, ${month} ${parseInt(day, 10)}, ${timeString ? timeString : ""}`;
+            }
+        }
+
+        // Fallback
+        return 'Invalid Date';
     };
 
     const fetchEvent = async () => {
@@ -379,19 +394,21 @@ const Info = () => {
                                 <p className='font-inter text-sm'><span className='text-[#898989] text-sm font-inter'>Home /</span> {eventName}</p>
                             </div>
                             <div className="max-w-5xl mx-auto p-6 flex flex-col lg:flex-row gap-8">
-                                <div className="flex-1 border border-gray-300 border-opacity-10 px-4 py-4 rounded-2xl overflow-y-auto">
-                                    <div className="bg-neutral-900 rounded-lg overflow-hidden">
-                                        <img
-                                            src={`${event.flyer}`}
-                                            alt=""
-                                            className="w-full h-full object-contain"
-                                        />
+                                <div className="flex-1  border-gray-300 border-opacity-10 px-4 py-4 rounded-2xl overflow-y-auto">
+                                    <div className="flex-1  border-gray-300 border-opacity-10 px-4 py-4 rounded-2xl overflow-y-auto">
+                                        <div className="bg-transparent overflow-hidden items-center">
+                                            <img
+                                                src={`${event.flyer}`}
+                                                alt=""
+                                                className="w-80 h-full object-contain mx-auto rounded-2xl"
+                                            />
+                                        </div>
                                     </div>
                                     <div className="mt-4 space-y-2">
-                                        <div className="flex items-center space-x-2 mb-8">
+                                        {/* <div className="flex items-center space-x-2 mb-8">
                                             <span className="text-red-400 border border-[#292929] px-3 py-2 rounded-full font-inter text-sm">♫ <span className='text-white'>{event.category}</span></span>
-                                        </div>
-                                        <div className='flex justify-between items-center'>
+                                        </div> */}
+                                        <div className='flex justify-between items-center mt-10'>
                                             <h1 className="text-3xl font-bold font-inter">{event.event_name}</h1>
                                             <IoShareOutline size={25} className='cursor-pointer' onClick={handleShare} />
                                         </div>
@@ -403,7 +420,7 @@ const Info = () => {
                                             <span className="hidden sm:inline">•</span>
                                             <div className="flex items-center space-x-2 text-gray-400">
                                                 <Calendar size={16} />
-                                                <span className="font-inter text-sm">{formatDate(event.start_date)}</span>
+                                                <span className="font-inter text-sm">{formatDate(event.start_date, event.start_time)}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -456,7 +473,7 @@ const Info = () => {
                                                     {book.filter(bk => bk.user_id?.showInEvent === 'YES').slice(0, 5).reverse().map((avatar, index) => (
                                                         <div
                                                             key={index}
-                                                            className={`w-12 h-12 rounded-full flex items-center justify-center text-white text-sm font-semibold border border-white/20 ${avatar.bgColor ? avatar.bgColor : "bg-[#141414]"}`}
+                                                            className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-semibold border border-white/20 ${avatar.bgColor ? avatar.bgColor : "bg-[#141414]"}`}
                                                             style={{
                                                                 backgroundImage: avatar.user_id?.profile_image ? `url(${avatar.user_id?.profile_image})` : "none",
                                                                 backgroundSize: "cover",
@@ -468,7 +485,7 @@ const Info = () => {
                                                     ))}
 
                                                     {/* "+ more" circle explicitly centered */}
-                                                    <div className="w-12 h-12 rounded-full flex items-center justify-center text-white text-[12px] font-semibold bg-[#141414] border border-white/20">
+                                                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-[10px] font-semibold bg-[#141414] border border-white/20">
                                                         + more
                                                     </div>
                                                 </div>
@@ -521,68 +538,71 @@ const Info = () => {
                                             </div>
                                         </>
                                     ) : null}
-                                    <div>
-                                        <p className='mt-8 text-gray-400 text-xs font-inter font-semibold'>ABOUT</p>
-                                    </div>
-                                    <div>
-                                        <p className='mt-4 text-gray-300 w-6/7 text-sm leading-relaxed font-inter' dangerouslySetInnerHTML={{ __html: event.event_description }}></p>
-                                    </div>
-                                    {
-                                        event.refund_policy ? (
-                                            <>
-                                                <div>
-                                                    <p className='mt-6 text-gray-400 text-xs font-inter font-semibold'>REFUND POLICY</p>
-                                                </div>
-                                                <div>
-                                                    <p className='mt-4 text-gray-300 w-6/7 text-sm leading-relaxed font-inter' dangerouslySetInnerHTML={{ __html: event.refund_policy }}></p>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            ""
-                                        )
-                                    }
-                                    <div className="flex flex-col items-center mt-5">
-                                        <button
-                                            onClick={toggleDropdown}
-                                            className="w-full border border-[#212121] rounded-full py-3 font-inter focus:outline-none"
-                                        >
-                                            Contact host
-                                        </button>
-                                        {(event?.organizer_id?.email && event.organizer_id.email !== 'undefined') ||
-                                            (event?.organizer_id?.phone && event.organizer_id.phone !== 'undefined') ? (
-                                            isDropdownOpen && (
-                                                <div className="mt-2 w-full border border-[#212121] rounded-lg shadow-lg p-4 space-y-3">
-                                                    {event?.organizer_id?.email && event.organizer_id.email !== 'undefined' && (
-                                                        <div className="flex items-center gap-3">
-                                                            <FaEnvelope className="text-[#ffffff]" />
-                                                            <a
-                                                                href={`mailto:${event.organizer_id.email}`}
-                                                                className="text-sm font-inter text-[#ffffff] hover:underline"
-                                                            >
-                                                                {event.organizer_id.email}
-                                                            </a>
-                                                        </div>
-                                                    )}
-                                                    {event?.organizer_id?.phone && event.organizer_id.phone !== 'undefined' && (
-                                                        <div className="flex items-center gap-3">
-                                                            <FaPhone className="text-[#ffffff]" />
-                                                            <a
-                                                                href={`tel:${event.organizer_id.phone}`}
-                                                                className="text-sm font-inter text-[#ffffff] hover:underline"
-                                                            >
-                                                                {event.organizer_id.phone}
-                                                            </a>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                    <div className="flex-1 border border-gray-300 border-opacity-10 px-4 py-4 rounded-2xl overflow-y-auto mt-8">
+                                        <div>
+                                            <p className=' text-gray-400 text-xs font-inter font-semibold'>ABOUT</p>
+                                        </div>
+                                        <div>
+                                            <p className='mt-4 text-gray-300 w-6/7 text-sm leading-relaxed font-inter' dangerouslySetInnerHTML={{ __html: event.event_description }}></p>
+                                        </div>
+                                        {
+                                            event.refund_policy ? (
+                                                <>
+                                                    <div>
+                                                        <p className='mt-6 text-gray-400 text-xs font-inter font-semibold'>REFUND POLICY</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className='mt-4 text-gray-300 w-6/7 text-sm leading-relaxed font-inter' dangerouslySetInnerHTML={{ __html: event.refund_policy }}></p>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                ""
                                             )
-                                        ) : null}
+                                        }
+                                        <div className="flex flex-col items-center mt-5">
+                                            <button
+                                                onClick={toggleDropdown}
+                                                className="w-full border border-[#212121] rounded-full py-3 font-inter focus:outline-none"
+                                            >
+                                                Contact host
+                                            </button>
+                                            {(event?.organizer_id?.email && event.organizer_id.email !== 'undefined') ||
+                                                (event?.organizer_id?.phone && event.organizer_id.phone !== 'undefined') ? (
+                                                isDropdownOpen && (
+                                                    <div className="mt-2 w-full border border-[#212121] rounded-lg shadow-lg p-4 space-y-3">
+                                                        {event?.organizer_id?.email && event.organizer_id.email !== 'undefined' && (
+                                                            <div className="flex items-center gap-3">
+                                                                <FaEnvelope className="text-[#ffffff]" />
+                                                                <a
+                                                                    href={`mailto:${event.organizer_id.email}`}
+                                                                    className="text-sm font-inter text-[#ffffff] hover:underline"
+                                                                >
+                                                                    {event.organizer_id.email}
+                                                                </a>
+                                                            </div>
+                                                        )}
+                                                        {event?.organizer_id?.phone && event.organizer_id.phone !== 'undefined' && (
+                                                            <div className="flex items-center gap-3">
+                                                                <FaPhone className="text-[#ffffff]" />
+                                                                <a
+                                                                    href={`tel:${event.organizer_id.phone}`}
+                                                                    className="text-sm font-inter text-[#ffffff] hover:underline"
+                                                                >
+                                                                    {event.organizer_id.phone}
+                                                                </a>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            ) : null}
 
 
+                                        </div>
+                                        <div className='flex justify-center items-center mt-2'>
+                                            <p className='text-sm text-gray-500 font-inter'>To get on the guest list, contact the host</p>
+                                        </div>
                                     </div>
-                                    <div className='flex justify-center items-center mt-2'>
-                                        <p className='text-sm text-gray-500 font-inter'>To get on the guest list, contact the host</p>
-                                    </div>
+
 
                                     <div>
                                         <p className='mt-10 text-gray-400 text-xs font-inter font-semibold'>LOCATION</p>
@@ -599,9 +619,9 @@ const Info = () => {
                                     <div>
                                         <p className=' text-gray-500 text-xs mt-1'>{event.address}</p>
                                     </div>
-                                    {/* <div className="mt-4" style={{ position: "relative", paddingBottom: "56.25%", height: "0", overflow: "hidden", maxWidth: "100%" }}>
+                                    <div className="mt-4" style={{ position: "relative", paddingBottom: "56.25%", height: "0", overflow: "hidden", maxWidth: "100%" }}>
                                         <iframe
-                                            src="https://www.google.com/maps/embed?pb=..."
+                                            src={`https://www.google.com/maps?q=${encodeURIComponent(event.address)}&output=embed`}
                                             style={{
                                                 position: "absolute",
                                                 top: "0",
@@ -613,8 +633,9 @@ const Info = () => {
                                             }}
                                             allowFullScreen=""
                                             loading="lazy"
+                                            onLoad={() => setIsLoaded(true)}
                                         ></iframe>
-                                    </div> */}
+                                    </div>
 
                                 </div>
 
@@ -652,24 +673,69 @@ const Info = () => {
                                         </div>
                                     )}
                                     {event?.tickets?.map((ticket, index) => {
-                                        const today = new Date();
-                                        let shouldShow = true;
+                                        // const today = new Date();
+                                        // let shouldShow = true;
 
-                                        if (ticket.sale_start && ticket.sale_end) {
-                                            const saleStart = new Date(ticket.sale_start);
-                                            const saleEnd = new Date(ticket.sale_end);
-                                            if (today < saleStart || today > saleEnd) {
-                                                shouldShow = false;
-                                            }
+                                        // if (ticket.sale_start && ticket.sale_end) {
+                                        //     const saleStart = new Date(ticket.sale_start);
+                                        //     const saleEnd = new Date(ticket.sale_end);
+                                        //     if (today < saleStart || today > saleEnd) {
+                                        //         shouldShow = false;
+                                        //     }
+                                        // }
+                                        // //if (!shouldShow) return null;
+
+                                        // const currentDate = new Date();
+                                        // currentDate.setHours(0, 0, 0, 0);
+
+                                        // const eventDate = new Date(event.start_date);
+                                        // eventDate.setHours(0, 0, 0, 0);
+                                        // const isPast = eventDate < currentDate ? true : false
+
+                                        function getDateOnly(dateStr, timezone) {
+                                            return DateTime.fromJSDate(new Date(dateStr), { zone: timezone }).toFormat("yyyy-MM-dd");
                                         }
-                                        //if (!shouldShow) return null;
 
-                                        const currentDate = new Date();
-                                        currentDate.setHours(0, 0, 0, 0);
+                                        function convertTo24HourFormat(time12h) {
+                                            const dt = DateTime.fromFormat(time12h, "hh:mm a");
+                                            return dt.toFormat("HH:mm");
+                                        }
 
-                                        const eventDate = new Date(event.start_date);
-                                        eventDate.setHours(0, 0, 0, 0);
-                                        const isPast = eventDate < currentDate ? true : false
+                                        const timeZone = DateTime.local().zoneName;
+
+                                        const ticketStartDate = getDateOnly(ticket.sale_start, event.timezone || "Pacific/Honolulu");
+                                        const ticketEndDate = getDateOnly(ticket.sale_end, event.timezone || "Pacific/Honolulu");
+                                        const ticketStartTime = ticket.sale_start_time ? convertTo24HourFormat(ticket.sale_start_time) : "00:00";
+                                        const ticketEndTime = ticket.sale_end_time ? convertTo24HourFormat(ticket.sale_end_time) : "00:00";
+
+                                        function convertTo24HourFormat(time12h) {
+                                            const dt = DateTime.fromFormat(time12h, "hh:mm a");
+                                            return dt.toFormat("HH:mm");
+                                        }
+
+                                        function getUTCISOString(date, time, timezone) {
+                                            const fullTime = time.length === 5 ? `${time}:00` : time;
+                                            const combined = `${date}T${fullTime}`;
+                                            const zonedTime = DateTime.fromISO(combined, { zone: timezone });
+                                            const utcTime = zonedTime.toUTC();
+                                            return utcTime.toISO();
+                                        }
+
+                                        function convertUTCToTimeZone(utcISOString, targetTimeZone) {
+                                            const dt = DateTime.fromISO(utcISOString, { zone: 'utc' }).setZone(targetTimeZone);
+                                            return dt.toFormat('yyyy-MM-dd HH:mm:ss ZZZZ');
+                                        }
+
+                                        const utcISOStartString = getUTCISOString(ticketStartDate, ticketStartTime, event.timezone || "Pacific/Honolulu");
+                                        const utcISOEndString = getUTCISOString(ticketEndDate, ticketEndTime, event.timezone || "Pacific/Honolulu");
+
+                                        const eventStartInLocalTZ = DateTime.fromISO(utcISOStartString, { zone: 'utc' }).setZone(timeZone);
+                                        const eventEndInLocalTZ = DateTime.fromISO(utcISOEndString, { zone: 'utc' }).setZone(timeZone);
+                                        const nowInLocalTZ = DateTime.local().setZone(timeZone);
+
+                                        //const isAllowedEvent = eventStartInLocalTZ <= nowInLocalTZ;
+                                        const isStart = eventStartInLocalTZ >= nowInLocalTZ ? true : false
+                                        const isPast = eventEndInLocalTZ <= nowInLocalTZ ? true : false
 
                                         const remainingTicket = remain.find(r => r.ticket_name === ticket.ticket_name);
                                         const isSoldOut = remainingTicket && remainingTicket.remaining_tickets <= 0;
@@ -714,7 +780,7 @@ const Info = () => {
                                                             </>
                                                         )}
                                                     </div>
-                                                    {!isSoldOut && !isPast && (
+                                                    {/* {!isSoldOut && !isStart ? (
                                                         <div className="flex items-center mt-4 bg-primary px-1 py-1 rounded-full w-max">
                                                             <button
                                                                 onClick={() => handleDecrement(index)}
@@ -738,6 +804,45 @@ const Info = () => {
                                                                 <PlusIcon size={16} />
                                                             </button>
                                                         </div>
+                                                    ) : (
+                                                        <div className='mt-5'>
+                                                            <p><span className='text-sm text-white/40'>sale starts at</span> {new Date(utcISOStartString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                        </div>
+                                                    )} */}
+                                                    {isPast ? (
+                                                        <div className='mt-5'>
+                                                            <p className='text-white/40 text-sm'>Ticket expired</p>
+                                                        </div>
+                                                    ) : isStart ? (
+                                                        <div className='mt-5'>
+                                                            <p><span className='text-sm text-white/40'>sale starts at</span> {new Date(utcISOStartString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                                        </div>
+                                                    ) : !isSoldOut ? (
+                                                        <div className="flex items-center mt-4 bg-primary px-1 py-1 rounded-full w-max">
+                                                            <button
+                                                                onClick={() => handleDecrement(index)}
+                                                                className={`p-3 font-inter bg-[#141414] text-white rounded-full ${ticketCounts[index] === null
+                                                                    ? 'cursor-not-allowed opacity-50'
+                                                                    : 'hover:bg-gray-500 hover:bg-opacity-30'
+                                                                    }`}
+                                                                disabled={ticketCounts[index] === null}
+                                                            >
+                                                                <MinusIcon size={16} />
+                                                            </button>
+                                                            <span className="mx-4 font-inter">
+                                                                {ticketCounts[index] === null
+                                                                    ? 'Choose tickets'
+                                                                    : `${ticketCounts[index]} tickets`}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleIncrement(index)}
+                                                                className="p-3 bg-[#141414] text-white rounded-full hover:bg-gray-500 hover:bg-opacity-30"
+                                                            >
+                                                                <PlusIcon size={16} />
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        ""
                                                     )}
                                                 </div>
                                             </div>

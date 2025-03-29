@@ -26,6 +26,7 @@ import {
 } from "../../components/ui/Dailog";
 import { LoadScript, Autocomplete } from "@react-google-maps/api";
 import moment from 'moment-timezone';
+import { DateTime } from 'luxon';
 
 const ticketTypes = [
     {
@@ -236,6 +237,8 @@ export default function TicketEvent() {
     const [timezones, setTimezones] = useState([]);
     const [selectedTimezone, setSelectedTimezone] = useState('');
     const [accountId, setAccountId] = useState("");
+    const [showPreviewMobile, setShowPreviewMobile] = useState(false);
+
 
     useEffect(() => {
         setTimezones(moment.tz.names());
@@ -744,12 +747,27 @@ export default function TicketEvent() {
 
         setEventSlug(value.toLowerCase());
     };
+    
+    function getUTCISOString(date, time, timezone) {
+        const fullTime = time.length === 5 ? `${time}:00` : time;
+        const combined = `${date}T${fullTime}`;
+
+        const zonedTime = DateTime.fromISO(combined, { zone: timezone });
+        const utcTime = zonedTime.toUTC();
+
+        return utcTime.toISO(); 
+    }
+
+    function convertUTCToTimeZone(utcISOString, targetTimeZone) {
+        const dt = DateTime.fromISO(utcISOString, { zone: 'utc' }).setZone(targetTimeZone);
+        return dt.toFormat('yyyy-MM-dd HH:mm:ss ZZZZ');
+    }
 
     // Form steps content
     const formSteps = [
         {
             id: 1,
-            title: "Basic info",
+            title: "Tell us about your event",
             description: "Let's start with the basic information about your event",
             fields: (
                 <div className="w-full">
@@ -2104,17 +2122,46 @@ export default function TicketEvent() {
                 />
                 {/* Update the main container structure */}
                 <div className="pt-16 flex flex-col md:flex-row bg-[#111111]">
+
+                    <div className="md:hidden flex justify-center mt-5">
+                        <div className="w-4/5 items-center justify-center">
+                            <div className="flex bg-[#787878] p-1 rounded-full bg-opacity-25">
+                                <button
+                                    onClick={() => setShowPreviewMobile(false)}
+                                    className={`flex-1 py-2 text-center transition-all text-sm duration-300 ease-in-out rounded-full ${!showPreviewMobile
+                                        ? "bg-[#787878] text-white font-medium p-2 bg-opacity-25"
+                                        : "text-gray-300"
+                                        }`}
+                                >
+                                    Details
+                                </button>
+                                <button
+                                    onClick={() => setShowPreviewMobile(true)}
+                                    className={`flex-1 py-2 text-center transition-all text-sm duration-300 ease-in-out rounded-full ${showPreviewMobile
+                                        ? "bg-[#787878] text-white font-medium p-2 bg-opacity-25"
+                                        : "text-gray-300"
+                                        }`}
+                                >
+                                    Preview
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Scrollable left side */}
-                    <div className="w-full order-2 md:order-1 md:w-1/2 min-h-[calc(100vh-64px)] overflow-y-auto flex flex-col items-center justify-center">
+                    <div className="hidden md:flex w-full order-2 md:order-1 md:w-1/2 min-h-[calc(100vh-64px)] overflow-y-auto flex-col items-center justify-center">
                         <div className="p-8 max-w-xl mx-auto flex flex-col w-full">
                             {formSteps[step - 1] && (
-                                <div className="mb-6">
-                                    <h2 className="text-2xl font-semibold text-white">
-                                        {formSteps[step - 1].title}
-                                    </h2>
-                                    <p className="text-white/60 text-sm mt-1">
-                                        {formSteps[step - 1].description}
-                                    </p>
+                                <div className="mb-6 space-y-12">
+                                    <div>
+                                        <h2 className="text-2xl font-semibold text-white text-center">
+                                            {formSteps[step - 1].title}
+                                        </h2>
+                                        <p className="text-white/60 text-sm mt-2 text-center">
+                                            {formSteps[step - 1].description}
+                                        </p>
+                                    </div>
+                                    <hr className="border-t border-white/5" />
                                     {formSteps[step - 1].fields}
                                 </div>
                             )}
@@ -2273,7 +2320,7 @@ export default function TicketEvent() {
                     </div>
 
                     {/* Fixed right side preview */}
-                    <div className="w-full order-1 md:order-2 md:w-1/2 md:h-[calc(100vh-64px)] bg-[#141414] flex items-center justify-center p-8 md:sticky top-16">
+                    <div className="hidden md:flex w-full order-1 md:order-2 md:w-1/2 md:h-[calc(100vh-64px)] bg-[#141414] items-center justify-center p-8 md:sticky top-16">
                         <div className="bg-white/[0.03] mx-auto rounded-3xl grid grid-rows-[1fr_70px] p-2">
                             <div className="bg-[#0F0F0F] rounded-2xl h-[350px] w-[350px] xl:h-[450px] xl:w-[450px] flex items-center justify-center">
                                 {imagePreview ? (
@@ -2334,6 +2381,235 @@ export default function TicketEvent() {
                             </div>
                         </div>
                     </div>
+
+                    {/* MOBILE VIEW (conditionally rendered) */}
+                    <div className="md:hidden">
+                        {showPreviewMobile ? (
+                            // Mobile Preview View
+                            <div className="w-full bg-[#141414] flex items-center justify-center p-8">
+                                <div className="bg-white/[0.03] mx-auto rounded-3xl grid grid-rows-[1fr_70px] p-2">
+                                    <div className="bg-[#0F0F0F] rounded-2xl h-[350px] w-[350px] flex items-center justify-center">
+                                        {imagePreview ? (
+                                            <div className="w-full aspect-square flex items-center justify-center rounded-xl overflow-hidden">
+                                                <img
+                                                    src={imagePreview}
+                                                    alt="Event Cover"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="96"
+                                                height="96"
+                                                viewBox="0 0 96 96"
+                                                fill="none"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    clipRule="evenodd"
+                                                    d="M12 24C12 20.8174 13.2643 17.7652 15.5147 15.5147C17.7652 13.2643 20.8174 12 24 12H72C75.1826 12 78.2348 13.2643 80.4853 15.5147C82.7357 17.7652 84 20.8174 84 24V72C84 75.1826 82.7357 78.2348 80.4853 80.4853C78.2348 82.7357 75.1826 84 72 84H24C20.8174 84 17.7652 82.7357 15.5147 80.4853C13.2643 78.2348 12 75.1826 12 72V24Z"
+                                                    fill="white"
+                                                    fillOpacity="0.1"
+                                                />
+                                            </svg>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 p-3">
+                                        <p className="text-white/60 text-sm">
+                                            {ticketStartDate
+                                                ? `${ticketStartDate.toLocaleDateString("en-US", {
+                                                    month: "short",
+                                                    day: "numeric",
+                                                })}, ${eventStartTime}`
+                                                : "-"}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 p-3">
+                                        <div className="flex flex-col gap-2">
+                                            <p className="text-white/60 text-sm">{eventName || "Event Name"}</p>
+                                            <p className="text-white/60 text-sm">{venueName || "Venue Name"}</p>
+                                        </div>
+                                        <p className="text-white/60 text-2xl font-semibold">
+                                            ${minPrice || "0"}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            // Mobile Details View (form)
+                            <div className="w-full min-h-[calc(100vh-64px)] overflow-y-auto flex flex-col items-center justify-center">
+                                <div className="p-8 max-w-xl mx-auto flex flex-col w-full">
+                                    {formSteps[step - 1] && (
+                                        <div className="mb-6 space-y-12">
+                                            <div>
+                                                <h2 className="text-2xl font-semibold text-white text-center">
+                                                    {formSteps[step - 1].title}
+                                                </h2>
+                                                <p className="text-white/60 text-sm mt-2 text-center">
+                                                    {formSteps[step - 1].description}
+                                                </p>
+                                            </div>
+                                            <hr className="border-t border-white/5" />
+                                            {formSteps[step - 1].fields}
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between gap-5 mt-8 w-full">
+                                        {
+                                            step === 6 ? (
+                                                ""
+                                            ) : (
+                                                <button
+                                                    onClick={() => (step === 1 ? navigate(-1) : setStep(step - 1))}
+                                                    className={`size-10 flex-shrink-0 flex items-center justify-center rounded-full border border-white/10 text-white`}
+                                                >
+                                                    <ArrowLeft className="size-5" />
+                                                </button>
+                                            )
+                                        }
+                                        {step === 5 ? (
+                                            <>
+                                                <button
+                                                    onClick={() => {
+                                                        if (!userId && !oragnizerId) {
+                                                            setIsModalOpen(true);
+                                                            return;
+                                                        }
+
+                                                        if (userId && !oragnizerId) {
+                                                            setIsModalDetailsOpen(true);
+                                                            return;
+                                                        }
+
+                                                        if (step === 5) {
+                                                            setStatusNotify("draft"); // or "live"
+                                                            handleAddEvent("NO", oragnizerId, "redirect"); // or "YES"
+                                                            return;
+                                                        }
+
+                                                        if (step < 6) {
+                                                            setStep((prevStep) => prevStep + 1);
+                                                        }
+                                                    }}
+                                                    className={`px-4 py-2 w-full rounded-full h-10 border border-white/10 text-white font-semibold flex items-center justify-center gap-2
+                                                ${step !== 5 || isAdding || !tickets.length > 0
+                                                            ? "disabled:opacity-50 cursor-not-allowed text-black"
+                                                            : "text-black"
+                                                        }`}
+                                                    disabled={step !== 5 || isAdding || !tickets.length > 0}
+                                                >
+                                                    {isAdding && addStatus === "draft" ? "Loading..." : "Draft it"}
+                                                </button>
+
+                                                {
+                                                    userId && oragnizerId && !accountId ? (
+                                                        <></>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => {
+                                                                if (!userId && !oragnizerId) {
+                                                                    setIsModalOpen(true);
+                                                                    return;
+                                                                }
+
+                                                                if (userId && !oragnizerId) {
+                                                                    setIsModalDetailsOpen(true);
+                                                                    return;
+                                                                }
+
+                                                                if (step === 5) {
+                                                                    setStatusNotify("live");
+                                                                    handleAddEvent("YES", oragnizerId, "redirect");
+                                                                    return;
+                                                                }
+
+                                                                if (step < 6) {
+                                                                    setStep((prevStep) => prevStep + 1);
+                                                                }
+                                                            }}
+
+                                                            className={`px-4 py-2 w-full bg-white rounded-full h-10 font-semibold flex items-center justify-center gap-2
+                                                ${step !== 5 || isAdding || !tickets.length > 0
+                                                                    ? "disabled:opacity-50 cursor-not-allowed text-black"
+                                                                    : "text-black"
+                                                                }`}
+                                                            disabled={step !== 5 || isAdding || !tickets.length > 0}
+                                                        >
+                                                            {isAdding && addStatus === "live" ? "Loading..." : "Publish"}
+                                                        </button>
+                                                    )
+
+                                                }
+                                                <OnboardLogin
+                                                    isOpen={isModalOpen}
+                                                    isAdding={isAdding}
+                                                    onClose={() => setIsModalOpen(false)}
+                                                    loginClosed={handleLoginComplete}
+                                                    onTrigger={handleAddEvent}
+                                                />
+                                                <OnboardDetails isAdding={isAdding} isOpen={isModalDetailsOpen} onClose={() => setIsModalDetailsOpen(false)} onTrigger={handleAddEvent} userId={userId} />
+                                            </>
+                                        ) : step === 6 ? (
+                                            ""
+                                        ) : (
+                                            <button
+                                                onClick={() => {
+                                                    if (step === 1) {
+                                                        if (!eventName.trim()) {
+                                                            alert("Please enter an event name before proceeding.");
+                                                            return;
+                                                        }
+                                                        if (!getImagesForUpload()) {
+                                                            alert("Please upload a flyer before proceeding.");
+                                                            return;
+                                                        }
+                                                        console.log("Images ready for upload", getImagesForUpload());
+                                                    }
+
+                                                    if (step === 2) {
+                                                        if (!ticketStartDate) {
+                                                            alert("Please select a ticket start date before proceeding.");
+                                                            return;
+                                                        }
+                                                        if (!ticketEndDate) {
+                                                            alert("Please select a ticket end date before proceeding.");
+                                                            return;
+                                                        }
+                                                    }
+
+                                                    if (step === 5) {
+                                                        handleAddEvent("YES", oragnizerId, "redirect");
+                                                        return
+                                                    }
+
+                                                    if (step < 6) {
+                                                        setStep((prevStep) => prevStep + 1);
+                                                    }
+                                                }}
+                                                className={`px-4 py-2 w-full bg-white rounded-full h-10 font-semibold flex items-center justify-center gap-2
+                                                ${step === 5 ||
+                                                        step === 1 && (!eventName.trim() || !getImagesForUpload()) ||
+                                                        step === 2 && (!ticketStartDate || !ticketEndDate) ||
+                                                        step === 3 && (!venueAddress || !venueName)
+                                                        ? "disabled:opacity-50 cursor-not-allowed text-black"
+                                                        : "text-black"
+                                                    }`}
+                                                disabled={
+                                                    step === 5 ||
+                                                    step === 1 && (!eventName.trim() || !getImagesForUpload()) ||
+                                                    step === 2 && (!ticketStartDate || !ticketEndDate) ||
+                                                    step === 3 && (!venueAddress || !venueName)
+                                                }
+                                            >
+                                                {step === 6 ? "Complete creating Event" : "Continue"}
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                 </div>
 
                 <Dialog

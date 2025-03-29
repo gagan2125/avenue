@@ -18,6 +18,7 @@ import { GoBookmarkSlash, GoBookmark } from "react-icons/go"
 import { Search } from 'lucide-react';
 import SearchModal from '../../components/modals/SearchModal';
 import { Spin } from 'antd';
+import { DateTime } from 'luxon';
 
 const Home = () => {
   const [isModalSearchOpen, setIsModalSearchOpen] = useState(false);
@@ -35,7 +36,6 @@ const Home = () => {
   const [savedEventIds, setSavedEventIds] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
-
 
   const cards = [
     {
@@ -117,18 +117,24 @@ const Home = () => {
   ];
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const year = date.getFullYear().toString().slice(-2);
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(dateString)) {
+      const [datePart] = dateString.split('T');
+      const [year, month, day] = datePart.split('-');
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${months[parseInt(month, 10) - 1]} ${parseInt(day, 10)}`;
+    }
+    if (typeof dateString === 'string') {
+      const parts = dateString.split(' ');
+      if (parts.length >= 3) {
+        const month = parts[1];
+        const day = parts[2];
+        return `${month} ${parseInt(day, 10)}`;
+      }
+    }
 
-    let hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-
-    return `${month} ${day}`;
+    // Fallback
+    return 'Invalid Date';
   };
 
   const fetchEvents = async () => {
@@ -167,43 +173,58 @@ const Home = () => {
     return date.toISOString().split("T")[0];
   };
 
-  function getDateOnly(date) {
-    if (!date) return null;
-
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(date)) {
-      date += ":00";
-    }
-
-    const d = new Date(date);
-    if (isNaN(d.getTime())) {
-      console.error("Invalid date:", date);
-      return null;
-    }
-
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString().split('T')[0];
+  function getDateOnly(dateStr, timezone) {
+    return DateTime.fromJSDate(new Date(dateStr), { zone: timezone }).toFormat("yyyy-MM-dd");
   }
-
+  
   const filteredEvents = events.filter((event) => {
-    const eventDate = getDateOnly(event.start_date);  // Ensure this returns a comparable date format
+
+    function convertTo24HourFormat(time12h) {
+      const dt = DateTime.fromFormat(time12h, "hh:mm a");
+      return dt.toFormat("HH:mm");
+    }
+
+    const timeZone = DateTime.local().zoneName;
+
+    const eventDate = getDateOnly(event.start_date, event.timezone || "Pacific/Honolulu");
+    const eventEndDate = getDateOnly(event.end_date, event.timezone || "Pacific/Honolulu");
+    const eventTime = event.start_time ? convertTo24HourFormat(event.start_time) : "00:00";
+    const eventEndTime = event.end_time ? convertTo24HourFormat(event.end_time) : "00:00";
     const startDateOnly = startDate ? getDateOnly(startDate) : null;
     const endDateOnly = endDate ? getDateOnly(endDate) : null;
+
+    function convertTo24HourFormat(time12h) {
+      const dt = DateTime.fromFormat(time12h, "hh:mm a");
+      return dt.toFormat("HH:mm");
+    }
+
+    function getUTCISOString(date, time, timezone) {
+      const fullTime = time.length === 5 ? `${time}:00` : time;
+      const combined = `${date}T${fullTime}`;
+      const zonedTime = DateTime.fromISO(combined, { zone: timezone });
+      const utcTime = zonedTime.toUTC();
+      return utcTime.toISO();
+    }
+
+    function convertUTCToTimeZone(utcISOString, targetTimeZone) {
+      const dt = DateTime.fromISO(utcISOString, { zone: 'utc' }).setZone(targetTimeZone);
+      return dt.toFormat('yyyy-MM-dd HH:mm:ss ZZZZ');
+    }
+
+    const utcISOString = getUTCISOString(eventDate, eventTime, event.timezone || "Pacific/Honolulu");
+    const utcISOEndString = getUTCISOString(eventEndDate, eventEndTime, event.timezone || "Pacific/Honolulu");
+    const convertedTime = convertUTCToTimeZone(utcISOString, timeZone);
+
+    const eventStartInLocalTZ = DateTime.fromISO(utcISOString, { zone: 'utc' }).setZone(timeZone);
+    const eventEndInLocalTZ = DateTime.fromISO(utcISOEndString, { zone: 'utc' }).setZone(timeZone);
+    const nowInLocalTZ = DateTime.local().setZone(timeZone);
+
+    const isAllowedEvent = eventEndInLocalTZ >= nowInLocalTZ;
 
     const minPrice = sliderValue ? sliderValue[0] : null;
     const maxPrice = sliderValue ? sliderValue[1] : null;
 
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const allowedDate = getDateOnly(yesterday);
-    const isAllowedEvent = eventDate >= allowedDate;
-
     const matchesSearch = event.event_name.toLowerCase().includes(searchTerm.toLowerCase()) || event.venue_name?.toLowerCase().includes(searchTerm.toLowerCase());
-
-
-
-    // const isWithinPriceRange =
-    //   (minPrice === null || (event.ticket_start_price || 0) >= minPrice) &&
-    //   (maxPrice === null || (event.ticket_start_price || 0) <= maxPrice);
 
     const getLowestTicketPrice = (tickets) => {
       if (!tickets || tickets.length === 0) return 0;
@@ -230,15 +251,6 @@ const Home = () => {
     })();
 
     const isFreeEvent = showFreeOnly ? event.event_type === "rsvp" : true;
-
-    // console.log({
-    //   eventDate,
-    //   currentDate,
-    //   isFutureEvent,
-    //   isWithinPriceRange,
-    //   isWithinDateRange,
-    //   isFreeEvent,
-    // });
 
     return (
       event.explore === "YES" &&
