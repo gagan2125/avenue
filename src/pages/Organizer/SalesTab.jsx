@@ -328,6 +328,7 @@ export default function SalesTab({ eventId, event }) {
   const [isQROpen, setIsQROpen] = useState(false);
   const [selectedTicketUpdate, setSelectedTicketUpdate] = useState(null);
   const [sendTicketUpdateOpen, setSendTicketUpdateOpen] = useState(false);
+  const [editNotificationModal, setEditNotificationModal] = useState(false);
 
   const handleViewTicket = async (sale) => {
     setIsLoadingTicket(true);
@@ -351,25 +352,26 @@ export default function SalesTab({ eventId, event }) {
     setIsQROpen(false);
   };
 
-  useEffect(() => {
-    const fetchEvent = async () => {
-      setLoading(true);
-      try {
-        const response = await axios.get(
-          `${url}/event/get-event-by-id/${eventId}`
-        );
-        setEvent(response.data);
-      } catch (error) {
-        console.error("Error fetching event:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchEvent = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${url}/event/get-event-by-id/${eventId}`
+      );
+      setEvent(response.data);
+    } catch (error) {
+      console.error("Error fetching event:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     if (eventId) {
       fetchEvent();
     }
   }, [eventId]);
+
   function extractPaymentId(fullString) {
     return fullString?.split("_secret")[0];
   }
@@ -692,12 +694,14 @@ export default function SalesTab({ eventId, event }) {
   useEffect(() => {
     fetchBook();
   }, [eventId]);
+
   const formatAmount = (amount) => {
     return (Math.abs(amount / 100 - 0.89) / 1.09).toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
   };
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const dayOfWeek = date.toLocaleString("en-US", { weekday: "short" });
@@ -863,6 +867,29 @@ export default function SalesTab({ eventId, event }) {
       alert("Refund or status update failed. Please try again.");
     }
   };
+
+  const handleTicketUpdate = async () => {
+    try {
+      const updatedData = {
+        paymentId: selectedTicketUpdate._id,
+        updateData: {
+          firstName: selectedTicketUpdate.firstName,
+          email: selectedTicketUpdate.email
+        }
+      }
+      const response = await axios.put(`${url}/payment/update-payment`, updatedData)
+      if (response.status === 200) {
+        setSendTicketUpdateOpen(false)
+        fetchBook()
+        setEditNotificationModal(true)
+        setTimeout(() => {
+          setEditNotificationModal(false);
+        }, [3000]);
+      }
+    } catch (error) {
+      console.error("Error updating ticket", error)
+    }
+  }
 
   return (
     <>
@@ -1718,22 +1745,22 @@ export default function SalesTab({ eventId, event }) {
             <div className="flex flex-col gap-y-3 bg-white/[0.03] border-b rounded-t-xl border-white/10 p-6">
               <DialogTitle>Edit ticket details</DialogTitle>
               <DialogDescription>
-                Change your personal details below.
+                Change ticket details below.
               </DialogDescription>
             </div>
             <div className="flex flex-col gap-4 p-6">
               <div className="flex flex-col items-start justify-between gap-4">
                 <div className="flex flex-col gap-3 w-full">
                   <span className="text-sm font-medium text-white">
-                    Name
+                    Full Name
                   </span>
                   <input
                     type="text"
-                    value={selectedTicketUpdate?.name || ""}
+                    value={selectedTicketUpdate?.firstName || ""}
                     onChange={(e) =>
                       setSelectedTicketUpdate((prev) => ({
                         ...prev,
-                        name: e.target.value,
+                        firstName: e.target.value,
                       }))
                     }
                     placeholder="john doe"
@@ -1746,15 +1773,28 @@ export default function SalesTab({ eventId, event }) {
                   </span>
                   <input
                     type="email"
-                    value={selectedPay?.email || ""}
+                    value={selectedTicketUpdate?.email || ""}
                     onChange={(e) =>
-                      setSelectedPay((prev) => ({
+                      setSelectedTicketUpdate((prev) => ({
                         ...prev,
                         email: e.target.value,
                       }))
                     }
                     placeholder="johndoe@gmail.com"
                     className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full"
+                  />
+                </div>
+                <div className="flex flex-col gap-3 w-full">
+                  <span className="text-sm font-medium text-white">
+                    Phone Number
+                  </span>
+                  <input
+                    type="text"
+                    value={selectedTicketUpdate?.user_id?.phoneNumber || ""}
+                    readOnly
+                    placeholder="+1 (555) 203 2587"
+                    className="border bg-primary text-white text-sm border-white/10 h-10 rounded-lg px-5 py-2.5 focus:outline-none w-full disabled:bg-white/10 disabled:text-gray-300"
+                    disabled  // Disables the input
                   />
                 </div>
               </div>
@@ -1772,24 +1812,20 @@ export default function SalesTab({ eventId, event }) {
               <button
                 className="flex-1 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-lg px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center"
               >
-                {isDownloadingReceipt ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                ) : (
-                  "Cancel"
-                )}
+                Cancel
               </button>
               <button
-                type="submit"
-                disabled={() => { }}
+                onClick={handleTicketUpdate}
                 className="flex-1 bg-white hover:bg-white/90 text-black border border-white/10 rounded-lg h-9 px-4 focus:outline-none flex items-center justify-center gap-2 font-semibold transition-colors text-sm"
               >
-                Save
+                Update
               </button>
             </div>
 
           </form>
         </DialogContent>
       </Dialog>
+
       {/* resend email */}
       <Dialog
         open={sendTicketOpen}
@@ -1938,6 +1974,7 @@ export default function SalesTab({ eventId, event }) {
           </form>
         </DialogContent>
       </Dialog>
+
       {resendNotificationModal && (
         <motion.div
           initial={{ y: -50, opacity: 0, scale: 0.9 }}
@@ -1969,6 +2006,55 @@ export default function SalesTab({ eventId, event }) {
           </div>
           <button
             onClick={() => setResendNotificationModal(false)}
+            className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <path
+                d="M5.28033 4.21967C4.98744 3.92678 4.51256 3.92678 4.21967 4.21967C3.92678 4.51256 3.92678 4.98744 4.21967 5.28033L6.93934 8L4.21967 10.7197C3.92678 11.0126 3.92678 11.4874 4.21967 11.7803C4.51256 12.0732 4.98744 12.0732 5.28033 11.7803L8 9.06066L10.7197 11.7803C11.0126 12.0732 11.4874 12.0732 11.7803 11.7803C12.0732 11.4874 12.0732 11.0126 11.7803 10.7197L9.06066 8L11.7803 5.28033C12.0732 4.98744 12.0732 4.51256 11.7803 4.21967C11.4874 3.92678 11.0126 3.92678 10.7197 4.21967L8 6.93934L5.28033 4.21967Z"
+                fill="white"
+              />
+            </svg>
+          </button>
+        </motion.div>
+      )}
+
+      {editNotificationModal && (
+        <motion.div
+          initial={{ y: -50, opacity: 0, scale: 0.9 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: -50, opacity: 0, scale: 0.9 }}
+          transition={{
+            type: "spring",
+            stiffness: 150,
+            damping: 15,
+          }}
+          className="fixed top-20 sm:top-10 inset-x-0 mx-auto w-fit backdrop-blur-md text-white p-3 pl-4 rounded-lg flex items-center gap-2 border border-white/10 shadow-lg max-w-[400px] justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+            >
+              <path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M8 15C9.85652 15 11.637 14.2625 12.9497 12.9497C14.2625 11.637 15 9.85652 15 8C15 6.14348 14.2625 4.36301 12.9497 3.05025C11.637 1.7375 9.85652 1 8 1C6.14348 1 4.36301 1.7375 3.05025 3.05025C1.7375 4.36301 1 6.14348 1 8C1 9.85652 1.7375 11.637 3.05025 12.9497C4.36301 14.2625 6.14348 15 8 15ZM11.844 6.209C11.9657 6.05146 12.0199 5.85202 11.9946 5.65454C11.9693 5.45706 11.8665 5.27773 11.709 5.156C11.5515 5.03427 11.352 4.9801 11.1545 5.00542C10.9571 5.03073 10.7777 5.13346 10.656 5.291L6.956 10.081L5.307 8.248C5.24174 8.17247 5.16207 8.11073 5.07264 8.06639C4.98322 8.02205 4.88584 7.99601 4.78622 7.98978C4.6866 7.98356 4.58674 7.99729 4.4925 8.03016C4.39825 8.06303 4.31151 8.11438 4.23737 8.1812C4.16322 8.24803 4.10316 8.32898 4.06071 8.41931C4.01825 8.50965 3.99425 8.60755 3.99012 8.70728C3.98599 8.807 4.00181 8.90656 4.03664 9.00009C4.07148 9.09363 4.12464 9.17927 4.193 9.252L6.443 11.752C6.51649 11.8335 6.60697 11.8979 6.70806 11.9406C6.80915 11.9833 6.91838 12.0034 7.02805 11.9993C7.13772 11.9952 7.24515 11.967 7.34277 11.9169C7.44038 11.8667 7.5258 11.7958 7.593 11.709L11.844 6.209Z"
+                fill="#10B981"
+              />
+            </svg>
+            <p className="text-sm">Ticket updated successfully</p>
+          </div>
+          <button
+            onClick={() => setEditNotificationModal(false)}
             className="ml-2 text-white/60 hover:text-white flex items-center justify-center border border-white/10 rounded-full p-1 flex-shrink-0 transition-colors"
           >
             <svg

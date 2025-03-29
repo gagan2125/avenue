@@ -82,7 +82,7 @@ const ticketTypesIcons = {
         clipRule="evenodd"
         d="M1 4.5C1 4.10218 1.15804 3.72064 1.43934 3.43934C1.72064 3.15804 2.10218 3 2.5 3H13.5C13.8978 3 14.2794 3.15804 14.5607 3.43934C14.842 3.72064 15 4.10218 15 4.5V5.5C15 5.776 14.773 5.994 14.505 6.062C14.0743 6.1718 13.6925 6.42192 13.4198 6.77286C13.1472 7.1238 12.9991 7.55557 12.9991 8C12.9991 8.44443 13.1472 8.8762 13.4198 9.22714C13.6925 9.57808 14.0743 9.8282 14.505 9.938C14.773 10.006 15 10.224 15 10.5V11.5C15 11.8978 14.842 12.2794 14.5607 12.5607C14.2794 12.842 13.8978 13 13.5 13H2.5C2.10218 13 1.72064 12.842 1.43934 12.5607C1.15804 12.2794 1 11.8978 1 11.5V10.5C1 10.224 1.227 10.006 1.495 9.938C1.92565 9.8282 2.30747 9.57808 2.58016 9.22714C2.85285 8.8762 3.00088 8.44443 3.00088 8C3.00088 7.55557 2.85285 7.1238 2.58016 6.77286C2.30747 6.42192 1.92565 6.1718 1.495 6.062C1.227 5.994 1 5.776 1 5.5V4.5ZM10 5.75C10 5.55109 10.079 5.36032 10.2197 5.21967C10.3603 5.07902 10.5511 5 10.75 5C10.9489 5 11.1397 5.07902 11.2803 5.21967C11.421 5.36032 11.5 5.55109 11.5 5.75V6.75C11.5 6.94891 11.421 7.13968 11.2803 7.28033C11.1397 7.42098 10.9489 7.5 10.75 7.5C10.5511 7.5 10.3603 7.42098 10.2197 7.28033C10.079 7.13968 10 6.94891 10 6.75V5.75ZM10.75 8.5C10.5511 8.5 10.3603 8.57902 10.2197 8.71967C10.079 8.86032 10 9.05109 10 9.25V10.25C10 10.4489 10.079 10.6397 10.2197 10.7803C10.3603 10.921 10.5511 11 10.75 11C10.9489 11 11.1397 10.921 11.2803 10.7803C11.421 10.6397 11.5 10.4489 11.5 10.25V9.25C11.5 9.05109 11.421 8.86032 11.2803 8.71967C11.1397 8.57902 10.9489 8.5 10.75 8.5Z"
         fill="#A3E635"
-        // fillOpacity="0.5"
+      // fillOpacity="0.5"
       />
     </svg>
   ),
@@ -99,7 +99,7 @@ const ticketTypesIcons = {
         clipRule="evenodd"
         d="M1 4.5C1 4.10218 1.15804 3.72064 1.43934 3.43934C1.72064 3.15804 2.10218 3 2.5 3H13.5C13.8978 3 14.2794 3.15804 14.5607 3.43934C14.842 3.72064 15 4.10218 15 4.5V5.5C15 5.776 14.773 5.994 14.505 6.062C14.0743 6.1718 13.6925 6.42192 13.4198 6.77286C13.1472 7.1238 12.9991 7.55557 12.9991 8C12.9991 8.44443 13.1472 8.8762 13.4198 9.22714C13.6925 9.57808 14.0743 9.8282 14.505 9.938C14.773 10.006 15 10.224 15 10.5V11.5C15 11.8978 14.842 12.2794 14.5607 12.5607C14.2794 12.842 13.8978 13 13.5 13H2.5C2.10218 13 1.72064 12.842 1.43934 12.5607C1.15804 12.2794 1 11.8978 1 11.5V10.5C1 10.224 1.227 10.006 1.495 9.938C1.92565 9.8282 2.30747 9.57808 2.58016 9.22714C2.85285 8.8762 3.00088 8.44443 3.00088 8C3.00088 7.55557 2.85285 7.1238 2.58016 6.77286C2.30747 6.42192 1.92565 6.1718 1.495 6.062C1.227 5.994 1 5.776 1 5.5V4.5ZM10 5.75C10 5.55109 10.079 5.36032 10.2197 5.21967C10.3603 5.07902 10.5511 5 10.75 5C10.9489 5 11.1397 5.07902 11.2803 5.21967C11.421 5.36032 11.5 5.55109 11.5 5.75V6.75C11.5 6.94891 11.421 7.13968 11.2803 7.28033C11.1397 7.42098 10.9489 7.5 10.75 7.5C10.5511 7.5 10.3603 7.42098 10.2197 7.28033C10.079 7.13968 10 6.94891 10 6.75V5.75ZM10.75 8.5C10.5511 8.5 10.3603 8.57902 10.2197 8.71967C10.079 8.86032 10 9.05109 10 9.25V10.25C10 10.4489 10.079 10.6397 10.2197 10.7803C10.3603 10.921 10.5511 11 10.75 11C10.9489 11 11.1397 10.921 11.2803 10.7803C11.421 10.6397 11.5 10.4489 11.5 10.25V9.25C11.5 9.05109 11.421 8.86032 11.2803 8.71967C11.1397 8.57902 10.9489 8.5 10.75 8.5Z"
         fill="#A3E635"
-        // fillOpacity="0.5"
+      // fillOpacity="0.5"
       />
     </svg>
   ),
@@ -116,7 +116,7 @@ const ticketTypesIcons = {
         clipRule="evenodd"
         d="M1 4.5C1 4.10218 1.15804 3.72064 1.43934 3.43934C1.72064 3.15804 2.10218 3 2.5 3H13.5C13.8978 3 14.2794 3.15804 14.5607 3.43934C14.842 3.72064 15 4.10218 15 4.5V5.5C15 5.776 14.773 5.994 14.505 6.062C14.0743 6.1718 13.6925 6.42192 13.4198 6.77286C13.1472 7.1238 12.9991 7.55557 12.9991 8C12.9991 8.44443 13.1472 8.8762 13.4198 9.22714C13.6925 9.57808 14.0743 9.8282 14.505 9.938C14.773 10.006 15 10.224 15 10.5V11.5C15 11.8978 14.842 12.2794 14.5607 12.5607C14.2794 12.842 13.8978 13 13.5 13H2.5C2.10218 13 1.72064 12.842 1.43934 12.5607C1.15804 12.2794 1 11.8978 1 11.5V10.5C1 10.224 1.227 10.006 1.495 9.938C1.92565 9.8282 2.30747 9.57808 2.58016 9.22714C2.85285 8.8762 3.00088 8.44443 3.00088 8C3.00088 7.55557 2.85285 7.1238 2.58016 6.77286C2.30747 6.42192 1.92565 6.1718 1.495 6.062C1.227 5.994 1 5.776 1 5.5V4.5ZM10 5.75C10 5.55109 10.079 5.36032 10.2197 5.21967C10.3603 5.07902 10.5511 5 10.75 5C10.9489 5 11.1397 5.07902 11.2803 5.21967C11.421 5.36032 11.5 5.55109 11.5 5.75V6.75C11.5 6.94891 11.421 7.13968 11.2803 7.28033C11.1397 7.42098 10.9489 7.5 10.75 7.5C10.5511 7.5 10.3603 7.42098 10.2197 7.28033C10.079 7.13968 10 6.94891 10 6.75V5.75ZM10.75 8.5C10.5511 8.5 10.3603 8.57902 10.2197 8.71967C10.079 8.86032 10 9.05109 10 9.25V10.25C10 10.4489 10.079 10.6397 10.2197 10.7803C10.3603 10.921 10.5511 11 10.75 11C10.9489 11 11.1397 10.921 11.2803 10.7803C11.421 10.6397 11.5 10.4489 11.5 10.25V9.25C11.5 9.05109 11.421 8.86032 11.2803 8.71967C11.1397 8.57902 10.9489 8.5 10.75 8.5Z"
         fill="#A3E635"
-        // fillOpacity="0.5"
+      // fillOpacity="0.5"
       />
     </svg>
   ),
@@ -149,6 +149,7 @@ export default function EventDetails() {
   const [ticketCount, setTicketCount] = useState(null);
   const [organizerId, setOrganizerId] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     const stored = localStorage.getItem("organizerId");
@@ -163,7 +164,7 @@ export default function EventDetails() {
       ),
     }));
   };
-  
+
   const scrollContainerRef = useRef(null);
   const handleIncrement = () => {
     if (!ticketData) return;
@@ -281,7 +282,7 @@ export default function EventDetails() {
             `${ticketData.ticket_name} ticket sales has been renewed.`
           );
           setShowSalesNotification(true);
-setTimeout(() => setShowSalesNotification(false), 3000);
+          setTimeout(() => setShowSalesNotification(false), 3000);
           setShowActivateNotification(true);
           setTimeout(() => setShowActivateNotification(false), 3000);
         }, 300);
@@ -513,9 +514,9 @@ setTimeout(() => setShowSalesNotification(false), 3000);
         phoneNumber: "+1" + data.phoneNumber, // Make sure this is included
 
         tickets: ticketData,
-        
+
         // userId: user_id
-        
+
       };
       // console.log("POST URL:", `${url}/complimentary/add-complimentary`);
 
@@ -525,7 +526,7 @@ setTimeout(() => setShowSalesNotification(false), 3000);
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         console.error("Failed to send ticket:", errorData);
@@ -566,7 +567,7 @@ setTimeout(() => setShowSalesNotification(false), 3000);
       setAssignLoading(false);
     }
   };
- 
+
   const handleRemoveEvent = async (eventId, data) => {
     try {
       const updatedEvents = assignEvents.filter(
@@ -732,6 +733,22 @@ setTimeout(() => setShowSalesNotification(false), 3000);
             <div className="flex flex-col items-start justify-start gap-2">
               <p className="text-lg font-medium">{event.venue_name}</p>
               <span className="text-white/50">{event.address}</span>
+              <div className="relative w-full h-[300px] rounded-xl overflow-hidden">
+                {!isLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#f0f0f0] z-10">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-500"></div>
+                  </div>
+                )}
+                <iframe
+                  width="100%"
+                  height="300"
+                  style={{ border: 0, borderRadius: '12px' }}
+                  loading="lazy"
+                  allowFullScreen
+                  src={`https://www.google.com/maps?q=${encodeURIComponent(event.address)}&output=embed`}
+                  onLoad={() => setIsLoaded(true)}
+                ></iframe>
+              </div>
             </div>
           </div>
         </div>
@@ -809,7 +826,7 @@ setTimeout(() => setShowSalesNotification(false), 3000);
           />
         </svg>
       ),
-      content: <TicketTab event={event}onTicketStatusChange={handleTicketStatusChange} />,
+      content: <TicketTab event={event} onTicketStatusChange={handleTicketStatusChange} />,
     },
     {
       id: "customers",
@@ -999,20 +1016,19 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                       <h2 className="text-2xl font-bold">{event.event_name}</h2>
                       <div className="flex items-center justify-center gap-2 text-sm bg-white/[0.05] px-2 h-6 w-fit rounded-full">
                         <div
-                          className={`h-2 w-2 rounded-full ${
-                            eventDate < currentDate && event.explore === "YES"
-                              ? "bg-[#FF5733]"
-                              : event.explore === "NO"
+                          className={`h-2 w-2 rounded-full ${eventDate < currentDate && event.explore === "YES"
+                            ? "bg-[#FF5733]"
+                            : event.explore === "NO"
                               ? "bg-gray-500"
                               : "bg-[#10B981]"
-                          }`}
+                            }`}
                         ></div>
                         <span className="text-white/50">
                           {eventDate < currentDate && event.explore === "YES"
                             ? "Past"
                             : event.explore === "NO"
-                            ? "Draft"
-                            : "Live"}
+                              ? "Draft"
+                              : "Live"}
                         </span>
                       </div>
                     </div>
@@ -1296,7 +1312,7 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                     />
                   </svg>
                   <p className="text-sm">
-                  {notificationMessage}
+                    {notificationMessage}
                   </p>{" "}
                 </div>
                 <button
@@ -1440,8 +1456,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                               const soldPercentage =
                                 totalTickets > 0
                                   ? ((soldTickets[ticket.ticket_name] || 0) /
-                                      totalTickets) *
-                                    100
+                                    totalTickets) *
+                                  100
                                   : 0;
                               return (
                                 <div
@@ -1487,9 +1503,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                                     <div
                                                       className="h-full transition-all duration-300 ease-out"
                                                       style={{
-                                                        transform: `scaleY(${
-                                                          barFillPercentage / 25
-                                                        })`,
+                                                        transform: `scaleY(${barFillPercentage / 25
+                                                          })`,
                                                         transformOrigin:
                                                           "bottom",
                                                         backgroundColor:
@@ -1595,11 +1610,10 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                 <div className="flex items-center bg-primary px-1 py-1 rounded-full w-max">
                                   <button
                                     onClick={handleDecrement}
-                                    className={`p-3 font-inter bg-[#141414] text-white rounded-full ${
-                                      ticketCount === null
-                                        ? "cursor-not-allowed opacity-50"
-                                        : "hover:bg-gray-500 hover:bg-opacity-30"
-                                    }`}
+                                    className={`p-3 font-inter bg-[#141414] text-white rounded-full ${ticketCount === null
+                                      ? "cursor-not-allowed opacity-50"
+                                      : "hover:bg-gray-500 hover:bg-opacity-30"
+                                      }`}
                                     disabled={ticketCount === null}
                                   >
                                     <MinusIcon width={16} height={16} />
@@ -1607,9 +1621,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                   <span className="mx-4 font-inter">
                                     {ticketCount === null
                                       ? "Choose tickets"
-                                      : `${ticketCount} ticket${
-                                          ticketCount > 1 ? "s" : ""
-                                        }`}
+                                      : `${ticketCount} ticket${ticketCount > 1 ? "s" : ""
+                                      }`}
                                   </span>
                                   <button
                                     onClick={handleIncrement}
@@ -1630,10 +1643,10 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                     const soldPercentage =
                                       totalTickets > 0
                                         ? ((soldTickets[
-                                            ticketData.ticket_name
-                                          ] || 0) /
-                                            totalTickets) *
-                                          100
+                                          ticketData.ticket_name
+                                        ] || 0) /
+                                          totalTickets) *
+                                        100
                                         : 0;
                                     return (
                                       <div className="text-white/70 text-right">
@@ -1664,9 +1677,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                                   <div
                                                     className="h-full transition-all duration-300 ease-out"
                                                     style={{
-                                                      transform: `scaleY(${
-                                                        barFillPercentage / 25
-                                                      })`,
+                                                      transform: `scaleY(${barFillPercentage / 25
+                                                        })`,
                                                       transformOrigin: "bottom",
                                                       backgroundColor: barColor,
                                                     }}
@@ -1949,8 +1961,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                           const soldPercentage =
                             totalTickets > 0
                               ? ((soldTickets[ticket.ticket_name] || 0) /
-                                  totalTickets) *
-                                100
+                                totalTickets) *
+                              100
                               : 0;
                           return (
                             <div
@@ -1993,9 +2005,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                                 <div
                                                   className="h-full transition-all duration-300 ease-out"
                                                   style={{
-                                                    transform: `scaleY(${
-                                                      barFillPercentage / 25
-                                                    })`,
+                                                    transform: `scaleY(${barFillPercentage / 25
+                                                      })`,
                                                     transformOrigin: "bottom",
                                                     backgroundColor: barColor,
                                                   }}
@@ -2127,11 +2138,10 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                             <div className="flex items-center bg-primary px-1 py-1 rounded-full w-max">
                               <button
                                 onClick={handleDecrements}
-                                className={`p-3 font-inter bg-[#141414] text-white rounded-full ${
-                                  ticketCount === null
-                                    ? "cursor-not-allowed opacity-50"
-                                    : "hover:bg-gray-500 hover:bg-opacity-30"
-                                }`}
+                                className={`p-3 font-inter bg-[#141414] text-white rounded-full ${ticketCount === null
+                                  ? "cursor-not-allowed opacity-50"
+                                  : "hover:bg-gray-500 hover:bg-opacity-30"
+                                  }`}
                                 disabled={ticketCount === null}
                               >
                                 <MinusIcon width={16} height={16} />
@@ -2139,9 +2149,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                               <span className="mx-4 font-inter">
                                 {ticketCount === null
                                   ? "Choose tickets"
-                                  : `${ticketCount} ticket${
-                                      ticketCount > 1 ? "s" : ""
-                                    }`}
+                                  : `${ticketCount} ticket${ticketCount > 1 ? "s" : ""
+                                  }`}
                               </span>
                               <button
                                 onClick={handleIncrements}
@@ -2160,9 +2169,9 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                 const soldPercentage =
                                   totalTickets > 0
                                     ? ((soldTickets[ticketData.ticket_name] ||
-                                        0) /
-                                        totalTickets) *
-                                      100
+                                      0) /
+                                      totalTickets) *
+                                    100
                                     : 0;
                                 return (
                                   <div className="text-white/70 text-right">
@@ -2192,9 +2201,8 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                                               <div
                                                 className="h-full transition-all duration-300 ease-out"
                                                 style={{
-                                                  transform: `scaleY(${
-                                                    barFillPercentage / 25
-                                                  })`,
+                                                  transform: `scaleY(${barFillPercentage / 25
+                                                    })`,
                                                   transformOrigin: "bottom",
                                                   backgroundColor: barColor,
                                                 }}
@@ -2406,11 +2414,10 @@ setTimeout(() => setShowSalesNotification(false), 3000);
                     value={tab.id}
                     active={activeTab === tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 hover:bg-white/[0.03] @4xl:hover:bg-transparent p-2 @4xl:border-b-2 @4xl:rounded-none ${
-                      activeTab === tab.id
-                        ? "border-white"
-                        : "border-transparent"
-                    }`}
+                    className={`flex items-center gap-2 hover:bg-white/[0.03] @4xl:hover:bg-transparent p-2 @4xl:border-b-2 @4xl:rounded-none ${activeTab === tab.id
+                      ? "border-white"
+                      : "border-transparent"
+                      }`}
                   >
                     <div className="flex items-center gap-2">
                       {tab.icon}
